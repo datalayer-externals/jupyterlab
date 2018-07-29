@@ -17,7 +17,7 @@
     "@jupyterlab/apputils": "^0.17.2",
     "@jupyterlab/apputils-extension": "^0.17.2",
     "@jupyterlab/attachments": "^0.17.2",
-    "@jupyterlab/cells": "file:/home/jovyan/.jupyter/repos/jupyterlab/packages/cells",
+    "@jupyterlab/cells": "file:/home/jovyan/.repos/jupyterlab/packages/cells",
     "@jupyterlab/codeeditor": "^0.17.2",
     "@jupyterlab/codemirror": "^0.17.3",
     "@jupyterlab/codemirror-extension": "^0.17.2",
