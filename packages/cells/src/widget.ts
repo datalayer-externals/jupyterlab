@@ -7,7 +7,7 @@ import { AttachmentsResolver } from '@jupyterlab/attachments';
 
 import { IClientSession } from '@jupyterlab/apputils';
 
-import { IChangedArgs, ActivityMonitor } from '@jupyterlab/coreutils';
+import { IChangedArgs, ActivityMonitor, uuid } from '@jupyterlab/coreutils';
 
 import { CodeEditor, CodeEditorWrapper } from '@jupyterlab/codeeditor';
 
@@ -547,6 +547,7 @@ export class CodeCell extends Cell {
       rendermime,
       contentFactory: contentFactory
     }));
+    output.id = uuid();
     output.addClass(CELL_OUTPUT_AREA_CLASS);
     // Set a CSS if there are no outputs, and connect a signal for future
     // changes to the number of outputs. This is for conditional styling
