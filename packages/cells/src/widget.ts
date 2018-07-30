@@ -7,7 +7,7 @@ import { AttachmentsResolver } from '@jupyterlab/attachments';
 
 import { IClientSession } from '@jupyterlab/apputils';
 
-import { IChangedArgs, ActivityMonitor, uuid } from '@jupyterlab/coreutils';
+import { IChangedArgs, ActivityMonitor } from '@jupyterlab/coreutils';
 
 import { CodeEditor, CodeEditorWrapper } from '@jupyterlab/codeeditor';
 
@@ -547,7 +547,7 @@ export class CodeCell extends Cell {
       rendermime,
       contentFactory: contentFactory
     }));
-    output.id = uuid();
+    output.id = this.guid();
     output.addClass(CELL_OUTPUT_AREA_CLASS);
     // Set a CSS if there are no outputs, and connect a signal for future
     // changes to the number of outputs. This is for conditional styling
@@ -568,6 +568,29 @@ export class CodeCell extends Cell {
     this.initializeState();
     model.stateChanged.connect(this.onStateChanged, this);
     model.metadata.changed.connect(this.onMetadataChanged, this);
+  }
+
+  guid() {
+    return (
+      this.s4() +
+      this.s4() +
+      '-' +
+      this.s4() +
+      '-' +
+      this.s4() +
+      '-' +
+      this.s4() +
+      '-' +
+      this.s4() +
+      this.s4() +
+      this.s4()
+    );
+  }
+
+  s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
   }
 
   /**
