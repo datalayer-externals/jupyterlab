@@ -3,7 +3,7 @@
 
 import { expect } from 'chai';
 
-import { StateDB } from '@jupyterlab/coreutils';
+import { StateDB } from '@jupyterlab/coreutils/src';
 
 import { PromiseDelegate, ReadonlyJSONObject } from '@phosphor/coreutils';
 
@@ -43,7 +43,7 @@ describe('StateDB', () => {
       await db.clear();
     });
 
-    it('should allow a merge data transformation', done => {
+    it('should allow a merge data transformation', async () => {
       let transform = new PromiseDelegate<StateDB.DataTransform>();
       let db = new StateDB({ namespace: 'test', transform: transform.promise });
       let prepopulate = new StateDB({ namespace: 'test' });
@@ -51,25 +51,18 @@ describe('StateDB', () => {
       let value = 'qux';
 
       // By sharing a namespace, the two databases will share data.
-      prepopulate
-        .save('foo', 'bar')
-        .then(() => db.fetch('foo'))
-        .then(saved => {
-          expect(saved).to.equal('bar');
-        })
-        .then(() => db.fetch(key))
-        .then(saved => {
-          expect(saved).to.equal(value);
-        })
-        .then(() => db.clear())
-        .then(done)
-        .catch(done);
+      await prepopulate.save('foo', 'bar');
       transform.resolve({ type: 'merge', contents: { [key]: value } });
+      let saved = await db.fetch('foo');
+      expect(saved).to.equal('bar');
+      saved = await db.fetch(key);
+      expect(saved).to.equal(value);
+      await db.clear();
     });
   });
 
   describe('#changed', () => {
-    it('should emit changes when the database is updated', done => {
+    it('should emit changes when the database is updated', async () => {
       const namespace = 'test-namespace';
       const db = new StateDB({ namespace });
       const changes: StateDB.Change[] = [
@@ -84,17 +77,12 @@ describe('StateDB', () => {
         recorded.push(change);
       });
 
-      db
-        .save('foo', 0)
-        .then(() => db.remove('foo'))
-        .then(() => db.save('bar', 1))
-        .then(() => db.remove('bar'))
-        .then(() => {
-          expect(recorded).to.deep.equal(changes);
-        })
-        .then(() => db.clear())
-        .then(done)
-        .catch(done);
+      await db.save('foo', 0);
+      await db.remove('foo');
+      await db.save('bar', 1);
+      await db.remove('bar');
+      expect(recorded).to.deep.equal(changes);
+      await db.clear();
     });
   });
 

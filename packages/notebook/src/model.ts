@@ -55,6 +55,10 @@ export interface INotebookModel extends DocumentRegistry.IModel {
    * The metadata associated with the notebook.
    */
   readonly metadata: IObservableJSON;
+  /**
+   * The array of deleted cells since the notebook was last run.
+   */
+  readonly deletedCells: string[];
 }
 
 /**
@@ -73,7 +77,10 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
     if (!this._cells.length) {
       this._cells.push(factory.createCodeCell({}));
     }
-    this._cells.changed.connect(this._onCellsChanged, this);
+    this._cells.changed.connect(
+      this._onCellsChanged,
+      this
+    );
 
     // Handle initial metadata.
     let metadata = this.modelDB.createMap('metadata');
@@ -82,7 +89,11 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
       metadata.set('language_info', { name });
     }
     this._ensureMetadata();
-    metadata.changed.connect(this.triggerContentChange, this);
+    metadata.changed.connect(
+      this.triggerContentChange,
+      this
+    );
+    this._deletedCells = [];
   }
 
   /**
@@ -125,7 +136,12 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
     let spec = this.metadata.get('kernelspec') as nbformat.IKernelspecMetadata;
     return spec ? spec.name : '';
   }
-
+  /**
+   * The default kernel name of the document.
+   */
+  get deletedCells(): string[] {
+    return this._deletedCells;
+  }
   /**
    * The default kernel language of the document.
    */
@@ -265,14 +281,20 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
     switch (change.type) {
       case 'add':
         change.newValues.forEach(cell => {
-          cell.contentChanged.connect(this.triggerContentChange, this);
+          cell.contentChanged.connect(
+            this.triggerContentChange,
+            this
+          );
         });
         break;
       case 'remove':
         break;
       case 'set':
         change.newValues.forEach(cell => {
-          cell.contentChanged.connect(this.triggerContentChange, this);
+          cell.contentChanged.connect(
+            this.triggerContentChange,
+            this
+          );
         });
         break;
       default:
@@ -308,6 +330,7 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
   private _cells: CellList;
   private _nbformat = nbformat.MAJOR_VERSION;
   private _nbformatMinor = nbformat.MINOR_VERSION;
+  private _deletedCells: string[];
 }
 
 /**

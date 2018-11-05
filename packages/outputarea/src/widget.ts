@@ -106,8 +106,14 @@ export class OutputArea extends Widget {
       let output = model.get(i);
       this._insertOutput(i, output);
     }
-    model.changed.connect(this.onModelChanged, this);
-    model.stateChanged.connect(this.onStateChanged, this);
+    model.changed.connect(
+      this.onModelChanged,
+      this
+    );
+    model.stateChanged.connect(
+      this.onStateChanged,
+      this
+    );
   }
 
   /**
@@ -531,7 +537,8 @@ export namespace OutputArea {
   export function execute(
     code: string,
     output: OutputArea,
-    session: IClientSession
+    session: IClientSession,
+    metadata?: JSONObject
   ): Promise<KernelMessage.IExecuteReplyMsg> {
     // Override the default for `stop_on_error`.
     let content: KernelMessage.IExecuteRequest = {
@@ -542,7 +549,7 @@ export namespace OutputArea {
     if (!session.kernel) {
       return Promise.reject('Session has no kernel.');
     }
-    let future = session.kernel.requestExecute(content, false);
+    let future = session.kernel.requestExecute(content, false, metadata);
     output.future = future;
     return future.done as Promise<KernelMessage.IExecuteReplyMsg>;
   }
@@ -627,7 +634,7 @@ export class OutputPrompt extends Widget implements IOutputPrompt {
     if (value === null) {
       this.node.textContent = '';
     } else {
-      this.node.textContent = `Out[${value}]:`;
+      this.node.textContent = `[${value}]:`;
     }
   }
 

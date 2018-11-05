@@ -12,7 +12,7 @@
 [![Documentation Status](https://readthedocs.org/projects/jupyterlab/badge/?version=stable)](http://jupyterlab.readthedocs.io/en/stable/)
 [![Google Group](https://img.shields.io/badge/-Google%20Group-lightgrey.svg)](https://groups.google.com/forum/#!forum/jupyter)
 [![Join the Gitter Chat](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/jupyterlab/jupyterlab)
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/jupyterlab/jupyterlab-demo/18a9793b58ba86660b5ab964e1aeaf7324d667c8?urlpath=lab%2Ftree%2Fdemo%2FLorenz.ipynb)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/jupyterlab/jupyterlab-demo/0b0bb42e3e43ee2ebe1c0424d3a88a9b9edcd055?urlpath=lab%2Ftree%2Fdemo%2FLorenz.ipynb)
 
 An extensible environment for interactive and reproducible computing, based on the
 Jupyter Notebook and Architecture. [Currently ready for users.](https://blog.jupyter.org/jupyterlab-is-ready-for-users-5a6f039b8906)
@@ -56,9 +56,9 @@ conda install -c conda-forge jupyterlab
 
 pip is a package management system for installing and updating Python packages. pip comes with Python, so you get pip simply by installing Python. On Ubuntu and Fedora Linux, you can simply use your system package manager to install the `python3-pip` package. [_The Hitchhiker's Guide to Python_ provides some guidance on how to install Python on your system if it isn't already](https://docs.python-guide.org/starting/installation/); you can also [install Python directly from python.org](https://www.python.org/getit/). You might want to [upgrade pip](https://pip.pypa.io/en/stable/installing/) before using it to install other programs.
 
-JupyterLab uses Python, and as of July 2018 JupyterLab can use either Python2 or Python3. However, it's recommended that you install JupyterLab using Python3, even when running Python2 code - and there are different ways to do that. Therefore:
+JupyterLab requires Python 3.5 or higher.
 
-1.  If you are using Windows with Python version 3.3 or higher, use the [Python Launcher for Windows](https://docs.python.org/3/using/windows.html?highlight=shebang#python-launcher-for-windows) to use `pip` with Python version 3:
+1.  If you are using Windows with Python version 3.5 or higher, use the [Python Launcher for Windows](https://docs.python.org/3/using/windows.html?highlight=shebang#python-launcher-for-windows) to use `pip` with Python version 3:
     ```bash
     py -3 -m pip install jupyterlab
     ```
@@ -129,9 +129,9 @@ jupyter notebook --version
 
 The latest versions of the following browsers are currently _known to work_:
 
-* Firefox
-* Chrome
-* Safari
+- Firefox
+- Chrome
+- Safari
 
 See our [documentation](http://jupyterlab.readthedocs.io/en/latest/getting_started/installation.html) for additional details.
 
@@ -143,11 +143,11 @@ See our [documentation](http://jupyterlab.readthedocs.io/en/latest/getting_start
 
 If you would like to contribute to the project, please read our [contributor documentation](CONTRIBUTING.md).
 
-JupyterLab follows the official [Jupyter Code of Conduct](https://github.com/jupyter/governance/blob/master/conduct/code_of_conduct.md).
+JupyterLab follows the Jupyter [Community Guides](https://jupyter.readthedocs.io/en/latest/community/content-community.html).
 
 ### Extending JupyterLab
 
-To start developing your own extension, see our [developers documentation](https://jupyterlab.readthedocs.io/en/latest/developer/extension_dev.html) and [API docs](http://jupyterlab.github.io/jupyterlab/globals.html).
+To start developing your own extension, see our [developers documentation](https://jupyterlab.readthedocs.io/en/latest/developer/extension_dev.html) and [API docs](http://jupyterlab.github.io/jupyterlab/index.html).
 
 ### License
 
@@ -160,24 +160,24 @@ JupyterLab is part of [Project Jupyter](http://jupyter.org/) and is developed by
 
 JupyterLab's current maintainers are listed in alphabetical order, with affiliation, and main areas of contribution:
 
-* Chris Colbert, Project Jupyter (co-creator, application/low-level architecture,
+- Chris Colbert, Project Jupyter (co-creator, application/low-level architecture,
   technical leadership, vision, PhosphorJS)
-* Afshin Darian, Two Sigma (co-creator, application/high-level architecture,
+- Afshin Darian, Two Sigma (co-creator, application/high-level architecture,
   prolific contributions throughout the code base).
-* Jessica Forde, Project Jupyter (demo, documentation)
-* Tim George, Cal Poly (UI/UX design, strategy, management, user needs analysis)
-* Brian Granger, Cal Poly (co-creator, strategy, vision, management, UI/UX design,
+- Jessica Forde, Project Jupyter (demo, documentation)
+- Tim George, Cal Poly (UI/UX design, strategy, management, user needs analysis)
+- Brian Granger, Cal Poly (co-creator, strategy, vision, management, UI/UX design,
   architecture).
-* Jason Grout, Bloomberg (co-creator, vision, general development).
-* Fernando Perez, UC Berkeley (co-creator, vision).
-* Ian Rose, UC Berkeley (Real-time collaboration, document architecture).
-* Saul Shanabrook, Quansight (general development, extensions)
-* Steven Silvester, JPMorgan Chase (co-creator, release management, packaging,
+- Jason Grout, Bloomberg (co-creator, vision, general development).
+- Fernando Perez, UC Berkeley (co-creator, vision).
+- Ian Rose, UC Berkeley (Real-time collaboration, document architecture).
+- Saul Shanabrook, Quansight (general development, extensions)
+- Steven Silvester, JPMorgan Chase (co-creator, release management, packaging,
   prolific contributions throughout the code base).
 
 Maintainer emeritus:
 
-* Cameron Oelsen, Cal Poly (UI/UX design).
+- Cameron Oelsen, Cal Poly (UI/UX design).
 
 This list is provided to help provide context about who we are and how our team functions.
 If you would like to be listed, please submit a pull request with your information.

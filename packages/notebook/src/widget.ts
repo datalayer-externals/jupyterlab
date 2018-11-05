@@ -372,9 +372,18 @@ export class StaticNotebook extends Widget {
     each(cells, (cell: ICellModel, i: number) => {
       this._insertCell(i, cell);
     });
-    cells.changed.connect(this._onCellsChanged, this);
-    newValue.contentChanged.connect(this.onModelContentChanged, this);
-    newValue.metadata.changed.connect(this.onMetadataChanged, this);
+    cells.changed.connect(
+      this._onCellsChanged,
+      this
+    );
+    newValue.contentChanged.connect(
+      this.onModelContentChanged,
+      this
+    );
+    newValue.metadata.changed.connect(
+      this.onMetadataChanged,
+      this
+    );
   }
 
   /**
@@ -855,9 +864,9 @@ export class Notebook extends StaticNotebook {
    * Get the active cell widget.
    *
    * #### Notes
-   * This is a cell or undefined if there is no active cell.
+   * This is a cell or `null` if there is no active cell.
    */
-  get activeCell(): Cell | undefined {
+  get activeCell(): Cell | null {
     return this._activeCell;
   }
 
@@ -868,7 +877,7 @@ export class Notebook extends StaticNotebook {
     if (this.isDisposed) {
       return;
     }
-    this._activeCell = undefined;
+    this._activeCell = null;
     super.dispose();
   }
 
@@ -1101,7 +1110,7 @@ export class Notebook extends StaticNotebook {
     let node = this.node;
     let ar = node.getBoundingClientRect();
     let delta = position - ar.top - ar.height / 2;
-    if (Math.abs(delta) > ar.height * threshold / 100) {
+    if (Math.abs(delta) > (ar.height * threshold) / 100) {
       node.scrollTop += delta;
     }
   }
@@ -1186,10 +1195,13 @@ export class Notebook extends StaticNotebook {
     node.addEventListener('dblclick', this);
     node.addEventListener('focusin', this);
     node.addEventListener('focusout', this);
-    node.addEventListener('p-dragenter', this);
-    node.addEventListener('p-dragleave', this);
-    node.addEventListener('p-dragover', this);
-    node.addEventListener('p-drop', this);
+    // Capture drag events for the notebook widget
+    // in order to preempt the drag/drop handlers in the
+    // code editor widgets, which can take text data.
+    node.addEventListener('p-dragenter', this, true);
+    node.addEventListener('p-dragleave', this, true);
+    node.addEventListener('p-dragover', this, true);
+    node.addEventListener('p-drop', this, true);
   }
 
   /**
@@ -1204,10 +1216,10 @@ export class Notebook extends StaticNotebook {
     node.removeEventListener('dblclick', this);
     node.removeEventListener('focusin', this);
     node.removeEventListener('focusout', this);
-    node.removeEventListener('p-dragenter', this);
-    node.removeEventListener('p-dragleave', this);
-    node.removeEventListener('p-dragover', this);
-    node.removeEventListener('p-drop', this);
+    node.removeEventListener('p-dragenter', this, true);
+    node.removeEventListener('p-dragleave', this, true);
+    node.removeEventListener('p-dragover', this, true);
+    node.removeEventListener('p-drop', this, true);
     document.removeEventListener('mousemove', this, true);
     document.removeEventListener('mouseup', this, true);
   }
@@ -1273,7 +1285,10 @@ export class Notebook extends StaticNotebook {
         }
       });
     }
-    cell.editor.edgeRequested.connect(this._onEdgeRequest, this);
+    cell.editor.edgeRequested.connect(
+      this._onEdgeRequest,
+      this
+    );
     // If the insertion happened above, increment the active cell
     // index, otherwise it stays the same.
     this.activeCellIndex =
@@ -1840,6 +1855,10 @@ export class Notebook extends StaticNotebook {
     // case where the target is in the same notebook and we
     // can just move the cells.
     this._drag.mimeData.setData('internal:cells', toMove);
+    // Add mimeData for the text content of the selected cells,
+    // allowing for drag/drop into plain text fields.
+    const textContent = toMove.map(cell => cell.model.value.text).join('\n');
+    this._drag.mimeData.setData('text/plain', textContent);
 
     // Remove mousemove and mouseup listeners and start the drag.
     document.removeEventListener('mousemove', this, true);
@@ -1962,7 +1981,7 @@ export class Notebook extends StaticNotebook {
   }
 
   private _activeCellIndex = -1;
-  private _activeCell: Cell | undefined = undefined;
+  private _activeCell: Cell | null = null;
   private _mode: NotebookMode = 'command';
   private _drag: Drag = null;
   private _dragData: { pressX: number; pressY: number; index: number } = null;
@@ -2052,7 +2071,7 @@ namespace Private {
               { className: DRAG_IMAGE_CLASS },
               h.span(
                 { className: CELL_DRAG_PROMPT_CLASS },
-                'In [' + promptNumber + ']:'
+                '[' + promptNumber + ']:'
               ),
               h.span({ className: CELL_DRAG_CONTENT_CLASS }, cellContent)
             ),
@@ -2079,7 +2098,7 @@ namespace Private {
               { className: `${DRAG_IMAGE_CLASS} ${SINGLE_DRAG_IMAGE_CLASS}` },
               h.span(
                 { className: CELL_DRAG_PROMPT_CLASS },
-                'In [' + promptNumber + ']:'
+                '[' + promptNumber + ']:'
               ),
               h.span({ className: CELL_DRAG_CONTENT_CLASS }, cellContent)
             )

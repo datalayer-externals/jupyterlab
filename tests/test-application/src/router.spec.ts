@@ -3,11 +3,13 @@
 
 import { expect } from 'chai';
 
-import { Router } from '@jupyterlab/application';
+import { Router } from '@jupyterlab/application/src';
 
 import { CommandRegistry } from '@phosphor/commands';
 
 import { Token } from '@phosphor/coreutils';
+
+import { signalToPromise } from '@jupyterlab/testutils';
 
 const base = '/';
 
@@ -41,9 +43,7 @@ describe('apputils', () => {
 
     describe('#current', () => {
       it('should return the current window location as an object', () => {
-        // The karma test window location is a file called `context.html`
-        // without any query string parameters or hash.
-        const path = 'context.html';
+        const path = '/';
         const request = path;
         const search = '';
         const hash = '';
@@ -53,7 +53,7 @@ describe('apputils', () => {
     });
 
     describe('#routed', () => {
-      it('should emit a signal when a path is routed', done => {
+      it('should emit a signal when a path is routed', async () => {
         let routed = false;
 
         commands.addCommand('a', {
@@ -63,11 +63,13 @@ describe('apputils', () => {
         });
         router.register({ command: 'a', pattern: /.*/, rank: 10 });
 
+        let called = false;
         router.routed.connect(() => {
           expect(routed).to.equal(true);
-          done();
+          called = true;
         });
-        router.route();
+        await router.route();
+        expect(called).to.equal(true);
       });
     });
 
@@ -76,7 +78,7 @@ describe('apputils', () => {
         expect(router.stop).to.be.an.instanceof(Token);
       });
 
-      it('should stop routing if returned by a routed command', done => {
+      it('should stop routing if returned by a routed command', async () => {
         const wanted = ['a', 'b'];
         const recorded: string[] = [];
 
@@ -102,11 +104,10 @@ describe('apputils', () => {
         router.register({ command: 'c', pattern: /.*/, rank: 30 });
         router.register({ command: 'd', pattern: /.*/, rank: 40 });
 
-        router.routed.connect(() => {
-          expect(recorded).to.deep.equal(wanted);
-          done();
-        });
-        router.route();
+        let promise = signalToPromise(router.routed);
+        await router.route();
+        await promise;
+        expect(recorded).to.deep.equal(wanted);
       });
     });
 
@@ -118,7 +119,7 @@ describe('apputils', () => {
     });
 
     describe('#register()', () => {
-      it('should register a command with a route pattern', done => {
+      it('should register a command with a route pattern', async () => {
         const wanted = ['a'];
         const recorded: string[] = [];
 
@@ -129,16 +130,18 @@ describe('apputils', () => {
         });
         router.register({ command: 'a', pattern: /.*/ });
 
+        let called = false;
         router.routed.connect(() => {
           expect(recorded).to.deep.equal(wanted);
-          done();
+          called = true;
         });
-        router.route();
+        await router.route();
+        expect(called).to.equal(true);
       });
     });
 
     describe('#route()', () => {
-      it('should route the location to a command', done => {
+      it('should route the location to a command', async () => {
         const wanted = ['a'];
         const recorded: string[] = [];
 
@@ -153,12 +156,14 @@ describe('apputils', () => {
         // Change the hash because changing location is a security error.
         window.location.hash = 'a';
 
+        let called = false;
         router.routed.connect(() => {
           expect(recorded).to.deep.equal(wanted);
           window.location.hash = '';
-          done();
+          called = true;
         });
-        router.route();
+        await router.route();
+        expect(called).to.equal(true);
       });
     });
   });

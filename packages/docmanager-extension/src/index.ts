@@ -20,7 +20,9 @@ import {
   renameDialog,
   getOpenPath,
   DocumentManager,
-  IDocumentManager
+  IDocumentManager,
+  PathStatus,
+  SavingStatus
 } from '@jupyterlab/docmanager';
 
 import { DocumentRegistry } from '@jupyterlab/docregistry';
@@ -28,6 +30,8 @@ import { DocumentRegistry } from '@jupyterlab/docregistry';
 import { IMainMenu } from '@jupyterlab/mainmenu';
 
 import { Contents, Kernel } from '@jupyterlab/services';
+
+import { IStatusBar } from '@jupyterlab/statusbar';
 
 import { IDisposable } from '@phosphor/disposable';
 
@@ -84,7 +88,7 @@ const pluginId = '@jupyterlab/docmanager-extension:plugin';
 /**
  * The default document manager provider.
  */
-const plugin: JupyterLabPlugin<IDocumentManager> = {
+const docManagerPlugin: JupyterLabPlugin<IDocumentManager> = {
   id: pluginId,
   provides: IDocumentManager,
   requires: [ICommandPalette, IMainMenu, ISettingRegistry],
@@ -156,9 +160,82 @@ const plugin: JupyterLabPlugin<IDocumentManager> = {
 };
 
 /**
- * Export the plugin as default.
+ * A plugin for adding a saving status item to the status bar.
  */
-export default plugin;
+export const savingStatusPlugin: JupyterLabPlugin<void> = {
+  id: '@jupyterlab/docmanager-extension:saving-status',
+  autoStart: true,
+  requires: [IStatusBar, IDocumentManager],
+  activate: (
+    app: JupyterLab,
+    statusBar: IStatusBar,
+    docManager: IDocumentManager
+  ) => {
+    let item = new SavingStatus({ docManager });
+
+    // Keep the currently active widget synchronized.
+    item.model!.widget = app.shell.currentWidget;
+    app.shell.currentChanged.connect(
+      () => (item.model!.widget = app.shell.currentWidget)
+    );
+
+    statusBar.registerStatusItem(
+      '@jupyterlab.docmanager-extension:saving-status',
+      {
+        item,
+        align: 'middle',
+        isActive: () => {
+          return true;
+        },
+        activeStateChanged: item.model!.stateChanged
+      }
+    );
+  }
+};
+
+/**
+ * A plugin providing a file path widget to the status bar.
+ */
+export const pathStatusPlugin: JupyterLabPlugin<void> = {
+  id: '@jupyterlab/docmanager-extension:path-status',
+  autoStart: true,
+  requires: [IStatusBar, IDocumentManager],
+  activate: (
+    app: JupyterLab,
+    statusBar: IStatusBar,
+    docManager: IDocumentManager
+  ) => {
+    let item = new PathStatus({ docManager });
+
+    // Keep the file path widget up-to-date with the application active widget.
+    item.model!.widget = app.shell.currentWidget;
+    app.shell.currentChanged.connect(() => {
+      item.model!.widget = app.shell.currentWidget;
+    });
+
+    statusBar.registerStatusItem(
+      '@jupyterlab/docmanager-extension:path-status',
+      {
+        item,
+        align: 'right',
+        rank: 0,
+        isActive: () => {
+          return true;
+        }
+      }
+    );
+  }
+};
+
+/**
+ * Export the plugins as default.
+ */
+const plugins: JupyterLabPlugin<any>[] = [
+  docManagerPlugin,
+  pathStatusPlugin,
+  savingStatusPlugin
+];
+export default plugins;
 
 /* Widget to display the revert to checkpoint confirmation. */
 class RevertConfirmWidget extends Widget {
@@ -186,12 +263,41 @@ function addCommands(
     const { currentWidget } = shell;
     return !!(currentWidget && docManager.contextForWidget(currentWidget));
   };
-  const fileType = () => {
+
+  const isWritable = () => {
     const { currentWidget } = shell;
     if (!currentWidget) {
-      return 'File';
+      return false;
     }
     const context = docManager.contextForWidget(currentWidget);
+    return !!(
+      context &&
+      context.contentsModel &&
+      context.contentsModel.writable
+    );
+  };
+
+  // fetches the doc widget associated with the most recent contextmenu event
+  const contextMenuWidget = (): Widget => {
+    const pathRe = /[Pp]ath:\s?(.*)\n?/;
+    const test = (node: HTMLElement) =>
+      node['title'] && !!node['title'].match(pathRe);
+    const node = app.contextMenuFirst(test);
+
+    if (!node) {
+      // fall back to active doc widget if path cannot be obtained from event
+      return app.shell.currentWidget;
+    }
+    const pathMatch = node['title'].match(pathRe);
+    return docManager.findWidget(pathMatch[1]);
+  };
+
+  // operates on active widget by default
+  const fileType = (widget: Widget = shell.currentWidget) => {
+    if (!widget) {
+      return 'File';
+    }
+    const context = docManager.contextForWidget(widget);
     if (!context) {
       return '';
     }
@@ -280,7 +386,7 @@ function addCommands(
       return !!iterator.next() && !!iterator.next();
     },
     execute: () => {
-      const widget = shell.currentWidget;
+      const widget = contextMenuWidget();
       if (!widget) {
         return;
       }
@@ -295,9 +401,9 @@ function addCommands(
   commands.addCommand(CommandIDs.closeRightTabs, {
     label: () => `Close Tabs to Right`,
     isEnabled: () =>
-      shell.currentWidget && widgetsRightOf(shell.currentWidget).length > 0,
+      contextMenuWidget() && widgetsRightOf(contextMenuWidget()).length > 0,
     execute: () => {
-      const widget = shell.currentWidget;
+      const widget = contextMenuWidget();
       if (!widget) {
         return;
       }
@@ -375,7 +481,7 @@ function addCommands(
   });
 
   commands.addCommand(CommandIDs.openDirect, {
-    label: () => 'Open from Path',
+    label: () => 'Open From Path...',
     caption: 'Open from path',
     isEnabled: () => true,
     execute: () => {
@@ -466,7 +572,7 @@ function addCommands(
   commands.addCommand(CommandIDs.save, {
     label: () => `Save ${fileType()}`,
     caption: 'Save and create checkpoint',
-    isEnabled,
+    isEnabled: isWritable,
     execute: () => {
       if (isEnabled()) {
         let context = docManager.contextForWidget(shell.currentWidget);
@@ -498,11 +604,18 @@ function addCommands(
       const iterator = shell.widgets('main');
       let widget = iterator.next();
       while (widget) {
-        if (docManager.contextForWidget(widget)) {
+        let context = docManager.contextForWidget(widget);
+        if (
+          context &&
+          context.contentsModel &&
+          context.contentsModel.writable
+        ) {
           return true;
         }
         widget = iterator.next();
       }
+      // disable saveAll if all of the widgets models
+      // have writable === false
       return false;
     },
     execute: () => {
@@ -535,23 +648,24 @@ function addCommands(
   });
 
   commands.addCommand(CommandIDs.rename, {
-    label: () => `Rename ${fileType()}…`,
+    label: () => `Rename ${fileType(contextMenuWidget())}…`,
     isEnabled,
     execute: () => {
       if (isEnabled()) {
-        let context = docManager.contextForWidget(shell.currentWidget);
+        let context = docManager.contextForWidget(contextMenuWidget());
         return renameDialog(docManager, context!.path);
       }
     }
   });
 
   commands.addCommand(CommandIDs.clone, {
-    label: () => `New View for ${fileType()}`,
+    label: () => `New View for ${fileType(contextMenuWidget())}`,
     isEnabled,
     execute: args => {
-      const widget = shell.currentWidget;
-      const options =
-        (args['options'] as DocumentRegistry.IOpenOptions) || void 0;
+      const widget = contextMenuWidget();
+      const options = (args['options'] as DocumentRegistry.IOpenOptions) || {
+        mode: 'split-right'
+      };
       if (!widget) {
         return;
       }
@@ -581,7 +695,7 @@ function addCommands(
     label: () => `Show in File Browser`,
     isEnabled,
     execute: () => {
-      let context = docManager.contextForWidget(shell.currentWidget);
+      let context = docManager.contextForWidget(contextMenuWidget());
       if (!context) {
         return;
       }
@@ -601,7 +715,8 @@ function addCommands(
       }
       return commands.execute('docmanager:open', {
         path,
-        factory: MARKDOWN_FACTORY
+        factory: MARKDOWN_FACTORY,
+        options: args['options']
       });
     }
   });
