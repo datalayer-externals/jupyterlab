@@ -26,7 +26,8 @@ import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 import {
   FileEditor,
   FileEditorFactory,
-  IEditorTracker
+  IEditorTracker,
+  TabSpaceStatus
 } from '@jupyterlab/fileeditor';
 
 import { ILauncher } from '@jupyterlab/launcher';
@@ -39,6 +40,8 @@ import {
   IViewMenu
 } from '@jupyterlab/mainmenu';
 
+import { IStatusBar } from '@jupyterlab/statusbar';
+
 import { JSONObject } from '@phosphor/coreutils';
 
 import { Menu } from '@phosphor/widgets';
@@ -47,6 +50,11 @@ import { Menu } from '@phosphor/widgets';
  * The class name for the text editor icon from the default theme.
  */
 const EDITOR_ICON_CLASS = 'jp-TextEditorIcon';
+
+/**
+ * The class name for the text editor icon from the default theme.
+ */
+const MARKDOWN_ICON_CLASS = 'jp-MarkdownIcon';
 
 /**
  * The name of the factory that creates editor widgets.
@@ -58,6 +66,8 @@ const FACTORY = 'Editor';
  */
 namespace CommandIDs {
   export const createNew = 'fileeditor:create-new';
+
+  export const createNewMarkdown = 'fileeditor:create-new-markdown-file';
 
   export const changeFontSize = 'fileeditor:change-font-size';
 
@@ -97,9 +107,82 @@ const plugin: JupyterLabPlugin<IEditorTracker> = {
 };
 
 /**
+ * A plugin that provides a status item allowing the user to
+ * switch tabs vs spaces and tab widths for text editors.
+ */
+export const tabSpaceStatus: JupyterLabPlugin<void> = {
+  id: '@jupyterlab/fileeditor-extension:tab-space-status',
+  autoStart: true,
+  requires: [IStatusBar, IEditorTracker, ISettingRegistry],
+  activate: (
+    app: JupyterLab,
+    statusBar: IStatusBar,
+    editorTracker: IEditorTracker,
+    settingRegistry: ISettingRegistry
+  ) => {
+    // Create a menu for switching tabs vs spaces.
+    const menu = new Menu({ commands: app.commands });
+    const command = 'fileeditor:change-tabs';
+    const args: JSONObject = {
+      insertSpaces: false,
+      size: 4,
+      name: 'Indent with Tab'
+    };
+    menu.addItem({ command, args });
+    for (let size of [1, 2, 4, 8]) {
+      let args: JSONObject = {
+        insertSpaces: true,
+        size,
+        name: `Spaces: ${size} `
+      };
+      menu.addItem({ command, args });
+    }
+
+    // Create the status item.
+    const item = new TabSpaceStatus({ menu });
+
+    // Keep a reference to the code editor config from the settings system.
+    const updateSettings = (settings: ISettingRegistry.ISettings): void => {
+      const cached = settings.get('editorConfig').composite as Partial<
+        CodeEditor.IConfig
+      >;
+      const config: CodeEditor.IConfig = {
+        ...CodeEditor.defaultConfig,
+        ...cached
+      };
+      item.model!.config = config;
+    };
+    Promise.all([
+      settingRegistry.load('@jupyterlab/fileeditor-extension:plugin'),
+      app.restored
+    ]).then(([settings]) => {
+      updateSettings(settings);
+      settings.changed.connect(updateSettings);
+    });
+
+    // Add the status item.
+    statusBar.registerStatusItem(
+      '@jupyterlab/fileeditor-extension:tab-space-status',
+      {
+        item,
+        align: 'right',
+        rank: 1,
+        isActive: () => {
+          return (
+            app.shell.currentWidget &&
+            editorTracker.has(app.shell.currentWidget)
+          );
+        }
+      }
+    );
+  }
+};
+
+/**
  * Export the plugins as default.
  */
-export default plugin;
+const plugins: JupyterLabPlugin<any>[] = [plugin, tabSpaceStatus];
+export default plugins;
 
 /**
  * Activate the editor tracker plugin.
@@ -327,13 +410,21 @@ function activate(
         return;
       }
 
-      return commands.execute('console:create', {
-        activate: args['activate'],
-        path: widget.context.path,
-        preferredLanguage: widget.context.model.defaultKernelLanguage,
-        ref: widget.id,
-        insertMode: 'split-bottom'
-      });
+      return commands
+        .execute('console:create', {
+          activate: args['activate'],
+          name: widget.context.contentsModel.name,
+          path: widget.context.path,
+          preferredLanguage: widget.context.model.defaultKernelLanguage,
+          ref: widget.id,
+          insertMode: 'split-bottom'
+        })
+        .then(console => {
+          widget.context.pathChanged.connect((sender, value) => {
+            console.session.setPath(value);
+            console.session.setName(widget.context.contentsModel.name);
+          });
+        });
     },
     isEnabled,
     label: 'Create Console for Editor'
@@ -407,7 +498,12 @@ function activate(
         return;
       }
       let path = widget.context.path;
-      return commands.execute('markdownviewer:open', { path });
+      return commands.execute('markdownviewer:open', {
+        path,
+        options: {
+          mode: 'split-right'
+        }
+      });
     },
     isVisible: () => {
       let widget = tracker.currentWidget;
@@ -420,11 +516,12 @@ function activate(
 
   // Function to create a new untitled text file, given
   // the current working directory.
-  const createNew = (cwd: string) => {
+  const createNew = (cwd: string, ext: string = 'txt') => {
     return commands
       .execute('docmanager:new-untitled', {
         path: cwd,
-        type: 'file'
+        type: 'file',
+        ext
       })
       .then(model => {
         return commands.execute('docmanager:open', {
@@ -436,12 +533,23 @@ function activate(
 
   // Add a command for creating a new text file.
   commands.addCommand(CommandIDs.createNew, {
-    label: 'Text File',
+    label: args => (args['isPalette'] ? 'New Text File' : 'Text File'),
     caption: 'Create a new text file',
-    iconClass: EDITOR_ICON_CLASS,
+    iconClass: args => (args['isPalette'] ? '' : EDITOR_ICON_CLASS),
     execute: args => {
       let cwd = args['cwd'] || browserFactory.defaultBrowser.model.path;
       return createNew(cwd as string);
+    }
+  });
+
+  // Add a command for creating a new Markdown file.
+  commands.addCommand(CommandIDs.createNewMarkdown, {
+    label: args => (args['isPalette'] ? 'New Markdown File' : 'Markdown File'),
+    caption: 'Create a new markdown file',
+    iconClass: args => (args['isPalette'] ? '' : MARKDOWN_ICON_CLASS),
+    execute: args => {
+      let cwd = args['cwd'] || browserFactory.defaultBrowser.model.path;
+      return createNew(cwd as string, 'md');
     }
   });
 
@@ -452,16 +560,23 @@ function activate(
       category: 'Other',
       rank: 1
     });
+
+    launcher.add({
+      command: CommandIDs.createNewMarkdown,
+      category: 'Other',
+      rank: 2
+    });
   }
 
   if (palette) {
+    const category = 'Text Editor';
     let args: JSONObject = {
       insertSpaces: false,
       size: 4,
       name: 'Indent with Tab'
     };
     let command = 'fileeditor:change-tabs';
-    palette.addItem({ command, args, category: 'Text Editor' });
+    palette.addItem({ command, args, category });
 
     for (let size of [1, 2, 4, 8]) {
       let args: JSONObject = {
@@ -469,16 +584,24 @@ function activate(
         size,
         name: `Spaces: ${size} `
       };
-      palette.addItem({ command, args, category: 'Text Editor' });
+      palette.addItem({ command, args, category });
     }
+
+    args = { isPalette: true };
+    command = CommandIDs.createNew;
+    palette.addItem({ command, args, category });
+
+    args = { isPalette: true };
+    command = CommandIDs.createNewMarkdown;
+    palette.addItem({ command, args, category });
 
     args = { name: 'Increase Font Size', delta: 1 };
     command = CommandIDs.changeFontSize;
-    palette.addItem({ command, args, category: 'Text Editor' });
+    palette.addItem({ command, args, category });
 
     args = { name: 'Decrease Font Size', delta: -1 };
     command = CommandIDs.changeFontSize;
-    palette.addItem({ command, args, category: 'Text Editor' });
+    palette.addItem({ command, args, category });
   }
 
   if (menu) {
@@ -520,6 +643,12 @@ function activate(
 
     // Add new text file creation to the file menu.
     menu.fileMenu.newMenu.addGroup([{ command: CommandIDs.createNew }], 30);
+
+    // Add new markdown file creation to the file menu.
+    menu.fileMenu.newMenu.addGroup(
+      [{ command: CommandIDs.createNewMarkdown }],
+      30
+    );
 
     // Add undo/redo hooks to the edit menu.
     menu.editMenu.undoers.add({

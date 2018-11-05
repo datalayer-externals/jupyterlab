@@ -130,6 +130,26 @@ export namespace CodeEditor {
   }
 
   /**
+   * An interface for a text token, such as a word, keyword, or variable.
+   */
+  export interface IToken {
+    /**
+     * The value of the token.
+     */
+    value: string;
+
+    /**
+     * The offset of the token in the code editor.
+     */
+    offset: number;
+
+    /**
+     * An optional type for the token.
+     */
+    type?: string;
+  }
+
+  /**
    * An interface to manage selections by selection owners.
    *
    * #### Definitions
@@ -201,7 +221,10 @@ export namespace CodeEditor {
 
       let mimeType = this.modelDB.createValue('mimeType');
       mimeType.set(options.mimeType || 'text/plain');
-      mimeType.changed.connect(this._onMimeTypeChanged, this);
+      mimeType.changed.connect(
+        this._onMimeTypeChanged,
+        this
+      );
 
       this.modelDB.createMap('selections');
     }
@@ -535,6 +558,16 @@ export namespace CodeEditor {
      * Inserts a new line at the cursor position and indents it.
      */
     newIndentedLine(): void;
+
+    /**
+     * Gets the token at a given position.
+     */
+    getTokenForPosition(position: IPosition): IToken;
+
+    /**
+     * Gets the list of tokens for the editor model.
+     */
+    getTokens(): IToken[];
   }
 
   /**
