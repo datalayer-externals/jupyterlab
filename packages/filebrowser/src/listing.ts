@@ -154,11 +154,6 @@ const RUNNING_CLASS = 'jp-mod-running';
 const DESCENDING_CLASS = 'jp-mod-descending';
 
 /**
- * The minimum duration for a rename select in ms.
- */
-const RENAME_DURATION = 1000;
-
-/**
  * The maximum duration between two key presses when selecting files by prefix.
  */
 const PREFIX_APPEND_DURATION = 1000;
@@ -193,9 +188,18 @@ export class DirListing extends Widget {
     });
     this.addClass(DIR_LISTING_CLASS);
     this._model = options.model;
-    this._model.fileChanged.connect(this._onFileChanged, this);
-    this._model.refreshed.connect(this._onModelRefreshed, this);
-    this._model.pathChanged.connect(this._onPathChanged, this);
+    this._model.fileChanged.connect(
+      this._onFileChanged,
+      this
+    );
+    this._model.refreshed.connect(
+      this._onModelRefreshed,
+      this
+    );
+    this._model.pathChanged.connect(
+      this._onPathChanged,
+      this
+    );
     this._editNode = document.createElement('input');
     this._editNode.className = EDITOR_CLASS;
     this._manager = this._model.manager;
@@ -203,7 +207,10 @@ export class DirListing extends Widget {
 
     const headerNode = DOMUtils.findElement(this.node, HEADER_CLASS);
     this._renderer.populateHeaderNode(headerNode);
-    this._manager.activateRequested.connect(this._onActivateRequested, this);
+    this._manager.activateRequested.connect(
+      this._onActivateRequested,
+      this
+    );
   }
 
   /**
@@ -515,7 +522,7 @@ export class DirListing extends Widget {
    * Select the first item that starts with prefix being typed.
    */
   selectByPrefix(): void {
-    const prefix = this._searchPrefix;
+    const prefix = this._searchPrefix.toLowerCase();
     let items = this._sortedItems;
 
     let index = ArrayExt.findFirstIndex(items, value => {
@@ -747,6 +754,12 @@ export class DirListing extends Widget {
           node.classList.add(CUT_CLASS);
         }
       }
+
+      // add metadata to the node
+      node.setAttribute(
+        'data-isdir',
+        item.type === 'directory' ? 'true' : 'false'
+      );
     });
 
     // Handle the selectors on the widget node.
@@ -978,10 +991,6 @@ export class DirListing extends Widget {
     event.stopPropagation();
 
     clearTimeout(this._selectTimer);
-    this._noSelectTimer = window.setTimeout(() => {
-      this._noSelectTimer = -1;
-    }, RENAME_DURATION);
-
     this._editNode.blur();
 
     // Find a valid double click target.
@@ -1082,7 +1091,6 @@ export class DirListing extends Widget {
     if (!event.mimeData.hasData(CONTENTS_MIME)) {
       return;
     }
-    event.dropAction = event.proposedAction;
 
     let target = event.target as HTMLElement;
     while (target && target.parentElement) {
@@ -1105,6 +1113,12 @@ export class DirListing extends Widget {
     // Handle the items.
     const promises: Promise<Contents.IModel | null>[] = [];
     const paths = event.mimeData.getData(CONTENTS_MIME) as string[];
+
+    if (event.ctrlKey && event.proposedAction === 'move') {
+      event.dropAction = 'copy';
+    } else {
+      event.dropAction = event.proposedAction;
+    }
     for (let path of paths) {
       let localPath = manager.services.contents.localPath(path);
       let name = PathExt.basename(localPath);
@@ -1113,10 +1127,15 @@ export class DirListing extends Widget {
       if (newPath === path) {
         continue;
       }
-      promises.push(renameFile(manager, path, newPath));
+
+      if (event.dropAction === 'copy') {
+        promises.push(manager.copy(path, basePath));
+      } else {
+        promises.push(renameFile(manager, path, newPath));
+      }
     }
     Promise.all(promises).catch(error => {
-      showErrorMessage('Move Error', error);
+      showErrorMessage('Error while copying/moving files', error);
     });
   }
 
@@ -1216,8 +1235,6 @@ export class DirListing extends Widget {
     // Fetch common variables.
     let items = this._sortedItems;
     let index = Private.hitTestNodes(this._items, event.clientX, event.clientY);
-    let target = event.target as HTMLElement;
-    let inText = target.classList.contains(ITEM_TEXT_CLASS);
 
     clearTimeout(this._selectTimer);
 
@@ -1249,14 +1266,6 @@ export class DirListing extends Widget {
 
       // Default to selecting the only the item.
     } else {
-      // Handle a rename.
-      if (inText && selected.length === 1 && selected[0] === name) {
-        this._selectTimer = window.setTimeout(() => {
-          if (this._noSelectTimer === -1) {
-            this._doRename();
-          }
-        }, RENAME_DURATION);
-      }
       // Select only the given item.
       this._selection = Object.create(null);
       this._selection[name] = true;
@@ -1495,7 +1504,6 @@ export class DirListing extends Widget {
     index: number;
   } | null = null;
   private _selectTimer = -1;
-  private _noSelectTimer = -1;
   private _isCut = false;
   private _prevPath = '';
   private _clipboard: string[] = [];
@@ -1761,7 +1769,7 @@ export namespace DirListing {
       let modTitle = '';
       if (model.last_modified) {
         modText = Time.formatHuman(new Date(model.last_modified));
-        modTitle = Time.format(new Date(model.last_modified));
+        modTitle = Time.format(new Date(model.last_modified), 'lll');
       }
       modified.textContent = modText;
       modified.title = modTitle;
@@ -1907,43 +1915,28 @@ namespace Private {
     state: DirListing.ISortState
   ): Contents.IModel[] {
     let copy = toArray(items);
+    let reverse = state.direction === 'descending' ? 1 : -1;
 
     if (state.key === 'last_modified') {
-      // Sort by type and then by last modified.
+      // Sort by last modified (grouping directories first)
       copy.sort((a, b) => {
-        // Compare based on type.
-        let t1 = typeWeight(a);
-        let t2 = typeWeight(b);
-        if (t1 !== t2) {
-          return t1 < t2 ? -1 : 1; // Infinity safe
-        }
+        let t1 = a.type === 'directory' ? 0 : 1;
+        let t2 = b.type === 'directory' ? 0 : 1;
 
         let valA = new Date(a.last_modified).getTime();
         let valB = new Date(b.last_modified).getTime();
 
-        if (state.direction === 'descending') {
-          return valA - valB;
-        }
-        return valB - valA;
+        return t1 - t2 || (valA - valB) * reverse;
       });
     } else {
-      // Sort by type and then by name.
+      // Sort by name (grouping directories first)
       copy.sort((a, b) => {
-        // Compare based on type.
-        let t1 = typeWeight(a);
-        let t2 = typeWeight(b);
-        if (t1 !== t2) {
-          return t1 < t2 ? -1 : 1; // Infinity safe
-        }
+        let t1 = a.type === 'directory' ? 0 : 1;
+        let t2 = b.type === 'directory' ? 0 : 1;
 
-        // Compare by display name.
-        if (state.direction === 'descending') {
-          return b.name.localeCompare(a.name);
-        }
-        return a.name.localeCompare(b.name);
+        return t1 - t2 || b.name.localeCompare(a.name) * reverse;
       });
     }
-
     return copy;
   }
 
@@ -1958,21 +1951,5 @@ namespace Private {
     return ArrayExt.findFirstIndex(nodes, node =>
       ElementExt.hitTest(node, x, y)
     );
-  }
-
-  /**
-   * Weight a contents model by type.
-   */
-  function typeWeight(model: Contents.IModel): number {
-    switch (model.type) {
-      case 'directory':
-        return 0;
-      case 'notebook':
-        return 1;
-      case 'file':
-        return 2;
-      default:
-        return Infinity;
-    }
   }
 }

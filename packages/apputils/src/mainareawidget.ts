@@ -1,8 +1,6 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { UUID } from '@phosphor/coreutils';
-
 import { Message } from '@phosphor/messaging';
 
 import { BoxLayout, Widget } from '@phosphor/widgets';
@@ -10,6 +8,8 @@ import { BoxLayout, Widget } from '@phosphor/widgets';
 import { Spinner } from './spinner';
 
 import { Toolbar } from './toolbar';
+
+import { DOMUtils } from './domutils';
 
 /**
  * A widget meant to be contained in the JupyterLab main area.
@@ -29,7 +29,7 @@ export class MainAreaWidget<T extends Widget = Widget> extends Widget {
   constructor(options: MainAreaWidget.IOptions<T>) {
     super(options);
     this.addClass('jp-MainAreaWidget');
-    this.id = UUID.uuid4();
+    this.id = DOMUtils.createDomID();
 
     const content = (this._content = options.content);
     const toolbar = (this._toolbar = options.toolbar || new Toolbar());
@@ -43,14 +43,20 @@ export class MainAreaWidget<T extends Widget = Widget> extends Widget {
     layout.addWidget(content);
 
     if (!content.id) {
-      content.id = UUID.uuid4();
+      content.id = DOMUtils.createDomID();
     }
     content.node.tabIndex = -1;
 
     this._updateTitle();
-    content.title.changed.connect(this._updateTitle, this);
+    content.title.changed.connect(
+      this._updateTitle,
+      this
+    );
     this.title.closable = true;
-    this.title.changed.connect(this._updateContentTitle, this);
+    this.title.changed.connect(
+      this._updateContentTitle,
+      this
+    );
 
     if (options.reveal) {
       this.node.appendChild(spinner.node);
@@ -122,51 +128,6 @@ export class MainAreaWidget<T extends Widget = Widget> extends Widget {
    */
   get revealed(): Promise<void> {
     return this._revealed;
-  }
-
-  /**
-   * Handle the DOM events for the widget.
-   *
-   * @param event - The DOM event sent to the widget.
-   *
-   * #### Notes
-   * This method implements the DOM `EventListener` interface and is
-   * called in response to events on the main area widget's node. It should
-   * not be called directly by user code.
-   */
-  handleEvent(event: Event): void {
-    switch (event.type) {
-      case 'mouseup':
-      case 'mouseout':
-        let target = event.target as HTMLElement;
-        if (
-          this._isRevealed &&
-          this._content &&
-          this.toolbar.node.contains(document.activeElement) &&
-          target.tagName !== 'SELECT'
-        ) {
-          this._focusContent();
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
-  /**
-   * Handle `after-attach` messages for the widget.
-   */
-  protected onAfterAttach(msg: Message): void {
-    this.toolbar.node.addEventListener('mouseup', this);
-    this.toolbar.node.addEventListener('mouseout', this);
-  }
-
-  /**
-   * Handle `before-detach` messages for the widget.
-   */
-  protected onBeforeDetach(msg: Message): void {
-    this.toolbar.node.removeEventListener('mouseup', this);
-    this.toolbar.node.removeEventListener('mouseout', this);
   }
 
   /**

@@ -10,7 +10,9 @@ import {
   SettingRegistry,
   Settings,
   StateDB
-} from '@jupyterlab/coreutils';
+} from '@jupyterlab/coreutils/src';
+
+import { signalToPromise } from '@jupyterlab/testutils';
 
 import { JSONObject } from '@phosphor/coreutils';
 
@@ -22,20 +24,17 @@ export class TestConnector extends StateDB
     super({ namespace: 'setting-registry-tests' });
   }
 
-  fetch(id: string): Promise<ISettingRegistry.IPlugin | null> {
-    return super.fetch(id).then((data: string) => {
-      if (!data && !this.schemas[id]) {
-        return null;
-      }
+  async fetch(id: string): Promise<ISettingRegistry.IPlugin | null> {
+    const data = await super.fetch(id);
+    if (!data && !this.schemas[id]) {
+      return null;
+    }
 
-      const schema = this.schemas[id] || { type: 'object' };
-      const composite = {};
-      const user = {};
-      const raw = data || '{ }';
-      const result = { id, data: { composite, user }, raw, schema };
-
-      return result;
-    });
+    const schema = this.schemas[id] || { type: 'object' };
+    const composite = {};
+    const user = {};
+    const raw = (data as string) || '{ }';
+    return { id, data: { composite, user }, raw, schema };
   }
 }
 
@@ -133,20 +132,20 @@ describe('@jupyterlab/coreutils', () => {
     });
 
     describe('#pluginChanged', () => {
-      it('should emit when a plugin changes', done => {
+      it('should emit when a plugin changes', async () => {
         const id = 'foo';
         const key = 'bar';
         const value = 'baz';
 
         connector.schemas[id] = { type: 'object' };
+        let called = false;
         registry.pluginChanged.connect((sender: any, plugin: string) => {
           expect(id).to.equal(plugin);
-          done();
+          called = true;
         });
-        registry
-          .load(id)
-          .then(() => registry.set(id, key, value))
-          .catch(done);
+        await registry.load(id);
+        await registry.set(id, key, value);
+        expect(called).to.equal(true);
       });
     });
 
@@ -336,23 +335,15 @@ describe('@jupyterlab/coreutils', () => {
     });
 
     describe('#changed', () => {
-      it('should emit when a plugin changes', done => {
+      it('should emit when a plugin changes', async () => {
         const id = 'alpha';
         const schema = { type: 'object' };
 
         connector.schemas[id] = schema;
-        registry
-          .load(id)
-          .then(s => {
-            settings = s as Settings;
-          })
-          .then(() => {
-            settings.changed.connect(() => {
-              done();
-            });
-            return settings.set('foo', 'bar');
-          })
-          .catch(done);
+        settings = (await registry.load(id)) as Settings;
+        let promise = signalToPromise(settings.changed);
+        await settings.set('foo', 'bar');
+        await promise;
       });
     });
 
