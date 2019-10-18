@@ -6,14 +6,15 @@
 
 import json
 import os
+import jinja2
 import os.path as osp
 from os.path import join as pjoin
 import sys
 
 from jupyter_core.application import JupyterApp, base_aliases
-from jupyterlab_server import slugify, WORKSPACE_EXTENSION
-from notebook.notebookapp import NotebookApp, aliases, flags
-from notebook.utils import url_path_join as ujoin
+from .workspaces_handler import slugify, WORKSPACE_EXTENSION
+from .notebookapp import NotebookApp, aliases, flags
+from jupyter_server.utils import url_path_join as ujoin
 from traitlets import Bool, Instance, Unicode
 
 from ._version import __version__
@@ -24,6 +25,7 @@ from .commands import (
     get_workspaces_dir, AppOptions,
 )
 from .coreconfig import CoreConfig
+from jupyter_server.extension.application import ExtensionApp
 
 
 build_aliases = dict(base_aliases)
@@ -322,7 +324,7 @@ lab_flags['watch'] = (
 )
 
 
-class LabApp(NotebookApp):
+class LabApp(ExtensionApp):
     version = version
 
     description = """
@@ -400,16 +402,26 @@ class LabApp(NotebookApp):
     watch = Bool(False, config=True,
         help="Whether to serve the app in watch mode")
 
-    def init_webapp(self, *args, **kwargs):
-        super().init_webapp(*args, **kwargs)
-        settings = self.web_app.settings
-        if 'page_config_data' not in settings:
-            settings['page_config_data'] = {}
+    # The name of the extension
+    extension_name = "jupyterlab"
 
-        # Handle quit button with support for Notebook < 5.6
-        settings['page_config_data']['quitButton'] = getattr(self, 'quit_button', False)
+    # Te url that your extension will serve its homepage.
+    default_url = '/lab'
 
-    def init_server_extensions(self):
+    # Should your extension expose other server extensions when launched directly?
+    load_other_extensions = True
+
+    # Local path to static files directory.
+    static_paths = [
+        '/Users/echar4/datalayer/.now/lab/jupyterlab/dev_mode/static'
+    ]
+
+    # Local path to templates directory.
+    template_paths = [
+        '/Users/echar4/datalayer/.now/lab/jupyterlab/jupyterlab/staging/templates'
+    ]
+
+    def initialize_handlers(self):
         """Load any extensions specified by config.
 
         Import the module, then call the load_jupyter_server_extension function,
@@ -420,11 +432,29 @@ class LabApp(NotebookApp):
 
         The extension API is experimental, and may change in future releases.
         """
-        super(LabApp, self).init_server_extensions()
         msg = 'JupyterLab server extension not enabled, manually loading...'
-        if not self.nbserver_extensions.get('jupyterlab', False):
+#        if not self.nbserver_extensions.get('jupyterlab', False):
+        if True:
             self.log.warning(msg)
             load_jupyter_server_extension(self)
+
+    def initialize_templates(self):
+        jenv_opt = {"autoescape": True}
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(self.template_paths),
+            extensions=["jinja2.ext.i18n"],
+            **jenv_opt
+        )
+        template_settings = {"jupyterlab_jinja2_env": env}
+        self.settings.update(**template_settings)
+
+    def initialize_settings(self):
+        settings = self.serverapp.web_app.settings
+        if 'page_config_data' not in settings:
+            settings['page_config_data'] = {}
+
+        # Handle quit button with support for Notebook < 5.6
+        settings['page_config_data']['quitButton'] = getattr(self, 'quit_button', False)
 
 
 #-----------------------------------------------------------------------------

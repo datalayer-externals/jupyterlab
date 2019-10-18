@@ -25,8 +25,8 @@ from urllib.error import URLError
 import warnings
 
 from jupyter_core.paths import jupyter_config_path
-from jupyterlab_server.process import which, Process, WatchHelper, list2cmdline
-from notebook.nbextensions import GREEN_ENABLED, GREEN_OK, RED_DISABLED, RED_X
+from .process import which, Process, WatchHelper, list2cmdline
+from jupyter_server.extensions import GREEN_ENABLED, GREEN_OK, RED_DISABLED, RED_X
 from traitlets import HasTraits, Bool, Unicode, Instance, default
 
 from .semver import Range, gte, lt, lte, gt, make_semver

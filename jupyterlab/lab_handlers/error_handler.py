@@ -5,7 +5,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from tornado import web
-from jupyterlab_server.server import JupyterHandler
+from ..server import JupyterHandler
 
 
 TEMPLATE = """
