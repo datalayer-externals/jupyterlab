@@ -13,7 +13,7 @@ from jupyter_core.application import JupyterApp, base_flags, base_aliases
 
 from traitlets import Bool, Instance, Unicode
 
-from .commands import (
+from jupyterlab_server.commands import (
     install_extension, uninstall_extension, list_extensions,
     enable_extension, disable_extension, check_extension,
     link_package, unlink_package, build, get_app_version, HERE,

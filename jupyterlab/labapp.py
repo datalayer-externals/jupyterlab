@@ -18,12 +18,12 @@ from traitlets import Bool, Instance, Unicode
 
 from ._version import __version__
 from .debuglog import DebugLogFileMixin
-from .extension import load_config, load_jupyter_server_extension
-from .commands import (
+from jupyterlab_server.extension import load_config, load_jupyter_server_extension
+from jupyterlab_server.commands import (
     build, clean, get_app_dir, get_app_version, get_user_settings_dir,
     get_workspaces_dir, AppOptions,
 )
-from .coreconfig import CoreConfig
+from jupyterlab_server.coreconfig import CoreConfig
 
 
 build_aliases = dict(base_aliases)
