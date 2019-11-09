@@ -182,6 +182,10 @@ export namespace Build {
               use: [MiniCssExtractPlugin.loader, 'css-loader']
             },
             {
+              test: /\.scss$/,
+              use: [MiniCssExtractPlugin.loader, 'saas-loader']
+            },
+            {
               test: /\.svg/,
               use: [{ loader: 'svg-url-loader', options: { encoding: 'none' } }]
             },
