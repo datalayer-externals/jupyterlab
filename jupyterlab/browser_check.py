@@ -174,6 +174,7 @@ class BrowserApp(LabApp):
 
         web_app.settings.setdefault('page_config_data', dict())
         web_app.settings['page_config_data']['browserTest'] = True
+        web_app.settings['page_config_data']['exposeAppInBrowser'] = True
         web_app.settings['page_config_data']['buildAvailable'] = False
         func = run_browser if self.test_browser else lambda url: 0
         run_test(self, func)
