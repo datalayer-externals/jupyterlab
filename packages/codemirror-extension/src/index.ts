@@ -216,6 +216,47 @@ function activateEditorCommands(
     });
   }
 
+  function setCellMode(editor: CodeMirrorEditor): void {
+    const cm: CodeMirror.Editor = editor.editor;
+    // Do not set scrollPastEnd option.
+    cm.setOption('keyMap', keyMap);
+    cm.setOption('theme', theme);
+    cm.setOption('styleActiveLine', styleActiveLine);
+    cm.setOption('styleSelectedText', styleSelectedText);
+    cm.setOption('selectionPointer', selectionPointer);
+    cm.setOption('lineWiseCopyCut', lineWiseCopyCut);
+    if (keyMap === 'vim') {
+      const extraKeys = cm.getOption('extraKeys') || {};
+      extraKeys['Esc'] = CodeMirror.prototype.leaveInsertMode;
+      cm.setOption('extraKeys', extraKeys);
+      const lvim = (CodeMirror as any).Vim as any;
+      lvim.defineEx('quit', 'q', function(cm: any) {
+        commands.execute('notebook:enter-command-mode');
+      });
+      lvim.handleKey(cm, '<Esc>');
+      CodeMirror.prototype.save = () => {
+        commands.execute('docmanager:save');
+      };
+      commands.addCommand('notebook:leave-vim-insert-mode', {
+        label: 'Leave VIM Insert Mode',
+        execute: args => {
+          console.log('--- notebook:leave-vim-insert-mode');
+        },
+        isEnabled
+      });
+      commands.addKeyBinding({
+        keys: ['Shift Escape'],
+        selector: '.jp-Notebook.jp-mod-editMode',
+        command: 'notebook:enter-command-mode'
+      });
+      commands.addKeyBinding({
+        keys: ['Escape'],
+        selector: '.jp-Notebook.jp-mod-editMode',
+        command: 'notebook:leave-vim-insert-mode'
+      });
+    }
+  }
+
   /**
    * Update the settings of the current notebook tracker instances.
    */
@@ -223,14 +264,7 @@ function activateEditorCommands(
     notebookTracker.forEach(widget => {
       widget.content.widgets.forEach(cell => {
         if (cell.inputArea.editor instanceof CodeMirrorEditor) {
-          const cm = cell.inputArea.editor.editor;
-          // Do not set scrollPastEnd option.
-          cm.setOption('keyMap', keyMap);
-          cm.setOption('theme', theme);
-          cm.setOption('styleActiveLine', styleActiveLine);
-          cm.setOption('styleSelectedText', styleSelectedText);
-          cm.setOption('selectionPointer', selectionPointer);
-          cm.setOption('lineWiseCopyCut', lineWiseCopyCut);
+          setCellMode(cell.inputArea.editor);
         }
       });
     });
@@ -276,14 +310,7 @@ function activateEditorCommands(
   notebookTracker.widgetAdded.connect((sender, widget) => {
     widget.content.widgets.forEach(cell => {
       if (cell.inputArea.editor instanceof CodeMirrorEditor) {
-        const cm = cell.inputArea.editor.editor;
-        // Do not set scrollPastEnd option.
-        cm.setOption('keyMap', keyMap);
-        cm.setOption('theme', theme);
-        cm.setOption('styleActiveLine', styleActiveLine);
-        cm.setOption('styleSelectedText', styleSelectedText);
-        cm.setOption('selectionPointer', selectionPointer);
-        cm.setOption('lineWiseCopyCut', lineWiseCopyCut);
+        setCellMode(cell.inputArea.editor);
       }
     });
   });
