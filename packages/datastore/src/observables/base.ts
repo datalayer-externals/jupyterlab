@@ -1,11 +1,11 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { Signal } from '@phosphor/signaling';
+import { Signal } from '@lumino/signaling';
 
-import { Datastore, Schema } from '@phosphor/datastore';
+import { Datastore, Schema } from '@lumino/datastore';
 
-import { ReadonlyJSONValue } from '@phosphor/coreutils';
+import { ReadonlyJSONValue } from '@lumino/coreutils';
 
 import { DatastoreManager } from '../manager';
 

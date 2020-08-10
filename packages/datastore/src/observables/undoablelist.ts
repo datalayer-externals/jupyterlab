@@ -7,11 +7,11 @@ import {
   IObservableList
 } from '@jupyterlab/observables';
 
-import { each } from '@phosphor/algorithm';
+import { each } from '@lumino/algorithm';
 
-import { ReadonlyJSONValue } from '@phosphor/coreutils';
+import { ReadonlyJSONValue } from '@lumino/coreutils';
 
-import { Schema } from '@phosphor/datastore';
+import { Schema } from '@lumino/datastore';
 
 import { ObservableList } from './list';
 

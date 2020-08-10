@@ -33,9 +33,9 @@
   "dependencies": {
     "@jupyterlab/application": "^1.0.0-alpha.3",
     "@jupyterlab/datastore": "^1.0.0-alpha.3",
-    "@phosphor/datastore": "file:../../../phosphor/packages/datastore",
-    "@phosphor/messaging": "^1.2.2",
-    "@phosphor/widgets": "^1.6.0"
+    "@lumino/datastore": "file:../../../phosphor/packages/datastore",
+    "@lumino/messaging": "^1.2.2",
+    "@lumino/widgets": "^1.6.0"
   },
   "devDependencies": {
     "rimraf": "~2.6.2",

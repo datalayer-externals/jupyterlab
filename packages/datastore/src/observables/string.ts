@@ -3,9 +3,9 @@
 
 import { IObservableString } from '@jupyterlab/observables';
 
-import { ISignal, Signal } from '@phosphor/signaling';
+import { ISignal, Signal } from '@lumino/signaling';
 
-import { TextField } from '@phosphor/datastore';
+import { TextField } from '@lumino/datastore';
 
 import { ObservableBase } from './base';
 

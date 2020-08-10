@@ -10,13 +10,13 @@ import {
   IterableOrArrayLike,
   toArray,
   each
-} from '@phosphor/algorithm';
+} from '@lumino/algorithm';
 
-import { ReadonlyJSONValue } from '@phosphor/coreutils';
+import { ReadonlyJSONValue } from '@lumino/coreutils';
 
-import { ListField, Schema } from '@phosphor/datastore';
+import { ListField, Schema } from '@lumino/datastore';
 
-import { ISignal, Signal } from '@phosphor/signaling';
+import { ISignal, Signal } from '@lumino/signaling';
 
 import { ObservableBase } from './base';
 

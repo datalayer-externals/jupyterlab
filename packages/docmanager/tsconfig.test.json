@@ -12,6 +12,9 @@
       "path": "../docregistry"
     },
     {
+      "path": "../observables"
+    },
+    {
       "path": "../services"
     },
     {
@@ -31,6 +34,9 @@
     },
     {
       "path": "../docregistry"
+    },
+    {
+      "path": "../observables"
     },
     {
       "path": "../services"

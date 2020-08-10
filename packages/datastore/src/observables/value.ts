@@ -3,11 +3,11 @@
 
 import { IObservableValue } from '@jupyterlab/observables';
 
-import { JSONValue, JSONExt, ReadonlyJSONValue } from '@phosphor/coreutils';
+import { JSONValue, JSONExt, ReadonlyJSONValue } from '@lumino/coreutils';
 
-import { RegisterField } from '@phosphor/datastore';
+import { RegisterField } from '@lumino/datastore';
 
-import { ISignal, Signal } from '@phosphor/signaling';
+import { ISignal, Signal } from '@lumino/signaling';
 
 import { ObservableBase } from './base';
 

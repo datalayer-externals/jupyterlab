@@ -3,13 +3,13 @@
 
 import { IObservableMap } from '@jupyterlab/observables';
 
-import { each } from '@phosphor/algorithm';
+import { each } from '@lumino/algorithm';
 
-import { ReadonlyJSONValue, ReadonlyJSONObject } from '@phosphor/coreutils';
+import { ReadonlyJSONValue, ReadonlyJSONObject } from '@lumino/coreutils';
 
-import { MapField, Schema } from '@phosphor/datastore';
+import { MapField, Schema } from '@lumino/datastore';
 
-import { ISignal, Signal } from '@phosphor/signaling';
+import { ISignal, Signal } from '@lumino/signaling';
 
 import { ObservableBase } from './base';
 

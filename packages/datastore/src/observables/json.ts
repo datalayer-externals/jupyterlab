@@ -3,11 +3,11 @@
 
 import { IObservableJSON } from '@jupyterlab/observables';
 
-import { JSONExt, JSONObject, JSONValue } from '@phosphor/coreutils';
+import { JSONExt, JSONObject, JSONValue } from '@lumino/coreutils';
 
-import { Schema } from '@phosphor/datastore';
+import { Schema } from '@lumino/datastore';
 
-import { Message } from '@phosphor/messaging';
+import { Message } from '@lumino/messaging';
 
 import { ObservableMap } from './map';
 

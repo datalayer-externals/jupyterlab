@@ -3,17 +3,17 @@
 
 import { IModelDB } from '@jupyterlab/observables';
 
-import { map, toArray } from '@phosphor/algorithm';
+import { map, toArray } from '@lumino/algorithm';
 
-import { UUID } from '@phosphor/coreutils';
+import { UUID } from '@lumino/coreutils';
 
-import { Schema, Datastore } from '@phosphor/datastore';
+import { Schema, Datastore } from '@lumino/datastore';
 
-import { IDisposable } from '@phosphor/disposable';
+import { IDisposable } from '@lumino/disposable';
 
-import { Message, IMessageHandler, MessageLoop } from '@phosphor/messaging';
+import { Message, IMessageHandler, MessageLoop } from '@lumino/messaging';
 
-import { Signal, ISignal } from '@phosphor/signaling';
+import { Signal, ISignal } from '@lumino/signaling';
 
 import { CollaborationClient } from './client';
 

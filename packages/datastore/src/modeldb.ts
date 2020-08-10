@@ -11,13 +11,13 @@ import {
   IObservableJSON
 } from '@jupyterlab/observables';
 
-import { toArray } from '@phosphor/algorithm';
+import { toArray } from '@lumino/algorithm';
 
-import { ReadonlyJSONValue } from '@phosphor/coreutils';
+import { ReadonlyJSONValue } from '@lumino/coreutils';
 
-import { Schema } from '@phosphor/datastore';
+import { Schema } from '@lumino/datastore';
 
-import { DisposableSet } from '@phosphor/disposable';
+import { DisposableSet } from '@lumino/disposable';
 
 import {
   ObservableJSON,
