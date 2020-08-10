@@ -35,6 +35,10 @@ from .handlers.build_handler import build_path, Builder, BuildHandler
 from .handlers.extension_manager_handler import (
     extensions_handler_path, ExtensionManager, ExtensionHandler
 )
+from .datastore import (
+    CollaborationHandler, collaboration_path,
+    CollaborationsManagerHandler, datastore_rest_path
+)
 from .handlers.error_handler import ErrorHandler
 
 
@@ -641,6 +645,15 @@ class LabApp(NBClassicConfigShimMixin, LabServerApp):
         builder = Builder(self.core_mode, app_options=build_handler_options)
         build_handler = (build_path, BuildHandler, {'builder': builder})
         handlers.append(build_handler)
+
+        collaborations_url = ujoin(app.settings.get('base_url', '/'), collaboration_path)
+        collaborations_handler = (collaborations_url, CollaborationHandler, {})
+        handlers.append(collaborations_handler)
+        colab_manager_url = ujoin(app.settings.get('base_url', '/'), datastore_rest_path)
+        colab_manager_handler = (colab_manager_url, CollaborationsManagerHandler, {})
+        handlers.append(colab_manager_handler)
+
+        handlers = [build_handler, collaborations_handler, colab_manager_handler]
 
         errored = False
 
