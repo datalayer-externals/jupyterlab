@@ -1,0 +1,7 @@
+{
+  "title": "Datastore",
+  "description": "Datastore settings",
+  "jupyter.lab.setting-icon-label": "Datastore",  
+  "additionalProperties": false,
+  "type": "object"
+}

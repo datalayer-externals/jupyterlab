@@ -25,6 +25,23 @@ import { DSModelDB } from './modeldb';
 const LOCAL_DS_STORE_ID = -1;
 
 /**
+ * A message of a datastore transaction.
+ */
+export
+class TransactionMessage extends Message {
+  constructor(transaction: Datastore.Transaction) {
+    super('datastore-transaction');
+    this.transaction = transaction;
+  }
+  /**
+   * The transaction associated with the change.
+   */
+  readonly transaction: Datastore.Transaction;
+
+  readonly type: 'datastore-transaction';
+}
+
+/**
  *
  */
 function cloneDS(
@@ -33,8 +50,9 @@ function cloneDS(
   overrides?: Partial<Datastore.IOptions>
 ): Datastore {
   // Clone store object
+  // TODO(@echarles) broadcastHandler: source.broadcastHandler || undefined,
   const dest = Datastore.create({
-    broadcastHandler: source.broadcastHandler || undefined,
+//    broadcastHandler: source.broadcastHandler || undefined,
     ...overrides,
     id: newId,
     schemas: toArray(map(source.iter(), table => table.schema)),
@@ -109,14 +127,14 @@ export class DatastoreManager implements IMessageHandler, IDisposable {
     if (msg.type === 'remote-transactions') {
       MessageLoop.sendMessage(
         this._remoteDS || this._localDS!,
-        new Datastore.TransactionMessage(
+        new TransactionMessage(
           (msg as CollaborationClient.RemoteTransactionMessage).transaction
         )
       );
     } else if (msg.type === 'datastore-transaction') {
       if (this._client) {
         this._client.broadcastTransactions([
-          (msg as Datastore.TransactionMessage).transaction
+          (msg as TransactionMessage).transaction
         ]);
       }
     } else if (msg.type === 'initial-state') {
@@ -132,10 +150,11 @@ export class DatastoreManager implements IMessageHandler, IDisposable {
       const immediate = this._localDS !== null && this._remoteDS === null;
       if (!immediate) {
         // 2. / 3.  ( 5.)
+        // TODO(@echarles) broadcastHandler: this,
         this._remoteDS = Datastore.create({
           id: this._storeId!,
           schemas: this._schemas,
-          broadcastHandler: this,
+//          broadcastHandler: this,
           restoreState: state || undefined
         });
         if (state !== null) {
@@ -143,8 +162,9 @@ export class DatastoreManager implements IMessageHandler, IDisposable {
         }
       } else if (state === null) {
         // 1.
+        // TODO(@echarles) broadcastHandler: this,
         this._remoteDS = cloneDS(this._storeId!, this._localDS!, {
-          broadcastHandler: this
+//          broadcastHandler: this
         });
       } else {
         // 4.

@@ -9,7 +9,7 @@ import {
 
 import { each } from '@lumino/algorithm';
 
-import { ReadonlyJSONValue } from '@lumino/coreutils';
+import { JSONValue, ReadonlyJSONValue } from '@lumino/coreutils';
 
 import { Schema } from '@lumino/datastore';
 
@@ -165,13 +165,13 @@ export class ObservableUndoableList<T extends ReadonlyJSONValue>
       case 'set':
         index = change.oldIndex;
         each(change.oldValues, value => {
-          this.set(index++, serializer.fromJSON(value));
+          this.set(index++, serializer.fromJSON(value as JSONValue));
         });
         break;
       case 'remove':
         index = change.oldIndex;
         each(change.oldValues, value => {
-          this.insert(index++, serializer.fromJSON(value));
+          this.insert(index++, serializer.fromJSON(value as JSONValue));
         });
         break;
       case 'move':
@@ -194,13 +194,13 @@ export class ObservableUndoableList<T extends ReadonlyJSONValue>
       case 'add':
         index = change.newIndex;
         each(change.newValues, value => {
-          this.insert(index++, serializer.fromJSON(value));
+          this.insert(index++, serializer.fromJSON(value as JSONValue));
         });
         break;
       case 'set':
         index = change.newIndex;
         each(change.newValues, value => {
-          this.set(change.newIndex++, serializer.fromJSON(value));
+          this.set(change.newIndex++, serializer.fromJSON(value as JSONValue));
         });
         break;
       case 'remove':
@@ -254,19 +254,19 @@ export namespace ObservableUndoableList {
   /**
    * A default, identity serializer.
    */
-  export class IdentitySerializer<T extends ReadonlyJSONValue>
+  export class IdentitySerializer<T extends JSONValue>
     implements ISerializer<T> {
     /**
      * Identity serialize.
      */
-    toJSON(value: T): ReadonlyJSONValue {
+    toJSON(value: T): JSONValue {
       return value;
     }
 
     /**
      * Identity deserialize.
      */
-    fromJSON(value: ReadonlyJSONValue): T {
+    fromJSON(value: JSONValue): T {
       return value as T;
     }
   }

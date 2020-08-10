@@ -88,10 +88,7 @@ export class ObservableList<T extends ReadonlyJSONValue>
    * #### Undefined Behavior
    * An `index` which is non-integral or out of range.
    */
-  get(index: number): T | undefined {
-    if (this.ds === undefined) {
-      return undefined;
-    }
+  get(index: number): T {
     return this._array[index];
   }
 
@@ -451,8 +448,8 @@ export class ObservableList<T extends ReadonlyJSONValue>
           type: 'set',
           newIndex: c.index,
           oldIndex: c.index,
-          newValues: c.inserted,
-          oldValues: c.removed
+          newValues: c.inserted as Array<T>,
+          oldValues: c.removed as Array<T>
         });
       } else {
         if (c.removed.length > 0) {
@@ -461,7 +458,7 @@ export class ObservableList<T extends ReadonlyJSONValue>
             newIndex: c.index,
             oldIndex: c.index,
             newValues: [],
-            oldValues: c.removed
+            oldValues: c.removed as Array<T>
           });
         }
         if (c.inserted.length > 0) {
@@ -469,7 +466,7 @@ export class ObservableList<T extends ReadonlyJSONValue>
             type: 'add',
             newIndex: c.index,
             oldIndex: c.index,
-            newValues: c.inserted,
+            newValues: c.inserted as Array<T>,
             oldValues: []
           });
         }

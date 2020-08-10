@@ -9,6 +9,8 @@ import { IModelDB } from '@jupyterlab/observables';
 
 import { Contents } from '@jupyterlab/services';
 
+import { Schema, Fields } from '@lumino/datastore';
+
 import { INotebookModel, NotebookModel } from './model';
 
 /**
@@ -83,6 +85,47 @@ export class NotebookModelFactory
    */
   preferredLanguage(path: string): string {
     return '';
+  }
+
+  get schemas(): ReadonlyArray<Schema> {
+    return [
+      {
+        id: 'NotebookModelSchema.v1',
+        fields: {
+          mimeType: Fields.String(),
+          metadata: Fields.Map(),
+          cellOrder: Fields.List<string>()
+        }
+      },
+      {
+        id: 'NotebookModelSchema.v1.cells',
+        fields: {
+          // General fields for cells:
+          type: Fields.String(),
+          metadata: Fields.Map(),
+          trusted: Fields.Boolean(),
+
+          // Fields for editable models:
+          value: Fields.Text({
+            description: 'The text value of the model'
+          }),
+          mimeType: Fields.String({
+            value: 'text/plain',
+            description: 'The MIME type of the text'
+          }),
+          selections: Fields.Map({
+            description: 'A map of all text selections for all users'
+          }),
+
+          // Code cell specific:
+          executionCount: Fields.Register<number | null>({ value: null }),
+          outputs: Fields.String(),
+
+          // Cells with attachments (md/raw):
+          attachments: Fields.String()
+        }
+      }
+    ];
   }
 
   private _disposed = false;

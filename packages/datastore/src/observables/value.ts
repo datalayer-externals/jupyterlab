@@ -60,8 +60,8 @@ export class ObservableValue
 
   protected onChange(change: RegisterField.Change<ReadonlyJSONValue>) {
     this._changed.emit({
-      oldValue: change.previous,
-      newValue: change.current
+      oldValue: change.previous as JSONValue,
+      newValue: change.current as JSONValue
     });
   }
 

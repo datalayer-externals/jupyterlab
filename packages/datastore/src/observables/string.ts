@@ -31,18 +31,12 @@ export class ObservableString extends ObservableBase<TextField.Change>
   /**
    * The value of the string.
    */
-  get text(): string | undefined {
-    if (this.ds === null) {
-      return undefined;
-    }
+  get text(): string {
     const record = this.ds!.get(this.schema).get(this.recordID);
     return record ? (record[this.fieldId] as string) : '';
   }
 
-  set text(value: string | undefined) {
-    if (this.ds === null && value === undefined) {
-      return;
-    }
+  set text(value: string) {
     this.ensureBackend();
     let old = this.text;
     if (old === value) {

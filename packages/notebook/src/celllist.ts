@@ -15,8 +15,6 @@ import { ISignal, Signal } from '@lumino/signaling';
 import { ICellModel } from '@jupyterlab/cells';
 
 import {
-  IObservableMap,
-  ObservableMap,
   IObservableList,
   IObservableUndoableList,
   IModelDB
@@ -34,7 +32,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
   constructor(modelDB: IModelDB, factory: NotebookModel.IContentFactory) {
     this._factory = factory;
     this._cellOrder = modelDB.createList<string>('cellOrder');
-    this._cellMap = new ObservableMap<ICellModel>();
+    this._cellMap = new Map();
 
     this._cellOrder.changed.connect(this._onOrderChanged, this);
   }
@@ -123,7 +121,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
     for (const cell of this._cellMap.values()) {
       cell.dispose();
     }
-    this._cellMap.dispose();
+    this._cellMap.clear();
     this._cellOrder.dispose();
   }
 
@@ -471,10 +469,10 @@ export class CellList implements IObservableUndoableList<ICellModel> {
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, id => {
         if (!this._cellMap.has(id)) {
-          const cellDB = this._factory.modelDB!;
-          const cellType = cellDB.createValue(id + '.type');
+          const cellDB = this._factory.modelDB?.view(id);
+          const cellType = cellDB?.createValue('type');
           let cell: ICellModel;
-          switch (cellType.get()) {
+          switch (cellType?.get()) {
             case 'code':
               cell = this._factory.createCodeCell({ id: id });
               break;
@@ -508,7 +506,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
 
   private _isDisposed: boolean = false;
   private _cellOrder: IObservableUndoableList<string>;
-  private _cellMap: IObservableMap<ICellModel>;
+  private _cellMap: Map<string, ICellModel>;
   private _changed = new Signal<this, IObservableList.IChangedArgs<ICellModel>>(
     this
   );

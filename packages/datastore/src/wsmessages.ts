@@ -340,7 +340,7 @@ export namespace Collaboration {
       msgType,
       parentId,
       content
-    } as ITypeMap[K];
+    } as unknown as ITypeMap[K];
   }
 
   /**

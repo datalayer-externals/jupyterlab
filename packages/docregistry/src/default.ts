@@ -7,6 +7,10 @@ import { Contents } from '@jupyterlab/services';
 
 import { PartialJSONValue } from '@lumino/coreutils';
 
+import { Schema, Fields } from '@lumino/datastore';
+
+import { IDisposable } from '@lumino/disposable';
+
 import { ISignal, Signal } from '@lumino/signaling';
 
 import { Widget } from '@lumino/widgets';
@@ -17,22 +21,36 @@ import { CodeEditor } from '@jupyterlab/codeeditor';
 
 import { IChangedArgs, PathExt } from '@jupyterlab/coreutils';
 
-import { IModelDB } from '@jupyterlab/observables';
-
+import {
+  IModelDB,
+  ModelDB,
+  IObservableString,
+  IObservableMap,
+  IObservableValue
+} from '@jupyterlab/observables';
+  
 import { DocumentRegistry, IDocumentWidget } from './index';
 
 /**
  * The default implementation of a document model.
  */
-export class DocumentModel extends CodeEditor.Model
-  implements DocumentRegistry.ICodeModel {
+export abstract class DocumentModel implements IDisposable {
   /**
    * Construct a new document model.
    */
-  constructor(languagePreference?: string, modelDB?: IModelDB) {
-    super({ modelDB });
+  constructor(
+    mimeType: string,
+    languagePreference?: string,
+    modelDB?: IModelDB
+  ) {
+    this.modelDB = modelDB || new ModelDB();
     this._defaultLang = languagePreference || '';
-    this.value.changed.connect(this.triggerContentChange, this);
+    let mimeTypeObs = this.modelDB.createValue('mimeType');
+    mimeTypeObs.changed.connect(
+      this._onMimeTypeChanged,
+      this
+    );
+    this._defaultMimeType = mimeType;
   }
 
   /**
@@ -100,11 +118,30 @@ export class DocumentModel extends CodeEditor.Model
   }
 
   /**
-   * Serialize the model to a string.
+   * A signal emitted when a mimetype changes.
    */
-  toString(): string {
-    return this.value.text;
+  get mimeTypeChanged(): ISignal<this, IChangedArgs<string>> {
+    return this._mimeTypeChanged;
   }
+
+  /**
+   * A mime type of the model.
+   */
+  get mimeType(): string {
+    return this.modelDB.getValue('mimeType') as string;
+  }
+  set mimeType(newValue: string) {
+    const oldValue = this.mimeType;
+    if (oldValue === newValue) {
+      return;
+    }
+    this.modelDB.setValue('mimeType', newValue);
+  }
+
+  /**
+  * Serialize the model to a string.
+   */
+  abstract toString(): string;
 
   /**
    * Deserialize the model from a string.
@@ -112,16 +149,12 @@ export class DocumentModel extends CodeEditor.Model
    * #### Notes
    * Should emit a [contentChanged] signal.
    */
-  fromString(value: string): void {
-    this.value.text = value;
-  }
+  abstract fromString(value: string): void;
 
   /**
    * Serialize the model to JSON.
    */
-  toJSON(): PartialJSONValue {
-    return JSON.parse(this.value.text || 'null');
-  }
+  abstract toJSON(): PartialJSONValue;
 
   /**
    * Deserialize the model from JSON.
@@ -129,16 +162,39 @@ export class DocumentModel extends CodeEditor.Model
    * #### Notes
    * Should emit a [contentChanged] signal.
    */
-  fromJSON(value: PartialJSONValue): void {
-    this.fromString(JSON.stringify(value));
-  }
+  abstract fromJSON(value: PartialJSONValue): void;
 
   /**
    * Initialize the model with its current state.
    */
   initialize(): void {
-    return;
+    const mimeType = this.modelDB.get('mimeType') as IObservableValue;
+    mimeType.set(mimeType.get() || this._defaultMimeType || 'text/plain');
   }
+
+  /**
+   * Whether the model is disposed.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  /**
+   * Dispose of the resources used by the model.
+   */
+  dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    Signal.clearData(this);
+  }
+
+  /**
+   * The underlying `IModelDB` instance in which model
+   * data is stored.
+   */
+  readonly modelDB: IModelDB;
 
   /**
    * Trigger a state change signal.
@@ -155,12 +211,129 @@ export class DocumentModel extends CodeEditor.Model
     this.dirty = true;
   }
 
+  private _onMimeTypeChanged(
+    mimeType: IObservableValue,
+    args: IObservableValue.IChangedArgs
+  ): void {
+    this._mimeTypeChanged.emit({
+      name: 'mimeType',
+      oldValue: args.oldValue as string,
+      newValue: args.newValue as string
+    });
+  }
+
   private _defaultLang = '';
   private _dirty = false;
+  private _isDisposed = false;
   private _readOnly = false;
+  private _defaultMimeType: string;
   private _contentChanged = new Signal<this, void>(this);
+  private _mimeTypeChanged = new Signal<this, IChangedArgs<string>>(this);
   private _stateChanged = new Signal<this, IChangedArgs<any>>(this);
 }
+
+/**
+ *
+ */
+export class TextModel extends DocumentModel
+  implements DocumentRegistry.ICodeModel {
+  /**
+   *
+   */
+  constructor(languagePreference?: string, modelDB?: IModelDB) {
+    super('text/plain', languagePreference, modelDB);
+    let value = this.modelDB.createString('value');
+    value.changed.connect(
+      this.triggerContentChange,
+      this
+    );
+  }
+
+  /**
+   * Get the value of the model.
+   */
+  get value(): IObservableString {
+    return this.modelDB.get('value') as IObservableString;
+  }
+
+  /**
+   * Get the selections for the model.
+   */
+  get selections(): IObservableMap<CodeEditor.ITextSelection[]> {
+    return this.modelDB.get('selections') as IObservableMap<
+      CodeEditor.ITextSelection[]
+    >;
+  }
+
+  toString(): string {
+    return this.value.text || ""
+  }
+
+  fromString(value: string): void {
+    this.value.text = value;
+  }
+
+  toJSON(): PartialJSONValue {
+    return JSON.parse(this.value.text || 'null');
+  }
+
+  fromJSON(value: PartialJSONValue): void {
+    this.fromString(JSON.stringify(value));
+  }
+
+  initialize(): void {
+    super.initialize();
+    const value = this.value;
+    value.text = value.text || '';
+  }
+}
+
+/**
+ *
+ */
+export class Base64Model extends DocumentModel {
+  /**
+   *
+   */
+  constructor(languagePreference?: string, modelDB?: IModelDB) {
+    super('text/plain', languagePreference, modelDB);
+    let value = this.modelDB.createValue('value');
+    value.changed.connect(
+      this.triggerContentChange,
+      this
+    );
+  }
+
+  /**
+   * Get the value of the model.
+   */
+  get value(): IObservableValue {
+    return this.modelDB.get('value') as IObservableValue;
+  }
+
+  toString(): string {
+    return this.value.get() as string;
+  }
+
+  fromString(value: string): void {
+    this.value.set(value);
+  }
+
+  toJSON(): PartialJSONValue {
+    return JSON.parse(this.value.toString() || 'null');
+  }
+
+  fromJSON(value: PartialJSONValue): void {
+    this.fromString(JSON.stringify(value));
+  }
+
+  initialize(): void {
+    super.initialize();
+    const value = this.value;
+    value.set(value.get() || '');
+  }
+}
+
 
 /**
  * An implementation of a model factory for text files.
@@ -220,7 +393,7 @@ export class TextModelFactory implements DocumentRegistry.CodeModelFactory {
     languagePreference?: string,
     modelDB?: IModelDB
   ): DocumentRegistry.ICodeModel {
-    return new DocumentModel(languagePreference, modelDB);
+    return new TextModel(languagePreference, modelDB);
   }
 
   /**
@@ -231,13 +404,34 @@ export class TextModelFactory implements DocumentRegistry.CodeModelFactory {
     return mode && mode.mode;
   }
 
+  /**
+  * The schemas for the datastore.
+  */
+  get schemas(): ReadonlyArray<Schema> {
+   return [
+     {
+       id: 'TextModelSchema.v1',
+       fields: {
+         value: Fields.Text({ description: 'The text value of the model' }),
+         mimeType: Fields.String({
+           value: 'text/plain',
+           description: 'The MIME type of the text'
+         }),
+         selections: Fields.Map({
+           description: 'A map of all text selections for all users'
+         })
+       }
+     }
+   ];
+ }
+
   private _isDisposed = false;
 }
 
 /**
  * An implementation of a model factory for base64 files.
  */
-export class Base64ModelFactory extends TextModelFactory {
+export class Base64ModelFactory implements DocumentRegistry.ModelFactory {
   /**
    * The name of the model type.
    *
@@ -266,6 +460,60 @@ export class Base64ModelFactory extends TextModelFactory {
   get fileFormat(): Contents.FileFormat {
     return 'base64';
   }
+
+  /**
+  * Get whether the model factory has been disposed.
+  */
+ get isDisposed(): boolean {
+   return this._isDisposed;
+ }
+
+ /**
+  * Dispose of the resources held by the model factory.
+  */
+ dispose(): void {
+   this._isDisposed = true;
+ }
+
+ /**
+  * Create a new model.
+  *
+  * @param languagePreference - An optional kernel language preference.
+  *
+  * @returns A new document model.
+  */
+ createNew(
+   languagePreference?: string,
+   modelDB?: IModelDB
+ ): DocumentRegistry.IModel {
+   return new Base64Model(languagePreference, modelDB);
+ }
+
+ /**
+  * Get the preferred kernel language given a file path.
+  */
+ preferredLanguage(path: string): string {
+   let mode = Mode.findByFileName(path);
+   return mode && mode.mode;
+ }
+
+ /**
+  * The schemas for the datastore.
+  */
+ get schemas(): ReadonlyArray<Schema> {
+   return [
+     {
+       id: 'Base64ModelSchema.v1',
+       fields: {
+         value: Fields.String({
+           description: 'The value of the model'
+         })
+       }
+     }
+   ];
+ }
+
+ private _isDisposed = false;
 }
 
 /**

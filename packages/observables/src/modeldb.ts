@@ -3,6 +3,8 @@
 
 import { IDisposable, DisposableSet } from '@lumino/disposable';
 
+import { Schema } from '@lumino/datastore';
+
 import { ISignal, Signal } from '@lumino/signaling';
 
 import {
@@ -54,7 +56,7 @@ export interface IObservableValue extends IObservable {
   /**
    * The changed signal.
    */
-  readonly changed: ISignal<IObservableValue, ObservableValue.IChangedArgs>;
+  readonly changed: ISignal<IObservableValue, IObservableValue.IChangedArgs>;
 
   /**
    * Get the current value, or `undefined` if it has not been set.
@@ -246,9 +248,31 @@ export interface IModelDB extends IDisposable {
   view(basePath: string): IModelDB;
 
   /**
+   * Run a funcion where all changes become part of a transaction.
+   * @param fn: the function to run. It recevies the transaction id
+   *            as an argument.
+   */
+  withTransaction(fn: (transactionId?: string) => void): void;
+
+  /**
    * Dispose of the resources held by the database.
    */
   dispose(): void;
+}
+
+/**
+ * A namespace for the `IModelDB` interface.
+ */
+export namespace IModelDB {
+  /**
+   * A factory interface for creating `IModelDB` objects.
+   */
+  export interface IFactory {
+    /**
+     * Create a new `IModelDB` instance.
+     */
+    createNew(path: string, schemas: ReadonlyArray<Schema>): IModelDB;
+  }
 }
 
 /**
@@ -281,7 +305,7 @@ export class ObservableValue implements IObservableValue {
   /**
    * The changed signal.
    */
-  get changed(): ISignal<this, ObservableValue.IChangedArgs> {
+  get changed(): ISignal<this, IObservableValue.IChangedArgs> {
     return this._changed;
   }
 
@@ -306,7 +330,6 @@ export class ObservableValue implements IObservableValue {
       newValue: value
     });
   }
-
   /**
    * Dispose of the resources held by the value.
    */
@@ -320,14 +343,15 @@ export class ObservableValue implements IObservableValue {
   }
 
   private _value: JSONValue = null;
-  private _changed = new Signal<this, ObservableValue.IChangedArgs>(this);
+  private _changed = new Signal<this, IObservableValue.IChangedArgs>(this);
   private _isDisposed = false;
 }
+
 
 /**
  * The namespace for the `ObservableValue` class statics.
  */
-export namespace ObservableValue {
+export namespace IObservableValue {
   /**
    * The changed args object emitted by the `IObservableValue`.
    */
@@ -541,6 +565,15 @@ export class ModelDB implements IModelDB {
   }
 
   /**
+   * Run a funcion where all changes become part of a transaction.
+   * @param fn: the function to run. It recevies the transaction id
+   *            as an argument.
+   */
+  withTransaction(fn: (transactionId?: string) => void): void {
+    fn();
+  }
+
+  /**
    * Dispose of the resources held by the database.
    */
   dispose(): void {
@@ -591,13 +624,4 @@ export namespace ModelDB {
     baseDB?: ModelDB;
   }
 
-  /**
-   * A factory interface for creating `IModelDB` objects.
-   */
-  export interface IFactory {
-    /**
-     * Create a new `IModelDB` instance.
-     */
-    createNew(path: string): IModelDB;
-  }
 }

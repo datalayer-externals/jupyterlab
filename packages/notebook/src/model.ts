@@ -26,7 +26,6 @@ import {
 } from '@jupyterlab/observables';
 
 import { CellList } from './celllist';
-import { showDialog, Dialog } from '@jupyterlab/apputils';
 
 /**
  * The definition of a model object for a notebook widget.
@@ -71,7 +70,11 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
    * Construct a new notebook model.
    */
   constructor(options: NotebookModel.IOptions = {}) {
-    super(options.languagePreference, options.modelDB);
+    super(
+      'application/x-ipynb+json',
+      options.languagePreference,
+      options.modelDB
+    );
     const factory =
       options.contentFactory || NotebookModel.defaultContentFactory;
     this.contentFactory = factory.clone(this.modelDB.view('cells'));
@@ -80,11 +83,6 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
 
     // Handle initial metadata.
     const metadata = this.modelDB.createMap('metadata');
-    if (!metadata.has('language_info')) {
-      const name = options.languagePreference || '';
-      metadata.set('language_info', { name });
-    }
-    this._ensureMetadata();
     metadata.changed.connect(this.triggerContentChange, this);
     this._deletedCells = [];
   }
@@ -209,77 +207,58 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
    * Should emit a [contentChanged] signal.
    */
   fromJSON(value: nbformat.INotebookContent): void {
-    const cells: ICellModel[] = [];
-    const factory = this.contentFactory;
-    for (const cell of value.cells) {
-      switch (cell.cell_type) {
-        case 'code':
-          cells.push(factory.createCodeCell({ cell }));
-          break;
-        case 'markdown':
-          cells.push(factory.createMarkdownCell({ cell }));
-          break;
-        case 'raw':
-          cells.push(factory.createRawCell({ cell }));
-          break;
-        default:
+    this.modelDB.withTransaction(() => {
+      let oldValue = 0;
+      let newValue = 0;
+      this._nbformatMinor = nbformat.MINOR_VERSION;
+      this._nbformat = nbformat.MAJOR_VERSION;
+
+      if (value.nbformat !== this._nbformat) {
+        oldValue = this._nbformat;
+        this._nbformat = newValue = value.nbformat;
+        this.triggerStateChange({ name: 'nbformat', oldValue, newValue });
+      }
+      if (value.nbformat_minor > this._nbformatMinor) {
+        oldValue = this._nbformatMinor;
+        this._nbformatMinor = newValue = value.nbformat_minor;
+        this.triggerStateChange({ name: 'nbformatMinor', oldValue, newValue });
+      }
+      // Update the metadata.
+      this.metadata.clear();
+      let metadata = value.metadata;
+      for (let key in metadata) {
+        // orig_nbformat is not intended to be stored per spec.
+        if (key === 'orig_nbformat') {
           continue;
+        }
+        this.metadata.set(key, metadata[key]);
       }
-    }
-    this.cells.beginCompoundOperation();
-    this.cells.clear();
-    this.cells.pushAll(cells);
-    this.cells.endCompoundOperation();
+      this._ensureMetadata();
+    });
 
-    let oldValue = 0;
-    let newValue = 0;
-    this._nbformatMinor = nbformat.MINOR_VERSION;
-    this._nbformat = nbformat.MAJOR_VERSION;
-    const origNbformat = value.metadata.orig_nbformat;
-
-    if (value.nbformat !== this._nbformat) {
-      oldValue = this._nbformat;
-      this._nbformat = newValue = value.nbformat;
-      this.triggerStateChange({ name: 'nbformat', oldValue, newValue });
-    }
-    if (value.nbformat_minor > this._nbformatMinor) {
-      oldValue = this._nbformatMinor;
-      this._nbformatMinor = newValue = value.nbformat_minor;
-      this.triggerStateChange({ name: 'nbformatMinor', oldValue, newValue });
-    }
-
-    // Alert the user if the format changes.
-    if (origNbformat !== undefined && this._nbformat !== origNbformat) {
-      const newer = this._nbformat > origNbformat;
-      const msg = `This notebook has been converted from ${
-        newer ? 'an older' : 'a newer'
-      } notebook format (v${origNbformat}) to the current notebook format (v${
-        this._nbformat
-      }). The next time you save this notebook, the current notebook format (v${
-        this._nbformat
-      }) will be used. ${
-        newer
-          ? 'Older versions of Jupyter may not be able to read the new format.'
-          : 'Some features of the original notebook may not be available.'
-      }  To preserve the original format version, close the notebook without saving it.`;
-      void showDialog({
-        title: 'Notebook converted',
-        body: msg,
-        buttons: [Dialog.okButton()]
-      });
-    }
-
-    // Update the metadata.
-    this.metadata.clear();
-    const metadata = value.metadata;
-    for (const key in metadata) {
-      // orig_nbformat is not intended to be stored per spec.
-      if (key === 'orig_nbformat') {
-        continue;
+    let cells: ICellModel[] = [];
+    this.modelDB.withTransaction((transactionId?: string) => {
+      let factory = this.contentFactory;
+      for (let cell of value.cells) {
+        switch (cell.cell_type) {
+          case 'code':
+            cells.push(factory.createCodeCell({ cell }));
+            break;
+          case 'markdown':
+            cells.push(factory.createMarkdownCell({ cell }));
+            break;
+          case 'raw':
+            cells.push(factory.createRawCell({ cell }));
+            break;
+          default:
+            continue;
+        }
       }
-      this.metadata.set(key, metadata[key]);
-    }
-    this._ensureMetadata();
+      this.cells.beginCompoundOperation();
+      this.cells.clear();
+      this.cells.pushAll(cells);
+      this.cells.endCompoundOperation();
+    });
     this.dirty = true;
   }
 
@@ -291,12 +270,29 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
    * and clears undo state.
    */
   initialize(): void {
-    super.initialize();
     if (!this.cells.length) {
       const factory = this.contentFactory;
-      this.cells.push(factory.createCodeCell({}));
+      this.modelDB.withTransaction(() => {
+        this.cells.push(factory.createCodeCell({}));
+      });
     }
     this.cells.clearUndo();
+    this.modelDB.withTransaction(() => {
+      super.initialize();
+      // Add an initial code cell by default.
+      if (!this._cells.length && !this.modelDB.isPrepopulated) {
+        this._cells.push(this.contentFactory.createCodeCell({}));
+      }
+
+      const metadata = this.metadata;
+      if (!metadata.has('language_info')) {
+        const name = this.defaultKernelLanguage;
+        metadata.set('language_info', { name });
+      }
+      this._ensureMetadata();
+      this.cells.clearUndo();
+    });
+
   }
 
   /**
@@ -490,7 +486,7 @@ export namespace NotebookModel {
      *   `codeCellContentFactory` will be used.
      */
     createCodeCell(options: CodeCellModel.IOptions): ICodeCellModel {
-      if (options.contentFactory) {
+      if (!options.contentFactory) {
         options.contentFactory = this.codeCellContentFactory;
       }
       if (this.modelDB) {

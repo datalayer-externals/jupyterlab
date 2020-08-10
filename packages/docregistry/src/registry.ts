@@ -13,6 +13,8 @@ import {
 
 import { PartialJSONValue, ReadonlyPartialJSONValue } from '@lumino/coreutils';
 
+import { Schema } from '@lumino/datastore';
+
 import { IDisposable, DisposableDelegate } from '@lumino/disposable';
 
 import { ISignal, Signal } from '@lumino/signaling';
@@ -232,6 +234,13 @@ export class DocumentRegistry implements IDisposable {
     });
   }
 
+  addModelDBFactory(name: string, factory: IModelDB.IFactory): IDisposable {
+    this._modelDbFactories[name] = factory;
+    return new DisposableDelegate(() => {
+      delete this._modelDbFactories[name];
+    });
+  }
+
   /**
    * Add a widget extension to the registry.
    *
@@ -437,6 +446,22 @@ export class DocumentRegistry implements IDisposable {
       return this._widgetFactories[this._defaultWidgetFactory];
     }
     return this.preferredWidgetFactories(path)[0];
+  }
+
+  /**
+   * Get the preferred model DB factory for a path.
+   *
+   * @param path - The path to for which to find a model DB factory.
+   *
+   * @returns The model DB factory for the path.
+   */
+  getModelDBFactory(path: string): IModelDB.IFactory {
+    // TODO: Use some resolution to pick DB factory
+    // TODO(@echarles) 
+    // for (let key in this._modelDbFactories) {
+    //  return this._modelDbFactories[key];
+    // }
+    return this._modelDbFactories[path];
   }
 
   /**
@@ -676,6 +701,9 @@ export class DocumentRegistry implements IDisposable {
     return fts;
   }
 
+  private _modelDbFactories: {
+    [key: string]: IModelDB.IFactory;
+  } = Object.create(null);
   private _modelFactories: {
     [key: string]: DocumentRegistry.ModelFactory;
   } = Object.create(null);
@@ -1137,6 +1165,11 @@ export namespace DocumentRegistry {
      * Get the preferred kernel language given a file path.
      */
     preferredLanguage(path: string): string;
+
+    /**
+     * The schemas for the datastore.
+     */
+    readonly schemas: ReadonlyArray<Schema>;
   }
 
   /**

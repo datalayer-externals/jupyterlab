@@ -13,7 +13,7 @@ import {
 
 import { toArray } from '@lumino/algorithm';
 
-import { ReadonlyJSONValue } from '@lumino/coreutils';
+import { JSONValue } from '@lumino/coreutils';
 
 import { Schema } from '@lumino/datastore';
 
@@ -118,7 +118,7 @@ export class DSModelDB implements IModelDB {
    * The list can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createList<T extends ReadonlyJSONValue>(
+  createList<T extends JSONValue>(
     path: string
   ): IObservableUndoableList<T> {
     const schema = this._schemas[this._schemaId];
@@ -192,14 +192,14 @@ export class DSModelDB implements IModelDB {
    *
    * @param path: the path for the value.
    */
-  getValue(path: string): ReadonlyJSONValue | undefined {
+  getValue(path: string): JSONValue | undefined {
     const ds = this.manager.datastore;
     if (!ds) {
       throw new Error('Cannot use model db before connection completed!');
     }
     const schema = this._schemas[this._schemaId];
     const record = ds.get(schema).get(this._recordId);
-    return record && record[path];
+    return (record && record[path]) as JSONValue;
   }
 
   /**
@@ -210,7 +210,7 @@ export class DSModelDB implements IModelDB {
    *
    * @param value: the new value.
    */
-  setValue(path: string, value: ReadonlyJSONValue): void {
+  setValue(path: string, value: JSONValue): void {
     const ds = this.manager.datastore;
     if (!ds) {
       throw new Error('Cannot use model db before connection completed!');
