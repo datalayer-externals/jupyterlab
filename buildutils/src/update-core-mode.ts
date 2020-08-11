@@ -13,9 +13,6 @@ utils.run('jlpm integrity');
 // Get the dev mode package.json file.
 const data = utils.readJSONFile('./dev_mode/package.json');
 
-// Use a fixed webpack version for now.  See https://github.com/jupyterlab/jupyterlab/issues/8655
-data['devDependencies']['webpack'] = '~4.43.0';
-
 // Update the values that need to change and write to staging.
 data['jupyterlab']['buildDir'] = './build';
 data['jupyterlab']['outputDir'] = '..';
@@ -42,7 +39,7 @@ const notice =
 
 [
   'index.js',
-  //'webpack.config.js',   # removing as part of https://github.com/jupyterlab/jupyterlab/issues/8655
+  'webpack.config.js',
   'webpack.prod.config.js',
   'webpack.prod.minimize.config.js',
   'webpack.prod.release.config.js',
