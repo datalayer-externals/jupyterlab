@@ -281,18 +281,21 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
       super.initialize();
       // Add an initial code cell by default.
       if (!this._cells.length && !this.modelDB.isPrepopulated) {
-        this._cells.push(this.contentFactory.createCodeCell({}));
+        this.cells.push(this.contentFactory.createCodeCell({}));
       }
 
+      // TODO(@echarles) ???
       const metadata = this.metadata;
+      /*
       if (!metadata.has('language_info')) {
         const name = this.defaultKernelLanguage;
         metadata.set('language_info', { name });
       }
+      */
+      metadata.changed.connect(this.triggerContentChange, this);
       this._ensureMetadata();
       this.cells.clearUndo();
     });
-
   }
 
   /**
@@ -494,6 +497,11 @@ export namespace NotebookModel {
           options.id = UUID.uuid4();
         }
         options.modelDB = this.modelDB.view(options.id);
+        let cell;
+        this.modelDB.withTransaction(() => {
+          cell = new CodeCellModel(options);
+        });
+        return (cell as unknown) as ICodeCellModel;
       }
       return new CodeCellModel(options);
     }
@@ -512,6 +520,11 @@ export namespace NotebookModel {
           options.id = UUID.uuid4();
         }
         options.modelDB = this.modelDB.view(options.id);
+        let cell;
+        this.modelDB.withTransaction(() => {
+          cell = new MarkdownCellModel(options);
+        });
+        return (cell as unknown) as IMarkdownCellModel;
       }
       return new MarkdownCellModel(options);
     }
@@ -530,6 +543,11 @@ export namespace NotebookModel {
           options.id = UUID.uuid4();
         }
         options.modelDB = this.modelDB.view(options.id);
+        let cell;
+        this.modelDB.withTransaction(() => {
+          cell = new RawCellModel(options);
+        });
+        return (cell as unknown) as IRawCellModel;
       }
       return new RawCellModel(options);
     }
