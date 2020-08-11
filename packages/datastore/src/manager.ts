@@ -27,8 +27,7 @@ const LOCAL_DS_STORE_ID = -1;
 /**
  * A message of a datastore transaction.
  */
-export
-class TransactionMessage extends Message {
+export class TransactionMessage extends Message {
   constructor(transaction: Datastore.Transaction) {
     super('datastore-transaction');
     this.transaction = transaction;
@@ -52,7 +51,7 @@ function cloneDS(
   // Clone store object
   // TODO(@echarles) broadcastHandler: source.broadcastHandler || undefined,
   const dest = Datastore.create({
-//    broadcastHandler: source.broadcastHandler || undefined,
+    //    broadcastHandler: source.broadcastHandler || undefined,
     ...overrides,
     id: newId,
     schemas: toArray(map(source.iter(), table => table.schema)),
@@ -121,6 +120,7 @@ export class DatastoreManager implements IMessageHandler, IDisposable {
    *
    */
   processMessage(msg: Message) {
+    console.log('---', msg);
     if (this.isDisposed) {
       return;
     }
@@ -154,7 +154,7 @@ export class DatastoreManager implements IMessageHandler, IDisposable {
         this._remoteDS = Datastore.create({
           id: this._storeId!,
           schemas: this._schemas,
-//          broadcastHandler: this,
+          //          broadcastHandler: this,
           restoreState: state || undefined
         });
         if (state !== null) {
@@ -164,7 +164,7 @@ export class DatastoreManager implements IMessageHandler, IDisposable {
         // 1.
         // TODO(@echarles) broadcastHandler: this,
         this._remoteDS = cloneDS(this._storeId!, this._localDS!, {
-//          broadcastHandler: this
+          //          broadcastHandler: this
         });
       } else {
         // 4.

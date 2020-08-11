@@ -457,11 +457,13 @@ export class DocumentRegistry implements IDisposable {
    */
   getModelDBFactory(path: string): IModelDB.IFactory {
     // TODO: Use some resolution to pick DB factory
-    // TODO(@echarles) 
-    // for (let key in this._modelDbFactories) {
-    //  return this._modelDbFactories[key];
-    // }
-    return this._modelDbFactories[path];
+    // TODO(@echarles)
+    for (let key in this._modelDbFactories) {
+      console.log('----', key);
+      //  return this._modelDbFactories[key];
+    }
+    console.log('----', this._modelDbFactories, path);
+    return this._modelDbFactories['lumino-datastore'];
   }
 
   /**

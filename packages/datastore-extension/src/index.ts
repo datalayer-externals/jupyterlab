@@ -22,7 +22,7 @@ const datastorePlugin: JupyterFrontEndPlugin<void> = {
   activate: (app: JupyterFrontEnd, labShell: ILabShell | null) => {
     const registry = app.docRegistry;
     const factory = new DSModelDBFactory();
-    registry.addModelDBFactory('phosphor-datastore', factory);
+    registry.addModelDBFactory('lumino-datastore', factory);
   }
 };
 

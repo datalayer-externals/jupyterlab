@@ -28,7 +28,7 @@ import {
   IObservableMap,
   IObservableValue
 } from '@jupyterlab/observables';
-  
+
 import { DocumentRegistry, IDocumentWidget } from './index';
 
 /**
@@ -45,11 +45,8 @@ export abstract class DocumentModel implements IDisposable {
   ) {
     this.modelDB = modelDB || new ModelDB();
     this._defaultLang = languagePreference || '';
-    let mimeTypeObs = this.modelDB.createValue('mimeType');
-    mimeTypeObs.changed.connect(
-      this._onMimeTypeChanged,
-      this
-    );
+    const mimeTypeObs = this.modelDB.createValue('mimeType');
+    mimeTypeObs.changed.connect(this._onMimeTypeChanged, this);
     this._defaultMimeType = mimeType;
   }
 
@@ -139,7 +136,7 @@ export abstract class DocumentModel implements IDisposable {
   }
 
   /**
-  * Serialize the model to a string.
+   * Serialize the model to a string.
    */
   abstract toString(): string;
 
@@ -243,10 +240,7 @@ export class TextModel extends DocumentModel
   constructor(languagePreference?: string, modelDB?: IModelDB) {
     super('text/plain', languagePreference, modelDB);
     let value = this.modelDB.createString('value');
-    value.changed.connect(
-      this.triggerContentChange,
-      this
-    );
+    value.changed.connect(this.triggerContentChange, this);
   }
 
   /**
@@ -266,7 +260,7 @@ export class TextModel extends DocumentModel
   }
 
   toString(): string {
-    return this.value.text || ""
+    return this.value.text || '';
   }
 
   fromString(value: string): void {
@@ -298,10 +292,7 @@ export class Base64Model extends DocumentModel {
   constructor(languagePreference?: string, modelDB?: IModelDB) {
     super('text/plain', languagePreference, modelDB);
     let value = this.modelDB.createValue('value');
-    value.changed.connect(
-      this.triggerContentChange,
-      this
-    );
+    value.changed.connect(this.triggerContentChange, this);
   }
 
   /**
@@ -333,7 +324,6 @@ export class Base64Model extends DocumentModel {
     value.set(value.get() || '');
   }
 }
-
 
 /**
  * An implementation of a model factory for text files.
@@ -405,25 +395,25 @@ export class TextModelFactory implements DocumentRegistry.CodeModelFactory {
   }
 
   /**
-  * The schemas for the datastore.
-  */
+   * The schemas for the datastore.
+   */
   get schemas(): ReadonlyArray<Schema> {
-   return [
-     {
-       id: 'TextModelSchema.v1',
-       fields: {
-         value: Fields.Text({ description: 'The text value of the model' }),
-         mimeType: Fields.String({
-           value: 'text/plain',
-           description: 'The MIME type of the text'
-         }),
-         selections: Fields.Map({
-           description: 'A map of all text selections for all users'
-         })
-       }
-     }
-   ];
- }
+    return [
+      {
+        id: 'TextModelSchema.v1',
+        fields: {
+          value: Fields.Text({ description: 'The text value of the model' }),
+          mimeType: Fields.String({
+            value: 'text/plain',
+            description: 'The MIME type of the text'
+          }),
+          selections: Fields.Map({
+            description: 'A map of all text selections for all users'
+          })
+        }
+      }
+    ];
+  }
 
   private _isDisposed = false;
 }
@@ -462,58 +452,58 @@ export class Base64ModelFactory implements DocumentRegistry.ModelFactory {
   }
 
   /**
-  * Get whether the model factory has been disposed.
-  */
- get isDisposed(): boolean {
-   return this._isDisposed;
- }
+   * Get whether the model factory has been disposed.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
 
- /**
-  * Dispose of the resources held by the model factory.
-  */
- dispose(): void {
-   this._isDisposed = true;
- }
+  /**
+   * Dispose of the resources held by the model factory.
+   */
+  dispose(): void {
+    this._isDisposed = true;
+  }
 
- /**
-  * Create a new model.
-  *
-  * @param languagePreference - An optional kernel language preference.
-  *
-  * @returns A new document model.
-  */
- createNew(
-   languagePreference?: string,
-   modelDB?: IModelDB
- ): DocumentRegistry.IModel {
-   return new Base64Model(languagePreference, modelDB);
- }
+  /**
+   * Create a new model.
+   *
+   * @param languagePreference - An optional kernel language preference.
+   *
+   * @returns A new document model.
+   */
+  createNew(
+    languagePreference?: string,
+    modelDB?: IModelDB
+  ): DocumentRegistry.IModel {
+    return new Base64Model(languagePreference, modelDB);
+  }
 
- /**
-  * Get the preferred kernel language given a file path.
-  */
- preferredLanguage(path: string): string {
-   let mode = Mode.findByFileName(path);
-   return mode && mode.mode;
- }
+  /**
+   * Get the preferred kernel language given a file path.
+   */
+  preferredLanguage(path: string): string {
+    let mode = Mode.findByFileName(path);
+    return mode && mode.mode;
+  }
 
- /**
-  * The schemas for the datastore.
-  */
- get schemas(): ReadonlyArray<Schema> {
-   return [
-     {
-       id: 'Base64ModelSchema.v1',
-       fields: {
-         value: Fields.String({
-           description: 'The value of the model'
-         })
-       }
-     }
-   ];
- }
+  /**
+   * The schemas for the datastore.
+   */
+  get schemas(): ReadonlyArray<Schema> {
+    return [
+      {
+        id: 'Base64ModelSchema.v1',
+        fields: {
+          value: Fields.String({
+            description: 'The value of the model'
+          })
+        }
+      }
+    ];
+  }
 
- private _isDisposed = false;
+  private _isDisposed = false;
 }
 
 /**

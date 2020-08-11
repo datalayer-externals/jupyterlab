@@ -40,10 +40,10 @@
     "watch": "npm run test -- --watch"
   },
   "dependencies": {
-    "@jupyterlab/observables": "^4.0.0-alpha.8",
     "@jupyterlab/apputils": "^3.0.0-alpha.8",
     "@jupyterlab/coreutils": "^5.0.0-alpha.8",
     "@jupyterlab/docregistry": "^3.0.0-alpha.8",
+    "@jupyterlab/observables": "^4.0.0-alpha.8",
     "@jupyterlab/services": "^6.0.0-alpha.8",
     "@jupyterlab/statusbar": "^3.0.0-alpha.8",
     "@lumino/algorithm": "^1.2.3",

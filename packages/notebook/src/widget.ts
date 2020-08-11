@@ -219,7 +219,10 @@ export class StaticNotebook extends Widget {
 
     if (oldValue && oldValue.modelDB.isCollaborative) {
       void oldValue.modelDB.connected.then(() => {
-        oldValue!.modelDB.collaborators!.changed.disconnect(
+        if (!oldValue!.modelDB.collaborators) {
+          return;
+        }
+        oldValue!.modelDB.collaborators?.changed.disconnect(
           this._onCollaboratorsChanged,
           this
         );
@@ -227,7 +230,10 @@ export class StaticNotebook extends Widget {
     }
     if (newValue && newValue.modelDB.isCollaborative) {
       void newValue.modelDB.connected.then(() => {
-        newValue!.modelDB.collaborators!.changed.connect(
+        if (!newValue!.modelDB.collaborators) {
+          return;
+        }
+        newValue!.modelDB.collaborators?.changed.connect(
           this._onCollaboratorsChanged,
           this
         );
@@ -1446,7 +1452,7 @@ export class Notebook extends StaticNotebook {
     if (this.model && this.model.modelDB.isCollaborative) {
       const modelDB = this.model.modelDB;
       void modelDB.connected.then(() => {
-        if (!cell.isDisposed) {
+        if (!cell.isDisposed && modelDB.collaborators) {
           // Setup the selection style for collaborators.
           const localCollaborator = modelDB.collaborators!.localCollaborator;
           cell.editor.uuid = localCollaborator.sessionId;

@@ -45,6 +45,7 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
    */
   constructor(options: DocumentWidget.IOptions<Notebook, INotebookModel>) {
     super(options);
+    ``;
 
     // Set up CSS classes
     this.addClass(NOTEBOOK_PANEL_CLASS);
