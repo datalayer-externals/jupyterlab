@@ -192,9 +192,6 @@
       "path": "./packages/outputarea"
     },
     {
-      "path": "./packages/package.json"
-    },
-    {
       "path": "./packages/pdf-extension"
     },
     {
