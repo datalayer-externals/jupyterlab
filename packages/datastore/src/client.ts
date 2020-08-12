@@ -5,7 +5,7 @@ import { URLExt } from '@jupyterlab/coreutils';
 
 import { PromiseDelegate } from '@lumino/coreutils';
 
-import { Datastore } from '@lumino/datastore';
+import { Datastore, IServerAdapter } from '@lumino/datastore';
 
 import { IMessageHandler, Message, MessageLoop } from '@lumino/messaging';
 
@@ -26,10 +26,9 @@ const DEFAULT_IDLE_TIME = 3;
 /**
  * A class that manages exchange of transactions with the collaboration server.
  */
-export class CollaborationClient extends WSConnection<
-  Collaboration.Message,
-  Collaboration.Message
-> {
+export class CollaborationClient
+  extends WSConnection<Collaboration.Message, Collaboration.Message>
+  implements IServerAdapter {
   /**
    * Create a new collaboration client connection.
    */
@@ -40,7 +39,44 @@ export class CollaborationClient extends WSConnection<
     this._idleTreshold = 1000 * (options.idleTreshold || DEFAULT_IDLE_TIME);
     this.serverSettings =
       options.serverSettings || ServerConnection.makeSettings();
+    console.log('---- socket', this._createSocket);
     this._createSocket();
+  }
+  onUndo!: ((transaction: Datastore.Transaction) => void) | null;
+  onRedo!: ((transaction: Datastore.Transaction) => void) | null;
+  undo(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  redo(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  broadcast(transaction: Datastore.Transaction): void {
+    this.broadcastTransactions([transaction]);
+  }
+  // Set by datastore when it's created.
+  set onRemoteTransaction(
+    onRemoteTransaction: (transaction: Datastore.Transaction) => void
+  ) {
+    console.log('--- onRemoteTransaction', onRemoteTransaction);
+    /*
+    if (this.state.label !== "initial") {
+      throw new Error(
+        "Can only set remote transaction function once, after creationg"
+      );
+    }
+    const socket = io(this.options.url);
+    socket.on("transactions", (transactions: Array<Datastore.Transaction>) => {
+      transactions.map((t) => onRemoteTransaction(t));
+      this.options.onLoad();
+    });
+    socket.on("transaction", (t: Datastore.Transaction) =>
+      onRemoteTransaction(t)
+    );
+    this.state = {
+      label: "connected",
+      socket,
+    };
+    */
   }
 
   /**
@@ -277,7 +313,9 @@ export class CollaborationClient extends WSConnection<
 
     this.sendMessage(msg);
 
-    return promise as unknown as  Promise<Collaboration.IReplyMap[T['msgType']]>;
+    return (promise as unknown) as Promise<
+      Collaboration.IReplyMap[T['msgType']]
+    >;
   }
 
   /**

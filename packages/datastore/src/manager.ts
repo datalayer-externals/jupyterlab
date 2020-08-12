@@ -7,7 +7,7 @@ import { map, toArray } from '@lumino/algorithm';
 
 import { UUID } from '@lumino/coreutils';
 
-import { Schema, Datastore } from '@lumino/datastore';
+import { Schema, Datastore, IServerAdapter } from '@lumino/datastore';
 
 import { IDisposable } from '@lumino/disposable';
 
@@ -51,7 +51,7 @@ function cloneDS(
   // Clone store object
   // TODO(@echarles) broadcastHandler: source.broadcastHandler || undefined,
   const dest = Datastore.create({
-    //    broadcastHandler: source.broadcastHandler || undefined,
+    //  adapter: this._client || undefined,
     ...overrides,
     id: newId,
     schemas: toArray(map(source.iter(), table => table.schema)),
@@ -154,7 +154,7 @@ export class DatastoreManager implements IMessageHandler, IDisposable {
         this._remoteDS = Datastore.create({
           id: this._storeId!,
           schemas: this._schemas,
-          //          broadcastHandler: this,
+          adapter: (this._client as IServerAdapter) || null,
           restoreState: state || undefined
         });
         if (state !== null) {
@@ -164,7 +164,7 @@ export class DatastoreManager implements IMessageHandler, IDisposable {
         // 1.
         // TODO(@echarles) broadcastHandler: this,
         this._remoteDS = cloneDS(this._storeId!, this._localDS!, {
-          //          broadcastHandler: this
+          adapter: (this._client as IServerAdapter) || null
         });
       } else {
         // 4.
