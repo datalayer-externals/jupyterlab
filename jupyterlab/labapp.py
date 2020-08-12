@@ -605,6 +605,8 @@ class LabApp(NBClassicConfigShimMixin, LabServerApp):
             dev_static_dir = ujoin(DEV_DIR, 'static')
             self.static_paths = [dev_static_dir]
             self.template_paths = [dev_static_dir]
+            self.labextensions_path = []
+            self.extra_labextensions_path = []
         elif self.core_mode:
             dev_static_dir = ujoin(HERE, 'static')
             self.static_paths = [dev_static_dir]
@@ -615,6 +617,8 @@ class LabApp(NBClassicConfigShimMixin, LabServerApp):
 
 
     def initialize_settings(self):
+        # FIXME: why isn't the default being applied?
+        self.app_version = self._default_app_version()
         super().initialize_settings()
 
 

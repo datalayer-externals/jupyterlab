@@ -3,7 +3,7 @@
 
 import { ISessionContext, sessionContextDialogs } from '@jupyterlab/apputils';
 
-import { PathExt } from '@jupyterlab/coreutils';
+import { PathExt, PageConfig } from '@jupyterlab/coreutils';
 
 import { UUID } from '@lumino/coreutils';
 
@@ -16,6 +16,8 @@ import {
 import { IModelDB } from '@jupyterlab/observables';
 
 import { Contents, Kernel, ServiceManager } from '@jupyterlab/services';
+
+import { nullTranslator, ITranslator } from '@jupyterlab/translation';
 
 import { ArrayExt, find } from '@lumino/algorithm';
 
@@ -48,6 +50,7 @@ export class DocumentManager implements IDocumentManager {
    * Construct a new document manager.
    */
   constructor(options: DocumentManager.IOptions) {
+    this.translator = options.translator || nullTranslator;
     this.registry = options.registry;
     this.services = options.manager;
     this._dialogs = options.sessionDialogs || sessionContextDialogs;
@@ -56,7 +59,8 @@ export class DocumentManager implements IDocumentManager {
     this._when = options.when || options.manager.ready;
 
     const widgetManager = new DocumentWidgetManager({
-      registry: this.registry
+      registry: this.registry,
+      translator: this.translator
     });
     widgetManager.activateRequested.connect(this._onActivateRequested, this);
     this._widgetManager = widgetManager;
@@ -78,6 +82,22 @@ export class DocumentManager implements IDocumentManager {
    */
   get activateRequested(): ISignal<this, string> {
     return this._activateRequested;
+  }
+
+  /**
+   * The document mode of the document manager, either 'single-document' or 'multiple-document'.
+   *
+   * This is usually synced with the `mode` attribute of the shell.
+   */
+  get mode(): string {
+    return this._mode;
+  }
+
+  /**
+   * Set the mode of the document manager, either 'single-document' or 'multiple-document'.
+   */
+  set mode(value: string) {
+    this._mode = value;
   }
 
   /**
@@ -374,12 +394,16 @@ export class DocumentManager implements IDocumentManager {
     kernel?: Partial<Kernel.IModel>,
     options?: DocumentRegistry.IOpenOptions
   ): IDocumentWidget | undefined {
-    const widget = this.findWidget(path, widgetName);
-    if (widget) {
-      this._opener.open(widget, options || {});
-      return widget;
+    if (this.mode == 'single-document' && options?.maybeNewWorkspace) {
+      this._openInNewWorkspace(path);
+    } else {
+      const widget = this.findWidget(path, widgetName);
+      if (widget) {
+        this._opener.open(widget, options || {});
+        return widget;
+      }
+      return this.open(path, widgetName, kernel, options || {});
     }
-    return this.open(path, widgetName, kernel, options || {});
   }
 
   /**
@@ -519,9 +543,18 @@ export class DocumentManager implements IDocumentManager {
     }
     return registry.getWidgetFactory(widgetName);
   }
- 
+
   private _modelDBFactoryFor(path: string): IModelDB.IFactory {
     return this.registry.getModelDBFactory(path);
+  }
+
+  private _openInNewWorkspace(path: string) {
+    const newUrl = PageConfig.getUrl({
+      mode: this.mode,
+      workspace: 'default',
+      treePath: path
+    });
+    window.open(newUrl);
   }
 
   /**
@@ -600,6 +633,7 @@ export class DocumentManager implements IDocumentManager {
     this._activateRequested.emit(args);
   }
 
+  protected translator: ITranslator;
   private _activateRequested = new Signal<this, string>(this);
   private _contexts: Private.IContext[] = [];
   private _opener: DocumentManager.IWidgetOpener;
@@ -607,6 +641,7 @@ export class DocumentManager implements IDocumentManager {
   private _isDisposed = false;
   private _autosave = true;
   private _autosaveInterval = 120;
+  private _mode = '';
   private _when: Promise<void>;
   private _setBusy: (() => IDisposable) | undefined;
   private _dialogs: ISessionContext.IDialogs;
@@ -649,6 +684,11 @@ export namespace DocumentManager {
      * The provider for session dialogs.
      */
     sessionDialogs?: ISessionContext.IDialogs;
+
+    /**
+     * The applicaton language translator.
+     */
+    translator?: ITranslator;
   }
 
   /**

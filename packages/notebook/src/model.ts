@@ -26,6 +26,12 @@ import {
 } from '@jupyterlab/observables';
 
 import { CellList } from './celllist';
+import { showDialog, Dialog } from '@jupyterlab/apputils';
+import {
+  nullTranslator,
+  ITranslator,
+  TranslationBundle
+} from '@jupyterlab/translation';
 
 /**
  * The definition of a model object for a notebook widget.
@@ -79,6 +85,7 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
       options.contentFactory || NotebookModel.defaultContentFactory;
     this.contentFactory = factory.clone(this.modelDB.view('cells'));
     this._cells = new CellList(this.modelDB, this.contentFactory);
+    this._trans = (options.translator || nullTranslator).load('jupyterlab');
     this._cells.changed.connect(this._onCellsChanged, this);
 
     // Handle initial metadata.
@@ -212,6 +219,7 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
       let newValue = 0;
       this._nbformatMinor = nbformat.MINOR_VERSION;
       this._nbformat = nbformat.MAJOR_VERSION;
+      const origNbformat = value.metadata.orig_nbformat;
 
       if (value.nbformat !== this._nbformat) {
         oldValue = this._nbformat;
@@ -223,6 +231,40 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
         this._nbformatMinor = newValue = value.nbformat_minor;
         this.triggerStateChange({ name: 'nbformatMinor', oldValue, newValue });
       }
+
+      // Alert the user if the format changes.
+      if (origNbformat !== undefined && this._nbformat !== origNbformat) {
+        const newer = this._nbformat > origNbformat;
+        let msg: string;
+
+        if (newer) {
+          msg = this._trans.__(
+            `This notebook has been converted from an older notebook format (v%1)
+  to the current notebook format (v%2).
+  The next time you save this notebook, the current notebook format (vthis._nbformat) will be used.
+  'Older versions of Jupyter may not be able to read the new format.' To preserve the original format version,
+  close the notebook without saving it.`,
+            origNbformat,
+            this._nbformat
+          );
+        } else {
+          msg = this._trans.__(
+            `This notebook has been converted from an newer notebook format (v%1)
+  to the current notebook format (v%2).
+  The next time you save this notebook, the current notebook format (v%2) will be used.
+  Some features of the original notebook may not be available.' To preserve the original format version,
+  close the notebook without saving it.`,
+            origNbformat,
+            this._nbformat
+          );
+        }
+        void showDialog({
+          title: this._trans.__('Notebook converted'),
+          body: msg,
+          buttons: [Dialog.okButton({ label: this._trans.__('Ok') })]
+        });
+      }
+
       // Update the metadata.
       this.metadata.clear();
       let metadata = value.metadata;
@@ -337,6 +379,7 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
     }
   }
 
+  private _trans: TranslationBundle;
   private _cells: CellList;
   private _nbformat = nbformat.MAJOR_VERSION;
   private _nbformatMinor = nbformat.MINOR_VERSION;
@@ -367,6 +410,11 @@ export namespace NotebookModel {
      * A modelDB for storing notebook data.
      */
     modelDB?: IModelDB;
+
+    /**
+     * Language translator.
+     */
+    translator?: ITranslator;
   }
 
   /**

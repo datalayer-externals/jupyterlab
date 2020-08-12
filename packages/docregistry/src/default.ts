@@ -29,6 +29,8 @@ import {
   IObservableValue
 } from '@jupyterlab/observables';
 
+import { nullTranslator, ITranslator } from '@jupyterlab/translation';
+
 import { DocumentRegistry, IDocumentWidget } from './index';
 
 /**
@@ -517,6 +519,7 @@ export abstract class ABCWidgetFactory<
    * Construct a new `ABCWidgetFactory`.
    */
   constructor(options: DocumentRegistry.IWidgetFactoryOptions<T>) {
+    this._translator = options.translator || nullTranslator;
     this._name = options.name;
     this._readOnly = options.readOnly === undefined ? false : options.readOnly;
     this._defaultFor = options.defaultFor ? options.defaultFor.slice() : [];
@@ -613,6 +616,13 @@ export abstract class ABCWidgetFactory<
   }
 
   /**
+   * The aplication language translator.
+   */
+  get translator(): ITranslator {
+    return this._translator;
+  }
+
+  /**
    * Whether the kernel should be shutdown when the widget is closed.
    */
   get shutdownOnClose(): boolean {
@@ -668,6 +678,7 @@ export abstract class ABCWidgetFactory<
     | ((widget: T) => DocumentRegistry.IToolbarItem[])
     | undefined;
   private _isDisposed = false;
+  private _translator: ITranslator;
   private _name: string;
   private _readOnly: boolean;
   private _canStartKernel: boolean;
@@ -768,5 +779,6 @@ export namespace DocumentWidget {
     U extends DocumentRegistry.IModel = DocumentRegistry.IModel
   > extends MainAreaWidget.IOptionsOptionalContent<T> {
     context: DocumentRegistry.IContext<U>;
+    translator?: ITranslator;
   }
 }
