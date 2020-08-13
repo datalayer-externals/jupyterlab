@@ -90,6 +90,11 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
 
     // Handle initial metadata.
     const metadata = this.modelDB.createMap('metadata');
+    if (!metadata.has('language_info')) {
+      const name = options.languagePreference || '';
+      metadata.set('language_info', { name });
+    }
+    this._ensureMetadata();
     metadata.changed.connect(this.triggerContentChange, this);
     this._deletedCells = [];
   }
@@ -312,30 +317,12 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
    * and clears undo state.
    */
   initialize(): void {
-    if (!this.cells.length) {
-      const factory = this.contentFactory;
-      this.modelDB.withTransaction(() => {
-        this.cells.push(factory.createCodeCell({}));
-      });
-    }
-    this.cells.clearUndo();
     this.modelDB.withTransaction(() => {
       super.initialize();
-      // Add an initial code cell by default.
-      if (!this._cells.length && !this.modelDB.isPrepopulated) {
-        this.cells.push(this.contentFactory.createCodeCell({}));
+      if (!this.cells.length) {
+        const factory = this.contentFactory;
+        this.cells.push(factory.createCodeCell({}));
       }
-
-      // TODO(@echarles) ???
-      const metadata = this.metadata;
-      /*
-      if (!metadata.has('language_info')) {
-        const name = this.defaultKernelLanguage;
-        metadata.set('language_info', { name });
-      }
-      */
-      metadata.changed.connect(this.triggerContentChange, this);
-      this._ensureMetadata();
       this.cells.clearUndo();
     });
   }
