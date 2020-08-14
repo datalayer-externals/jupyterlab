@@ -462,13 +462,10 @@ export class DocumentRegistry implements IDisposable {
    * @returns The model DB factory for the path.
    */
   getModelDBFactory(path: string): IModelDB.IFactory {
-    // TODO: Use some resolution to pick DB factory
-    // TODO(@echarles)
-    for (let key in this._modelDbFactories) {
-      console.log('----', key);
-      //  return this._modelDbFactories[key];
-    }
-    console.log('----', this._modelDbFactories, path);
+    // TODO(@echarles) Use some resolution to pick DB factory ?
+    // for (let key in this._modelDbFactories) {
+    //   return this._modelDbFactories[key];
+    // }
     return this._modelDbFactories['lumino-datastore'];
   }
 
@@ -712,10 +709,10 @@ export class DocumentRegistry implements IDisposable {
     return fts;
   }
 
+  protected translator: ITranslator;
   private _modelDbFactories: {
     [key: string]: IModelDB.IFactory;
   } = Object.create(null);
-  protected translator: ITranslator;
   private _modelFactories: {
     [key: string]: DocumentRegistry.ModelFactory;
   } = Object.create(null);
