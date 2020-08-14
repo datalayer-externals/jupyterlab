@@ -220,32 +220,6 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
    */
   fromJSON(value: nbformat.INotebookContent): void {
     this.modelDB.withTransaction(() => {
-      let cells: ICellModel[] = [];
-      let factory = this.contentFactory;
-      for (let cell of value.cells) {
-        switch (cell.cell_type) {
-          case 'code':
-            // TODO(@echarles)
-            const c = factory.createCodeCell({ cell });
-            console.log('--- cell', cell);
-            console.log('--- c', c);
-            cells.push(c);
-            break;
-          case 'markdown':
-            cells.push(factory.createMarkdownCell({ cell }));
-            break;
-          case 'raw':
-            cells.push(factory.createRawCell({ cell }));
-            break;
-          default:
-            continue;
-        }
-      }
-      this.cells.beginCompoundOperation();
-      this.cells.clear();
-      this.cells.pushAll(cells);
-      this.cells.endCompoundOperation();
-
       let oldValue = 0;
       let newValue = 0;
       this._nbformatMinor = nbformat.MINOR_VERSION;
@@ -295,7 +269,6 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
           buttons: [Dialog.okButton({ label: this._trans.__('Ok') })]
         });
       }
-
       // Update the metadata.
       this.metadata.clear();
       let metadata = value.metadata;
@@ -308,7 +281,33 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
       }
       this._ensureMetadata();
     });
-
+    let cells: ICellModel[] = [];
+    this.modelDB.withTransaction((transactionId?: string) => {
+      let factory = this.contentFactory;
+      for (let cell of value.cells) {
+        switch (cell.cell_type) {
+          case 'code':
+            // TODO(@echarles)
+            const c = factory.createCodeCell({ cell });
+            console.log('--- cell', cell);
+            console.log('--- c', c);
+            cells.push(c);
+            break;
+          case 'markdown':
+            cells.push(factory.createMarkdownCell({ cell }));
+            break;
+          case 'raw':
+            cells.push(factory.createRawCell({ cell }));
+            break;
+          default:
+            continue;
+        }
+      }
+      this.cells.beginCompoundOperation();
+      this.cells.clear();
+      this.cells.pushAll(cells);
+      this.cells.endCompoundOperation();
+    });
     this.dirty = true;
   }
 
@@ -322,10 +321,16 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
   initialize(): void {
     this.modelDB.withTransaction(() => {
       super.initialize();
-      if (!this.cells.length) {
-        const factory = this.contentFactory;
-        this.cells.push(factory.createCodeCell({}));
+      // Add an initial code cell by default.
+      if (!this._cells.length && !this.modelDB.isPrepopulated) {
+        this._cells.push(this.contentFactory.createCodeCell({}));
       }
+      const metadata = this.metadata;
+      if (!metadata.has('language_info')) {
+        const name = this.defaultKernelLanguage;
+        metadata.set('language_info', { name });
+      }
+      this._ensureMetadata();
       this.cells.clearUndo();
     });
   }
@@ -539,7 +544,7 @@ export namespace NotebookModel {
         this.modelDB.withTransaction(() => {
           cell = new CodeCellModel(options);
         });
-        return (cell as unknown) as ICodeCellModel;
+        return (cell as unknown) as CodeCellModel;
       }
       return new CodeCellModel(options);
     }
