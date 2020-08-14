@@ -282,7 +282,8 @@ export namespace CodeEditor {
         return;
       }
       this._isDisposed = true;
-      this.value.dispose();
+      // TODO(@echarles) this.value.dispose(); ???
+      this.value.text = '';
       Signal.clearData(this);
     }
 
