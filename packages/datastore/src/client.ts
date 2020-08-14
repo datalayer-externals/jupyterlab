@@ -13,6 +13,8 @@ import { ServerConnection, WSConnection } from '@jupyterlab/services';
 
 import { Collaboration } from './wsmessages';
 
+type TransactionHandler = (transaction: Datastore.Transaction) => void;
+
 /**
  * The url for the datastore service.
  */
@@ -39,9 +41,29 @@ export class CollaborationClient
     this._idleTreshold = 1000 * (options.idleTreshold || DEFAULT_IDLE_TIME);
     this.serverSettings =
       options.serverSettings || ServerConnection.makeSettings();
+    console.log('--- serverSettings', this.serverSettings);
     console.log('---- socket', this._createSocket);
     this._createSocket();
   }
+
+  broadcast(transaction: Datastore.Transaction): void {
+    this.broadcastTransactions([transaction]);
+  }
+
+  // Set by datastore when it's created.
+  set onRemoteTransaction(onRemoteTransaction: TransactionHandler) {
+    this._ws!.onmessage = (evt) => {
+      const msg = JSON.parse(evt.data);
+      if (msg.content && msg.content.transactions) {
+        const transactions = msg.content.transactions;
+        console.log('--- onRemoteTransaction', transactions);
+        transactions.map((t: any) => {
+          onRemoteTransaction(t)
+        });
+      }
+    };
+  }
+
   onUndo!: ((transaction: Datastore.Transaction) => void) | null;
   onRedo!: ((transaction: Datastore.Transaction) => void) | null;
   undo(): Promise<void> {
@@ -49,34 +71,6 @@ export class CollaborationClient
   }
   redo(): Promise<void> {
     throw new Error('Method not implemented.');
-  }
-  broadcast(transaction: Datastore.Transaction): void {
-    this.broadcastTransactions([transaction]);
-  }
-  // Set by datastore when it's created.
-  set onRemoteTransaction(
-    onRemoteTransaction: (transaction: Datastore.Transaction) => void
-  ) {
-    console.log('--- onRemoteTransaction', onRemoteTransaction);
-    /*
-    if (this.state.label !== "initial") {
-      throw new Error(
-        "Can only set remote transaction function once, after creationg"
-      );
-    }
-    const socket = io(this.options.url);
-    socket.on("transactions", (transactions: Array<Datastore.Transaction>) => {
-      transactions.map((t) => onRemoteTransaction(t));
-      this.options.onLoad();
-    });
-    socket.on("transaction", (t: Datastore.Transaction) =>
-      onRemoteTransaction(t)
-    );
-    this.state = {
-      label: "connected",
-      socket,
-    };
-    */
   }
 
   /**

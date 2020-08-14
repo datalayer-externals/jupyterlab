@@ -94,6 +94,7 @@ export class DSModelDB implements IModelDB {
    * @returns the string that was created.
    */
   createString(path: string): IObservableString {
+    console.log('------- createString');
     const schema = this._schemas[this._schemaId];
     const field = schema.fields[path];
     if (!field || field.type !== 'text') {

@@ -120,7 +120,7 @@ export class DatastoreManager implements IMessageHandler, IDisposable {
    *
    */
   processMessage(msg: Message) {
-    console.log('---', msg);
+    console.log('--- msg', msg);
     if (this.isDisposed) {
       return;
     }
