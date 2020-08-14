@@ -220,6 +220,32 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
    */
   fromJSON(value: nbformat.INotebookContent): void {
     this.modelDB.withTransaction(() => {
+      let cells: ICellModel[] = [];
+      let factory = this.contentFactory;
+      for (let cell of value.cells) {
+        switch (cell.cell_type) {
+          case 'code':
+            // TODO(@echarles)
+            const c = factory.createCodeCell({ cell });
+            console.log('--- cell', cell);
+            console.log('--- c', c);
+            cells.push(c);
+            break;
+          case 'markdown':
+            cells.push(factory.createMarkdownCell({ cell }));
+            break;
+          case 'raw':
+            cells.push(factory.createRawCell({ cell }));
+            break;
+          default:
+            continue;
+        }
+      }
+      this.cells.beginCompoundOperation();
+      this.cells.clear();
+      this.cells.pushAll(cells);
+      this.cells.endCompoundOperation();
+
       let oldValue = 0;
       let newValue = 0;
       this._nbformatMinor = nbformat.MINOR_VERSION;
@@ -283,29 +309,6 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
       this._ensureMetadata();
     });
 
-    let cells: ICellModel[] = [];
-    this.modelDB.withTransaction((transactionId?: string) => {
-      let factory = this.contentFactory;
-      for (let cell of value.cells) {
-        switch (cell.cell_type) {
-          case 'code':
-            cells.push(factory.createCodeCell({ cell }));
-            break;
-          case 'markdown':
-            cells.push(factory.createMarkdownCell({ cell }));
-            break;
-          case 'raw':
-            cells.push(factory.createRawCell({ cell }));
-            break;
-          default:
-            continue;
-        }
-      }
-      this.cells.beginCompoundOperation();
-      this.cells.clear();
-      this.cells.pushAll(cells);
-      this.cells.endCompoundOperation();
-    });
     this.dirty = true;
   }
 
