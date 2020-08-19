@@ -14,7 +14,7 @@ import { AttachedProperty } from '@lumino/properties';
 
 import { Signal } from '@lumino/signaling';
 
-import { Panel, PanelLayout } from '@lumino/widgets';
+import { Panel } from '@lumino/widgets';
 
 import { Widget } from '@lumino/widgets';
 
@@ -30,9 +30,8 @@ import { Kernel, KernelMessage } from '@jupyterlab/services';
 
 import { IOutputAreaModel } from './model';
 
-import { BehaviorSubject } from 'rxjs';
 import * as React from 'react';
-import OutputAreaComponent from './OutputArea';
+import OutputAreaComponent from './OutputAreaComponent';
 
 /**
  * The class name added to an output area widget.
@@ -63,11 +62,6 @@ const OUTPUT_PROMPT_CLASS = 'jp-OutputPrompt';
  * The class name added to an execution result.
  */
 const EXECUTE_CLASS = 'jp-OutputArea-executeResult';
-
-/**
- * The class name added stdin items of OutputArea
- */
-const OUTPUT_AREA_STDIN_ITEM_CLASS = 'jp-OutputArea-stdin-item';
 
 /**
  * The class name added to stdin widgets.
@@ -185,6 +179,7 @@ export class OutputArea extends ReactWidget {
 
     // Handle the execute reply.
     value.onReply = this._onExecuteReply;
+    this.update();
   }
 
   /**
@@ -202,6 +197,8 @@ export class OutputArea extends ReactWidget {
   protected render() {
     return React.createElement(OutputAreaComponent, {
       model: this.model,
+      future: this.future,
+      contentFactory: this.contentFactory,
       setWidgets: widgets => (this._widgets = widgets)
     });
   }
@@ -329,7 +326,7 @@ export class OutputArea extends ReactWidget {
    * Update an output in the layout in place.
    */
   private _setOutput(index: number, model: IOutputModel): void {
-    let panel = layout.widgets[index] as Panel;
+    let panel = this.widgets[index] as Panel;
     let renderer = (panel.widgets
       ? panel.widgets[1]
       : panel) as IRenderMime.IRenderer;
@@ -348,10 +345,26 @@ export class OutputArea extends ReactWidget {
     ) {
       void renderer.renderModel(model);
     } else {
-      layout.widgets[index].dispose();
-      this._insertOutput(index, model);
+      this.widgets[index].dispose();
+      // TODO(@echarles)
+      // this._insertOutput(index, model);
+      this._renderOutput(model);
     }
   }
+
+  /**
+   * Render and insert a single output into the layout.
+  private _insertOutput(index: number, model: IOutputModel): void {
+    let output = this.createOutputItem(model);
+    if (output) {
+      output.toggleClass(EXECUTE_CLASS, model.executionCount !== null);
+    } else {
+      output = new Widget();
+    }
+    const layout = this.layout as PanelLayout;
+    layout.insertWidget(index, output);
+  }
+   */
 
   /**
    * Render a single output .

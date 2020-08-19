@@ -1,14 +1,10 @@
 import * as React from 'react';
-import { IOutputAreaModel } from './model';
+import { JSONObject } from '@lumino/coreutils';
 import { Widget, Panel } from '@lumino/widgets';
+import { IOutputAreaModel } from './model';
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 import { OutputArea, IStdin } from './widget';
-import { dispatch } from 'rxjs/internal/observable/pairs';
-
-/**
- * The class name added to an output area widget.
- */
-const OUTPUT_AREA_CLASS = 'jp-OutputArea';
+import * as nbformat from '@jupyterlab/nbformat';
 
 /**
  * The class name added to the direction children of OutputArea
@@ -26,34 +22,9 @@ const OUTPUT_AREA_OUTPUT_CLASS = 'jp-OutputArea-output';
 const OUTPUT_AREA_PROMPT_CLASS = 'jp-OutputArea-prompt';
 
 /**
- * The class name added to OutputPrompt.
- */
-const OUTPUT_PROMPT_CLASS = 'jp-OutputPrompt';
-
-/**
- * The class name added to an execution result.
- */
-const EXECUTE_CLASS = 'jp-OutputArea-executeResult';
-
-/**
  * The class name added stdin items of OutputArea
  */
 const OUTPUT_AREA_STDIN_ITEM_CLASS = 'jp-OutputArea-stdin-item';
-
-/**
- * The class name added to stdin widgets.
- */
-const STDIN_CLASS = 'jp-Stdin';
-
-/**
- * The class name added to stdin data prompt nodes.
- */
-const STDIN_PROMPT_CLASS = 'jp-Stdin-prompt';
-
-/**
- * The class name added to stdin data input nodes.
- */
-const STDIN_INPUT_CLASS = 'jp-Stdin-input';
 
 type FUTURE = Kernel.IShellFuture<
   KernelMessage.IExecuteRequestMsg,
@@ -61,7 +32,7 @@ type FUTURE = Kernel.IShellFuture<
 >;
 type STATE = {
   stdin: [Widget, IStdin] | null;
-  outpust: Array<{ displayID: string; widget: Widget }>;
+  output: Array<{ displayID: string; widget: Widget }>;
 };
 type ACTION =
   | {
@@ -79,7 +50,7 @@ type ACTION =
   | { name: 'model.clear' }
   | { name: 'stdin.value'; value: string };
 
-const DEFAULT_STATE: STATE = { stdin: null };
+const DEFAULT_STATE: STATE = { stdin: null, output: [] };
 
 function makeReducer({
   future,
@@ -93,20 +64,34 @@ function makeReducer({
   return (state, action) => {
     switch (action.name) {
       case 'future.onIOPub':
-        const { msg: IOPubMsg } = action;
+        const msg: KernelMessage.IIOPubMessage = action.msg;
         let output: nbformat.IOutput;
         let transient = ((msg.content as any).transient || {}) as JSONObject;
         let displayId = transient['display_id'] as string;
         let targets: number[] | undefined;
 
-        switch (IOPubMsg.header.msg_type) {
+        console.log('--- msg', msg);
+
+        switch (msg.header.msg_type) {
           case 'execute_result':
+            return {
+              output: state.output.concat((msg.content as any).text),
+              stdin: state.stdin
+            };
           case 'display_data':
+            return {
+              output: state.output.concat((msg.content as any).text),
+              stdin: state.stdin
+            };
           case 'stream':
+            return {
+              output: state.output.concat((msg.content as any).text),
+              stdin: state.stdin
+            };
           case 'error':
             output = {
-              ...IOPubMsg.content,
-              output_type: IOPubMsg.header.msg_type
+              ...msg.content,
+              output_type: msg.header.msg_type
             };
             model.add(output);
             break;
@@ -154,8 +139,19 @@ function makeReducer({
           ...restState,
           stdin: null
         };
-      default:
-        throw new Error(`Unknown action ${action.name}`);
+      case 'future.onReply':
+        return {
+          ...state,
+          stdin: null
+        };
+      case 'model.clear':
+        model.clear();
+        return {
+          ...state,
+          stdin: null
+        };
+      //      default:
+      //        throw new Error(`Unknown action ${action.name}`);
     }
   };
 }
@@ -193,7 +189,7 @@ function makeStdin({
  *
  * Will call `setWidgets` with a list of the lumino widgets displayed in this widget every time they change.
  */
-export default function OutputArea({
+export default function OutputAreaComponent({
   model,
   future,
   contentFactory,
@@ -204,7 +200,7 @@ export default function OutputArea({
   contentFactory: OutputArea.ContentFactory;
   future: FUTURE;
 }) {
-  const [state, dispatch] = React.useReducer(
+  const [state, setState] = React.useReducer(
     React.useCallback(makeReducer({ future, contentFactory, model }), [
       future,
       contentFactory,
@@ -214,22 +210,23 @@ export default function OutputArea({
   );
 
   React.useEffect(() => {
-    dispatch({ name: 'model.clear' });
-    future.onIOPub = msg => dispatch({ name: 'future.onIOPub', msg });
-    future.onReply = msg => dispatch({ name: 'future.onReply', msg });
-    future.onStdin = msg => dispatch({ name: 'future.onStdin', msg });
-    return () => future.dispose();
-  }, [dispatch, future]);
+    setState({ name: 'model.clear' });
+    if (future) {
+      future.onIOPub = msg => setState({ name: 'future.onIOPub', msg });
+      future.onReply = msg => setState({ name: 'future.onReply', msg });
+      future.onStdin = msg => setState({ name: 'future.onStdin', msg });
+      return () => future.dispose();
+    }
+  }, [setState, future]);
 
   React.useEffect(() => {
     if (state.stdin) {
       state.stdin[1].value.then(value =>
-        dispatch({ name: 'stdin.value', value })
+        setState({ name: 'stdin.value', value })
       );
     }
   }, [state.stdin]);
-  //
-  //
+
   // Either we have a current input request we are dealing with
   // or we dont
   // Either
@@ -238,5 +235,6 @@ export default function OutputArea({
   // Update on model change
 
   // mapping
-  return <>{state}</>;
+
+  return <>{state.output}</>;
 }
