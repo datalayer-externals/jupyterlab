@@ -25,247 +25,7 @@ index 3640a79c668..ce3f1d9af89 100644
  
      if (options.mimeExtensions) {
        for (let plugin of createRendermimePlugins(options.mimeExtensions)) {
-diff --git a/packages/attachments/src/data.ts b/packages/attachments/src/data.ts
-new file mode 100644
-index 00000000000..82abb0df77d
---- /dev/null
-+++ b/packages/attachments/src/data.ts
-@@ -0,0 +1,235 @@
-+// Copyright (c) Jupyter Development Team.
-+// Distributed under the terms of the Modified BSD License.
-+
-+import { nbformat } from '@jupyterlab/coreutils';
-+
-+import { DatastoreExt } from '@jupyterlab/datastore';
-+
-+import { imageRendererFactory } from '@jupyterlab/rendermime';
-+
-+import { IRenderMime } from '@jupyterlab/rendermime-interfaces';
-+
-+import {
-+  JSONExt,
-+  JSONObject,
-+  JSONValue,
-+  ReadonlyJSONObject
-+} from '@phosphor/coreutils';
-+
-+import { MapField } from '@phosphor/datastore';
-+
-+/**
-+ * The namespace for IAttachmentsData interfaces.
-+ */
-+export namespace IAttachmentsData {
-+  /**
-+   * An interface for schema fields for an attachments model.
-+   */
-+  export type Fields = {
-+    /**
-+     * A map storing attachments.
-+     */
-+    attachments: MapField<nbformat.IMimeBundle>;
-+  };
-+
-+  /**
-+   * The attachments data schema.
-+   */
-+  export type Schema = {
-+    /**
-+     * The id for the schema.
-+     */
-+    id: string;
-+
-+    /**
-+     * The fields storing attachment model data.
-+     */
-+    fields: {
-+      /**
-+       * A map storing attachments.
-+       */
-+      attachments: MapField<nbformat.IMimeBundle>;
-+    };
-+  };
-+
-+  /**
-+   * The location of data in a datastore for attachments.
-+   */
-+  export type DataLocation = DatastoreExt.DataLocation & {
-+    /**
-+     * A record for storing an attachment.
-+     */
-+    record: DatastoreExt.RecordLocation<Schema>;
-+  };
-+}
-+
-+/**
-+ * A namespace for AttachmentsData functionality.
-+ */
-+export namespace AttachmentsData {
-+  /**
-+   * Get the data for an attachment.
-+   *
-+   * @params bundle - A kernel attachment MIME bundle.
-+   *
-+   * @returns - The data for the payload.
-+   */
-+  export function getData(bundle: nbformat.IMimeBundle): JSONObject {
-+    return Private.getData(bundle);
-+  }
-+
-+  /**
-+   * Serialize the attachment model to JSON.
-+   */
-+  export function toJSON(
-+    loc: IAttachmentsData.DataLocation
-+  ): nbformat.IAttachments {
-+    return DatastoreExt.getField(loc.datastore, {
-+      ...loc.record,
-+      field: 'attachments'
-+    });
-+  }
-+
-+  /**
-+   * Deserialize an attachment model from JSON, inserting it into a record.
-+   */
-+  export function fromJSON(
-+    loc: IAttachmentsData.DataLocation,
-+    value: nbformat.IAttachments
-+  ): void {
-+    // Construct an update, removing any old data from the bundle.
-+    const old = toJSON(loc);
-+    Object.keys(old).forEach(key => {
-+      old[key] = null;
-+    });
-+    const update = { ...old, ...value };
-+    DatastoreExt.withTransaction(loc.datastore, () => {
-+      DatastoreExt.updateField(
-+        loc.datastore,
-+        { ...loc.record, field: 'attachments' },
-+        update
-+      );
-+    });
-+  }
-+}
-+
-+/**
-+ * A resolver for cell attachments 'attchment:filename'.
-+ *
-+ * Will resolve to a data: url.
-+ */
-+export class AttachmentsResolver implements IRenderMime.IResolver {
-+  /**
-+   * Create an attachments resolver object.
-+   */
-+  constructor(options: AttachmentsResolver.IOptions) {
-+    this._parent = options.parent || null;
-+    this._data = options.data;
-+  }
-+  /**
-+   * Resolve a relative url to a correct server path.
-+   */
-+  resolveUrl(url: string): Promise<string> {
-+    if (this._parent && !url.startsWith('attachment:')) {
-+      return this._parent.resolveUrl(url);
-+    }
-+    return Promise.resolve(url);
-+  }
-+
-+  /**
-+   * Get the download url of a given absolute server path.
-+   */
-+  getDownloadUrl(path: string): Promise<string> {
-+    if (this._parent && !path.startsWith('attachment:')) {
-+      return this._parent.getDownloadUrl(path);
-+    }
-+    // Return a data URL with the data of the url
-+    const key = path.slice('attachment:'.length);
-+    const attachment = DatastoreExt.getField(this._data.datastore, {
-+      ...this._data.record,
-+      field: 'attachments'
-+    });
-+    if (!attachment || !attachment[key]) {
-+      // Resolve with unprocessed path, to show as broken image
-+      return Promise.resolve(path);
-+    }
-+    const data = AttachmentsData.getData(attachment[key]);
-+    const mimeType = Object.keys(data)[0];
-+    // Only support known safe types:
-+    if (imageRendererFactory.mimeTypes.indexOf(mimeType) === -1) {
-+      return Promise.reject(
-+        `Cannot render unknown image mime type "${mimeType}".`
-+      );
-+    }
-+    const dataUrl = `data:${mimeType};base64,${data[mimeType]}`;
-+    return Promise.resolve(dataUrl);
-+  }
-+
-+  /**
-+   * Whether the URL should be handled by the resolver
-+   * or not.
-+   */
-+  isLocal(url: string): boolean {
-+    if (this._parent && !url.startsWith('attachment:')) {
-+      return this._parent.isLocal(url);
-+    }
-+    return true;
-+  }
-+
-+  private _data: IAttachmentsData.DataLocation;
-+  private _parent: IRenderMime.IResolver | null;
-+}
-+
-+/**
-+ * The namespace for `AttachmentsResolver` class statics.
-+ */
-+export namespace AttachmentsResolver {
-+  /**
-+   * The options used to create an AttachmentsResolver.
-+   */
-+  export interface IOptions {
-+    /**
-+     * The attachments model to resolve against.
-+     */
-+    data: IAttachmentsData.DataLocation;
-+
-+    /**
-+     * A parent resolver to use if the URL/path is not for an attachment.
-+     */
-+    parent?: IRenderMime.IResolver;
-+  }
-+}
-+
-+/**
-+ * The namespace for module private data.
-+ */
-+namespace Private {
-+  /**
-+   * Get the data from a notebook attachment.
-+   */
-+  export function getData(bundle: nbformat.IMimeBundle): JSONObject {
-+    return convertBundle(bundle);
-+  }
-+
-+  /**
-+   * Extract a value from a JSONObject.
-+   */
-+  export function extract(value: ReadonlyJSONObject, key: string): JSONValue {
-+    let item = value[key];
-+    if (JSONExt.isPrimitive(item)) {
-+      return item;
-+    }
-+    return JSONExt.deepCopy(item as JSONValue);
-+  }
-+
-+  /**
-+   * Convert a mime bundle to mime data.
-+   */
-+  function convertBundle(bundle: nbformat.IMimeBundle): JSONObject {
-+    let map: JSONObject = Object.create(null);
-+    for (let mimeType in bundle) {
-+      map[mimeType] = extract(bundle, mimeType);
-+    }
-+    return map;
-+  }
-+}
+
 diff --git a/packages/attachments/src/index.ts b/packages/attachments/src/index.ts
 index e6f235adbe0..f9414df8864 100644
 --- a/packages/attachments/src/index.ts
@@ -276,480 +36,7 @@ index e6f235adbe0..f9414df8864 100644
  
 -export * from './model';
 +export * from './data';
-diff --git a/packages/attachments/src/model.ts b/packages/attachments/src/model.ts
-deleted file mode 100644
-index 2a55f28b65d..00000000000
---- a/packages/attachments/src/model.ts
-+++ /dev/null
-@@ -1,433 +0,0 @@
--// Copyright (c) Jupyter Development Team.
--// Distributed under the terms of the Modified BSD License.
--
--import { nbformat } from '@jupyterlab/coreutils';
--
--import {
--  IObservableMap,
--  ObservableMap,
--  IObservableValue,
--  ObservableValue,
--  IModelDB
--} from '@jupyterlab/observables';
--
--import {
--  IAttachmentModel,
--  AttachmentModel,
--  imageRendererFactory
--} from '@jupyterlab/rendermime';
--
--import { IRenderMime } from '@jupyterlab/rendermime-interfaces';
--
--import { IDisposable } from '@phosphor/disposable';
--
--import { ISignal, Signal } from '@phosphor/signaling';
--
--/**
-- * The model for attachments.
-- */
--export interface IAttachmentsModel extends IDisposable {
--  /**
--   * A signal emitted when the model state changes.
--   */
--  readonly stateChanged: ISignal<IAttachmentsModel, void>;
--
--  /**
--   * A signal emitted when the model changes.
--   */
--  readonly changed: ISignal<IAttachmentsModel, IAttachmentsModel.ChangedArgs>;
--
--  /**
--   * The length of the items in the model.
--   */
--  readonly length: number;
--
--  /**
--   * The keys of the attachments in the model.
--   */
--  readonly keys: ReadonlyArray<string>;
--
--  /**
--   * The attachment content factory used by the model.
--   */
--  readonly contentFactory: IAttachmentsModel.IContentFactory;
--
--  /**
--   * Whether the specified key is set.
--   */
--  has(key: string): boolean;
--
--  /**
--   * Get an item for the specified key.
--   */
--  get(key: string): IAttachmentModel;
--
--  /**
--   * Set the value of the specified key.
--   */
--  set(key: string, attachment: nbformat.IMimeBundle): void;
--
--  /**
--   * Clear all of the attachments.
--   */
--  clear(): void;
--
--  /**
--   * Deserialize the model from JSON.
--   *
--   * #### Notes
--   * This will clear any existing data.
--   */
--  fromJSON(values: nbformat.IAttachments): void;
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IAttachments;
--}
--
--/**
-- * The namespace for IAttachmentsModel interfaces.
-- */
--export namespace IAttachmentsModel {
--  /**
--   * The options used to create a attachments model.
--   */
--  export interface IOptions {
--    /**
--     * The initial values for the model.
--     */
--    values?: nbformat.IAttachments;
--
--    /**
--     * The attachment content factory used by the model.
--     *
--     * If not given, a default factory will be used.
--     */
--    contentFactory?: IContentFactory;
--
--    /**
--     * An optional IModelDB to store the attachments model.
--     */
--    modelDB?: IModelDB;
--  }
--
--  /**
--   * A type alias for changed args.
--   */
--  export type ChangedArgs = IObservableMap.IChangedArgs<IAttachmentModel>;
--
--  /**
--   * The interface for an attachment content factory.
--   */
--  export interface IContentFactory {
--    /**
--     * Create an attachment model.
--     */
--    createAttachmentModel(options: IAttachmentModel.IOptions): IAttachmentModel;
--  }
--}
--
--/**
-- * The default implementation of the IAttachmentsModel.
-- */
--export class AttachmentsModel implements IAttachmentsModel {
--  /**
--   * Construct a new observable outputs instance.
--   */
--  constructor(options: IAttachmentsModel.IOptions = {}) {
--    this.contentFactory =
--      options.contentFactory || AttachmentsModel.defaultContentFactory;
--    if (options.values) {
--      for (let key of Object.keys(options.values)) {
--        this.set(key, options.values[key]);
--      }
--    }
--    this._map.changed.connect(this._onMapChanged, this);
--
--    // If we are given a IModelDB, keep an up-to-date
--    // serialized copy of the AttachmentsModel in it.
--    if (options.modelDB) {
--      this._modelDB = options.modelDB;
--      this._serialized = this._modelDB.createValue('attachments');
--      if (this._serialized.get()) {
--        this.fromJSON(this._serialized.get() as nbformat.IAttachments);
--      } else {
--        this._serialized.set(this.toJSON());
--      }
--      this._serialized.changed.connect(this._onSerializedChanged, this);
--    }
--  }
--
--  /**
--   * A signal emitted when the model state changes.
--   */
--  get stateChanged(): ISignal<IAttachmentsModel, void> {
--    return this._stateChanged;
--  }
--
--  /**
--   * A signal emitted when the model changes.
--   */
--  get changed(): ISignal<this, IAttachmentsModel.ChangedArgs> {
--    return this._changed;
--  }
--
--  /**
--   * The keys of the attachments in the model.
--   */
--  get keys(): ReadonlyArray<string> {
--    return this._map.keys();
--  }
--
--  /**
--   * Get the length of the items in the model.
--   */
--  get length(): number {
--    return this._map.keys().length;
--  }
--
--  /**
--   * The attachment content factory used by the model.
--   */
--  readonly contentFactory: IAttachmentsModel.IContentFactory;
--
--  /**
--   * Test whether the model is disposed.
--   */
--  get isDisposed(): boolean {
--    return this._isDisposed;
--  }
--
--  /**
--   * Dispose of the resources used by the model.
--   */
--  dispose(): void {
--    if (this.isDisposed) {
--      return;
--    }
--    this._isDisposed = true;
--    this._map.dispose();
--    Signal.clearData(this);
--  }
--
--  /**
--   * Whether the specified key is set.
--   */
--  has(key: string): boolean {
--    return this._map.has(key);
--  }
--
--  /**
--   * Get an item at the specified key.
--   */
--  get(key: string): IAttachmentModel {
--    return this._map.get(key);
--  }
--
--  /**
--   * Set the value at the specified key.
--   */
--  set(key: string, value: nbformat.IMimeBundle): void {
--    // Normalize stream data.
--    let item = this._createItem({ value });
--    this._map.set(key, item);
--  }
--
--  /**
--   * Clear all of the attachments.
--   */
--  clear(): void {
--    this._map.values().forEach((item: IAttachmentModel) => {
--      item.dispose();
--    });
--    this._map.clear();
--  }
--
--  /**
--   * Deserialize the model from JSON.
--   *
--   * #### Notes
--   * This will clear any existing data.
--   */
--  fromJSON(values: nbformat.IAttachments) {
--    this.clear();
--    Object.keys(values).forEach(key => {
--      this.set(key, values[key]);
--    });
--  }
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IAttachments {
--    let ret: nbformat.IAttachments = {};
--    for (let key of this._map.keys()) {
--      ret[key] = this._map.get(key).toJSON();
--    }
--    return ret;
--  }
--
--  /**
--   * Create an attachment item and hook up its signals.
--   */
--  private _createItem(options: IAttachmentModel.IOptions): IAttachmentModel {
--    let factory = this.contentFactory;
--    let item = factory.createAttachmentModel(options);
--    item.changed.connect(this._onGenericChange, this);
--    return item;
--  }
--
--  /**
--   * Handle a change to the list.
--   */
--  private _onMapChanged(
--    sender: IObservableMap<IAttachmentModel>,
--    args: IObservableMap.IChangedArgs<IAttachmentModel>
--  ) {
--    if (this._serialized && !this._changeGuard) {
--      this._changeGuard = true;
--      this._serialized.set(this.toJSON());
--      this._changeGuard = false;
--    }
--    this._changed.emit(args);
--    this._stateChanged.emit(void 0);
--  }
--
--  /**
--   * If the serialized version of the outputs have changed due to a remote
--   * action, then update the model accordingly.
--   */
--  private _onSerializedChanged(
--    sender: IObservableValue,
--    args: ObservableValue.IChangedArgs
--  ) {
--    if (!this._changeGuard) {
--      this._changeGuard = true;
--      this.fromJSON(args.newValue as nbformat.IAttachments);
--      this._changeGuard = false;
--    }
--  }
--
--  /**
--   * Handle a change to an item.
--   */
--  private _onGenericChange(): void {
--    this._stateChanged.emit(void 0);
--  }
--
--  private _map = new ObservableMap<IAttachmentModel>();
--  private _isDisposed = false;
--  private _stateChanged = new Signal<IAttachmentsModel, void>(this);
--  private _changed = new Signal<this, IAttachmentsModel.ChangedArgs>(this);
--  private _modelDB: IModelDB = null;
--  private _serialized: IObservableValue = null;
--  private _changeGuard = false;
--}
--
--/**
-- * The namespace for AttachmentsModel class statics.
-- */
--export namespace AttachmentsModel {
--  /**
--   * The default implementation of a `IAttachemntsModel.IContentFactory`.
--   */
--  export class ContentFactory implements IAttachmentsModel.IContentFactory {
--    /**
--     * Create an attachment model.
--     */
--    createAttachmentModel(
--      options: IAttachmentModel.IOptions
--    ): IAttachmentModel {
--      return new AttachmentModel(options);
--    }
--  }
--
--  /**
--   * The default attachment model factory.
--   */
--  export const defaultContentFactory = new ContentFactory();
--}
--
--/**
-- * A resolver for cell attachments 'attchment:filename'.
-- *
-- * Will resolve to a data: url.
-- */
--export class AttachmentsResolver implements IRenderMime.IResolver {
--  /**
--   * Create an attachments resolver object.
--   */
--  constructor(options: AttachmentsResolver.IOptions) {
--    this._parent = options.parent || null;
--    this._model = options.model;
--  }
--  /**
--   * Resolve a relative url to a correct server path.
--   */
--  resolveUrl(url: string): Promise<string> {
--    if (this._parent && !url.startsWith('attachment:')) {
--      return this._parent.resolveUrl(url);
--    }
--    return Promise.resolve(url);
--  }
--
--  /**
--   * Get the download url of a given absolute server path.
--   */
--  getDownloadUrl(path: string): Promise<string> {
--    if (this._parent && !path.startsWith('attachment:')) {
--      return this._parent.getDownloadUrl(path);
--    }
--    // Return a data URL with the data of the url
--    const key = path.slice('attachment:'.length);
--    if (!this._model.has(key)) {
--      // Resolve with unprocessed path, to show as broken image
--      return Promise.resolve(path);
--    }
--    const { data } = this._model.get(key);
--    const mimeType = Object.keys(data)[0];
--    // Only support known safe types:
--    if (imageRendererFactory.mimeTypes.indexOf(mimeType) === -1) {
--      return Promise.reject(
--        `Cannot render unknown image mime type "${mimeType}".`
--      );
--    }
--    const dataUrl = `data:${mimeType};base64,${data[mimeType]}`;
--    return Promise.resolve(dataUrl);
--  }
--
--  /**
--   * Whether the URL should be handled by the resolver
--   * or not.
--   */
--  isLocal(url: string): boolean {
--    if (this._parent && !url.startsWith('attachment:')) {
--      return this._parent.isLocal(url);
--    }
--    return true;
--  }
--
--  private _model: IAttachmentsModel;
--  private _parent: IRenderMime.IResolver | null;
--}
--
--/**
-- * The namespace for `AttachmentsResolver` class statics.
-- */
--export namespace AttachmentsResolver {
--  /**
--   * The options used to create an AttachmentsResolver.
--   */
--  export interface IOptions {
--    /**
--     * The attachments model to resolve against.
--     */
--    model: IAttachmentsModel;
--
--    /**
--     * A parent resolver to use if the URL/path is not for an attachment.
--     */
--    parent?: IRenderMime.IResolver;
--  }
--}
-diff --git a/packages/attachments/tsconfig.json b/packages/attachments/tsconfig.json
-index 0738f0d99ad..153d08f9611 100644
---- a/packages/attachments/tsconfig.json
-+++ b/packages/attachments/tsconfig.json
-@@ -10,7 +10,7 @@
-       "path": "../coreutils"
-     },
-     {
--      "path": "../observables"
-+      "path": "../datastore"
-     },
-     {
-       "path": "../rendermime"
-diff --git a/packages/cells/package.json b/packages/cells/package.json
-index 3eca7dd4345..49176c4b9be 100644
---- a/packages/cells/package.json
-+++ b/packages/cells/package.json
-@@ -40,14 +40,15 @@
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/codemirror": "^1.0.1",
-     "@jupyterlab/coreutils": "^3.0.0",
--    "@jupyterlab/observables": "^2.2.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/outputarea": "^1.0.1",
-     "@jupyterlab/rendermime": "^1.0.1",
-     "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-+    "@phosphor/disposable": "^1.2.0",
-     "@phosphor/messaging": "^1.2.3",
--    "@phosphor/signaling": "^1.2.3",
-     "@phosphor/virtualdom": "^1.1.3",
-     "@phosphor/widgets": "^1.8.0",
-     "react": "~16.8.4"
+
 diff --git a/packages/cells/src/celldragutils.ts b/packages/cells/src/celldragutils.ts
 index d67bd588df2..0fb7b103ef9 100644
 --- a/packages/cells/src/celldragutils.ts
@@ -762,11 +49,11 @@ index d67bd588df2..0fb7b103ef9 100644
 +
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
- import { each, IterableOrArrayLike } from '@phosphor/algorithm';
+ import { each, IterableOrArrayLike } from '@lumino/algorithm';
 -import { ICodeCellModel } from './model';
 -import { Cell } from './widget';
 +
- import { h, VirtualDOM } from '@phosphor/virtualdom';
+ import { h, VirtualDOM } from '@lumino/virtualdom';
 -import { nbformat } from '@jupyterlab/coreutils';
 +
 +import { Cell } from './widget';
@@ -797,446 +84,7 @@ index d67bd588df2..0fb7b103ef9 100644
      if (count > 1) {
        if (promptNumber !== '') {
          return VirtualDOM.realize(
-diff --git a/packages/cells/src/data.ts b/packages/cells/src/data.ts
-new file mode 100644
-index 00000000000..0b56b86f45d
---- /dev/null
-+++ b/packages/cells/src/data.ts
-@@ -0,0 +1,434 @@
-+/*-----------------------------------------------------------------------------
-+| Copyright (c) Jupyter Development Team.
-+| Distributed under the terms of the Modified BSD License.
-+|----------------------------------------------------------------------------*/
-+
-+import { AttachmentsData, IAttachmentsData } from '@jupyterlab/attachments';
-+
-+import {
-+  CodeEditor,
-+  CodeEditorData,
-+  ICodeEditorData
-+} from '@jupyterlab/codeeditor';
-+
-+import { nbformat } from '@jupyterlab/coreutils';
-+
-+import { DatastoreExt } from '@jupyterlab/datastore';
-+
-+import { OutputAreaData } from '@jupyterlab/outputarea';
-+
-+import { IOutputData, OutputData } from '@jupyterlab/rendermime';
-+
-+import { JSONExt, JSONObject, ReadonlyJSONValue } from '@phosphor/coreutils';
-+
-+import {
-+  Datastore,
-+  Fields,
-+  ListField,
-+  MapField,
-+  RegisterField
-+} from '@phosphor/datastore';
-+
-+/**
-+ * The namespace for `ICellData` interfaces, describing
-+ * where cells store their data in a datastore.
-+ */
-+export namespace ICellData {
-+  /**
-+   * An interface for a cell schema.
-+   */
-+  export type BaseSchema = {
-+    /**
-+     * The id for the schema.
-+     */
-+    id: string;
-+
-+    fields: ICodeEditorData.Schema['fields'] & {
-+      /**
-+       * The type of the cell.
-+       */
-+      type: RegisterField<nbformat.CellType>;
-+
-+      /**
-+       * Whether the cell is trusted.
-+       */
-+      trusted: RegisterField<boolean>;
-+
-+      /**
-+       * The metadata for the cell.
-+       */
-+      metadata: MapField<ReadonlyJSONValue>;
-+    };
-+  };
-+
-+  /**
-+   * An interface for a cell schema.
-+   */
-+  export type Schema = {
-+    /**
-+     * The id for the schema.
-+     */
-+    id: string;
-+
-+    /**
-+     * The union of cell fields.
-+     */
-+    fields: BaseSchema['fields'] &
-+      ICodeCellData.Schema['fields'] &
-+      IAttachmentsCellData.Schema['fields'];
-+  };
-+
-+  /**
-+   * The location of cell data in a datastore.
-+   */
-+  export type DataLocation = DatastoreExt.DataLocation & {
-+    /**
-+     * The record for the cell data.
-+     */
-+    record: DatastoreExt.RecordLocation<Schema>;
-+
-+    /**
-+     * A table in which outputs are stored.
-+     */
-+    outputs: DatastoreExt.TableLocation<IOutputData.Schema>;
-+  };
-+}
-+
-+/**
-+ * The namespace for `IAttachmentsCellData` interfaces.
-+ */
-+export namespace IAttachmentsCellData {
-+  /**
-+   * A type alias for an attachment cell schema, which includes the fields for
-+   * a base cell, plus possible attachment data.
-+   */
-+  export type Schema = {
-+    /**
-+     * The id for the schema.
-+     */
-+    id: string;
-+
-+    /**
-+     * The union of cell fields.
-+     */
-+    fields: ICellData.BaseSchema['fields'] & IAttachmentsData.Schema['fields'];
-+  };
-+}
-+
-+/**
-+ * The namespace for `ICodeCellData` statics.
-+ */
-+export namespace ICodeCellData {
-+  /**
-+   * A type alias for a code cell data schema, which includes the fields of a base
-+   * cell, plus data for execution count and outputs.
-+   */
-+  export type Schema = {
-+    /**
-+     * The id for the schema.
-+     */
-+    id: string;
-+
-+    /**
-+     * The union of cell fields.
-+     */
-+    fields: ICellData.BaseSchema['fields'] & {
-+      /**
-+       * Execution count for the cell.
-+       */
-+      executionCount: RegisterField<nbformat.ExecutionCount>;
-+
-+      /**
-+       * A list of output ids for the cell.
-+       */
-+      outputs: ListField<string>;
-+    };
-+  };
-+}
-+
-+/**
-+ * Utility functions for operating on cell data.
-+ */
-+export namespace CellData {
-+  /**
-+   * A concrete schema for a cell table, available at runtime.
-+   */
-+  export const SCHEMA: ICellData.Schema = {
-+    /**
-+     * The id for the schema.
-+     */
-+    id: '@jupyterlab/cells:cellmodel.v1',
-+
-+    /**
-+     * The union of cell fields.
-+     */
-+    fields: {
-+      attachments: Fields.Map<nbformat.IMimeBundle>(),
-+      executionCount: Fields.Register<nbformat.ExecutionCount>({ value: null }),
-+      metadata: Fields.Map<ReadonlyJSONValue>(),
-+      mimeType: Fields.String(),
-+      outputs: Fields.List<string>(),
-+      selections: Fields.Map<CodeEditor.ITextSelection[]>(),
-+      text: Fields.Text(),
-+      trusted: Fields.Boolean(),
-+      type: Fields.Register<nbformat.CellType>({ value: 'code' })
-+    }
-+  };
-+
-+  /**
-+   * Create an in-memory datastore capable of holding the data for an output area.
-+   */
-+  export function createStore(id: number = 1): Datastore {
-+    return Datastore.create({
-+      id,
-+      schemas: [SCHEMA, OutputData.SCHEMA]
-+    });
-+  }
-+
-+  /**
-+   * Construct a cell model from optional cell content.
-+   */
-+  export function fromJSON(
-+    loc: ICellData.DataLocation,
-+    cell?: nbformat.IBaseCell
-+  ) {
-+    // Get the intitial data for the model.
-+    let trusted = false;
-+    let metadata: JSONObject = {};
-+    let text = '';
-+    let type: nbformat.CellType = 'code';
-+    if (cell) {
-+      metadata = JSONExt.deepCopy(cell.metadata);
-+      trusted = !!metadata['trusted'];
-+      delete metadata['trusted'];
-+
-+      if (cell.cell_type !== 'raw') {
-+        delete metadata['format'];
-+      }
-+      if (cell.cell_type !== 'code') {
-+        delete metadata['collapsed'];
-+        delete metadata['scrolled'];
-+      }
-+
-+      if (Array.isArray(cell.source)) {
-+        text = (cell.source as string[]).join('');
-+      } else {
-+        text = (cell.source as string) || '';
-+      }
-+
-+      type = cell.cell_type as nbformat.CellType;
-+    }
-+    // Set the intitial data for the model.
-+    let { datastore, record } = loc;
-+    DatastoreExt.withTransaction(datastore, () => {
-+      DatastoreExt.updateRecord(datastore, record, {
-+        type,
-+        metadata,
-+        trusted,
-+        text: { index: 0, remove: 0, text }
-+      });
-+    });
-+  }
-+
-+  /**
-+   * Convert a cell at a given data location to JSON.
-+   * This delegates to specific versions of `toJSON` based
-+   * on the cell type.
-+   */
-+  export function toJSON(loc: ICellData.DataLocation): nbformat.ICell {
-+    let data = DatastoreExt.getRecord(loc.datastore, loc.record);
-+    switch (data.type) {
-+      case 'code':
-+        return CodeCellData.toJSON(loc);
-+        break;
-+      case 'markdown':
-+        return MarkdownCellData.toJSON(loc);
-+        break;
-+      default:
-+        return RawCellData.toJSON(loc);
-+    }
-+  }
-+
-+  /*
-+   * Clear a cell data. The record is not actually removed, but its data
-+   * is emptied as much as possible to allow it to garbage collect.
-+   */
-+  export function clear(loc: ICellData.DataLocation): void {
-+    let { datastore, record } = loc;
-+    let cellData = DatastoreExt.getRecord(loc.datastore, loc.record);
-+
-+    let attachments: { [x: string]: nbformat.IMimeBundle | null } = {};
-+    Object.keys(cellData.attachments).forEach(key => (attachments[key] = null));
-+    let metadata: { [x: string]: ReadonlyJSONValue | null } = {};
-+    Object.keys(cellData.metadata).forEach(key => (metadata[key] = null));
-+
-+    DatastoreExt.withTransaction(datastore, () => {
-+      DatastoreExt.updateRecord(datastore, record, {
-+        attachments,
-+        metadata,
-+        executionCount: null,
-+        type: 'code',
-+        trusted: false,
-+        outputs: { index: 0, remove: cellData.outputs.length, values: [] }
-+      });
-+      OutputAreaData.clear(loc);
-+      CodeEditorData.clear(loc);
-+    });
-+  }
-+}
-+
-+/**
-+ * The namespace for `AttachmentsCellData` statics.
-+ */
-+export namespace AttachmentsCellData {
-+  /**
-+   * Construct a new cell with optional attachments.
-+   */
-+  export function fromJSON(
-+    loc: ICellData.DataLocation,
-+    cell?: nbformat.IMarkdownCell | nbformat.IRawCell
-+  ): void {
-+    CellData.fromJSON(loc, cell);
-+    const attachments = (cell && cell.attachments) || {};
-+    AttachmentsData.fromJSON(loc, attachments);
-+  }
-+
-+  /**
-+   * Serialize the model to JSON.
-+   */
-+  export function toJSON(
-+    loc: ICellData.DataLocation
-+  ): nbformat.IRawCell | nbformat.IMarkdownCell {
-+    const cell = Private.baseToJSON(loc) as
-+      | nbformat.IRawCell
-+      | nbformat.IMarkdownCell;
-+    const attachments = AttachmentsData.toJSON(loc);
-+    if (Object.keys(attachments).length) {
-+      cell.attachments = attachments;
-+    }
-+    return cell;
-+  }
-+}
-+
-+/**
-+ * Utility functions for working with RawCellData.
-+ */
-+export namespace RawCellData {
-+  /**
-+   * Construct a new cell with optional attachments.
-+   */
-+  export function fromJSON(
-+    loc: ICellData.DataLocation,
-+    cell?: nbformat.IRawCell
-+  ): void {
-+    const { datastore, record } = loc;
-+    DatastoreExt.withTransaction(datastore, () => {
-+      AttachmentsCellData.fromJSON(loc, cell);
-+      DatastoreExt.updateRecord(datastore, record, {
-+        type: 'raw'
-+      });
-+    });
-+  }
-+
-+  /**
-+   * Serialize the model to JSON.
-+   */
-+  export function toJSON(loc: ICellData.DataLocation): nbformat.IRawCell {
-+    return AttachmentsCellData.toJSON(loc) as nbformat.IRawCell;
-+  }
-+}
-+
-+/**
-+ * Utility functions for working with MarkdownCellData.
-+ */
-+export namespace MarkdownCellData {
-+  /**
-+   * Construct a new cell with optional attachments.
-+   */
-+  export function fromJSON(
-+    loc: ICellData.DataLocation,
-+    cell?: nbformat.IMarkdownCell
-+  ): void {
-+    const { datastore, record } = loc;
-+    DatastoreExt.withTransaction(datastore, () => {
-+      AttachmentsCellData.fromJSON(loc, cell);
-+      DatastoreExt.updateRecord(datastore, record, {
-+        mimeType: 'text/x-ipythongfm',
-+        type: 'markdown'
-+      });
-+    });
-+  }
-+
-+  /**
-+   * Serialize the model to JSON.
-+   */
-+  export function toJSON(loc: ICellData.DataLocation): nbformat.IMarkdownCell {
-+    return AttachmentsCellData.toJSON(loc) as nbformat.IMarkdownCell;
-+  }
-+}
-+
-+/**
-+ * The namespace for `CodeCellData` statics.
-+ */
-+export namespace CodeCellData {
-+  /**
-+   * Construct a new code cell with optional original cell content.
-+   */
-+  export function fromJSON(
-+    loc: ICellData.DataLocation,
-+    cell?: nbformat.ICodeCell
-+  ) {
-+    const { datastore, record } = loc;
-+    DatastoreExt.withTransaction(datastore, () => {
-+      CellData.fromJSON(loc, cell);
-+      DatastoreExt.updateRecord(datastore, record, {
-+        executionCount: cell ? cell.execution_count || null : null,
-+        type: 'code'
-+      });
-+      let outputs: nbformat.IOutput[] = (cell && cell.outputs) || [];
-+      OutputAreaData.fromJSON(loc, outputs);
-+    });
-+  }
-+
-+  /**
-+   * Serialize the model to JSON.
-+   */
-+  export function toJSON(loc: ICellData.DataLocation): nbformat.ICodeCell {
-+    let cell = Private.baseToJSON(loc) as nbformat.ICodeCell;
-+    const { datastore, record } = loc;
-+    cell.execution_count = DatastoreExt.getField(datastore, {
-+      ...record,
-+      field: 'executionCount'
-+    });
-+    cell.outputs = OutputAreaData.toJSON(loc);
-+    return cell;
-+  }
-+}
-+
-+/**
-+ * A namespace for module-private functionality.
-+ */
-+namespace Private {
-+  /**
-+   * Serialize the model to JSON.
-+   *
-+   * ### Notes
-+   * This is the common serialization logic for the three cell types,
-+   * and is called by the specializations of the cell types.
-+   * The `toJSON` function in this namespace correctly delegates
-+   * to the different subtypes.
-+   */
-+  export function baseToJSON(loc: ICellData.DataLocation): nbformat.ICell {
-+    const { datastore, record } = loc;
-+    let data = DatastoreExt.getRecord(datastore, record);
-+    let metadata = data.metadata as JSONObject;
-+    if (data.trusted) {
-+      metadata['trusted'] = true;
-+    }
-+    return {
-+      cell_type: data.type,
-+      source: data.text,
-+      metadata
-+    } as nbformat.ICell;
-+  }
-+}
+
 diff --git a/packages/cells/src/index.ts b/packages/cells/src/index.ts
 index 39967bf3c55..e49bcd3f160 100644
 --- a/packages/cells/src/index.ts
@@ -1300,670 +148,7 @@ index ecbf82225d9..b614b57ef70 100644
  
      /**
       * The content factory used by the widget to create children.
-diff --git a/packages/cells/src/model.ts b/packages/cells/src/model.ts
-deleted file mode 100644
-index 14808559191..00000000000
---- a/packages/cells/src/model.ts
-+++ /dev/null
-@@ -1,658 +0,0 @@
--/*-----------------------------------------------------------------------------
--| Copyright (c) Jupyter Development Team.
--| Distributed under the terms of the Modified BSD License.
--|----------------------------------------------------------------------------*/
--
--import { JSONExt, JSONObject, JSONValue } from '@phosphor/coreutils';
--
--import { ISignal, Signal } from '@phosphor/signaling';
--
--import { IAttachmentsModel, AttachmentsModel } from '@jupyterlab/attachments';
--
--import { CodeEditor } from '@jupyterlab/codeeditor';
--
--import { IChangedArgs, nbformat } from '@jupyterlab/coreutils';
--
--import { UUID } from '@phosphor/coreutils';
--
--import {
--  IObservableJSON,
--  IModelDB,
--  IObservableValue,
--  ObservableValue,
--  IObservableMap
--} from '@jupyterlab/observables';
--
--import { IOutputAreaModel, OutputAreaModel } from '@jupyterlab/outputarea';
--
--/**
-- * The definition of a model object for a cell.
-- */
--export interface ICellModel extends CodeEditor.IModel {
--  /**
--   * The type of the cell.
--   */
--  readonly type: nbformat.CellType;
--
--  /**
--   * A unique identifier for the cell.
--   */
--  readonly id: string;
--
--  /**
--   * A signal emitted when the content of the model changes.
--   */
--  readonly contentChanged: ISignal<ICellModel, void>;
--
--  /**
--   * A signal emitted when a model state changes.
--   */
--  readonly stateChanged: ISignal<ICellModel, IChangedArgs<any>>;
--
--  /**
--   * Whether the cell is trusted.
--   */
--  trusted: boolean;
--
--  /**
--   * The metadata associated with the cell.
--   */
--  readonly metadata: IObservableJSON;
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.ICell;
--}
--
--/**
-- * The definition of a model cell object for a cell with attachments.
-- */
--export interface IAttachmentsCellModel extends ICellModel {
--  /**
--   * The cell attachments
--   */
--  readonly attachments: IAttachmentsModel;
--}
--
--/**
-- * The definition of a code cell.
-- */
--export interface ICodeCellModel extends ICellModel {
--  /**
--   * The type of the cell.
--   *
--   * #### Notes
--   * This is a read-only property.
--   */
--  readonly type: 'code';
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.ICodeCell;
--
--  /**
--   * The code cell's prompt number. Will be null if the cell has not been run.
--   */
--  executionCount: nbformat.ExecutionCount;
--
--  /**
--   * The cell outputs.
--   */
--  readonly outputs: IOutputAreaModel;
--}
--
--/**
-- * The definition of a markdown cell.
-- */
--export interface IMarkdownCellModel extends IAttachmentsCellModel {
--  /**
--   * The type of the cell.
--   */
--  readonly type: 'markdown';
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IMarkdownCell;
--}
--
--/**
-- * The definition of a raw cell.
-- */
--export interface IRawCellModel extends IAttachmentsCellModel {
--  /**
--   * The type of the cell.
--   */
--  readonly type: 'raw';
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IRawCell;
--}
--
--export function isCodeCellModel(model: ICellModel): model is ICodeCellModel {
--  return model.type === 'code';
--}
--
--export function isMarkdownCellModel(
--  model: ICellModel
--): model is IMarkdownCellModel {
--  return model.type === 'markdown';
--}
--
--export function isRawCellModel(model: ICellModel): model is IRawCellModel {
--  return model.type === 'raw';
--}
--
--/**
-- * An implementation of the cell model.
-- */
--export class CellModel extends CodeEditor.Model implements ICellModel {
--  /**
--   * Construct a cell model from optional cell content.
--   */
--  constructor(options: CellModel.IOptions) {
--    super({ modelDB: options.modelDB });
--
--    this.id = options.id || UUID.uuid4();
--
--    this.value.changed.connect(this.onGenericChange, this);
--
--    let cellType = this.modelDB.createValue('type');
--    cellType.set(this.type);
--
--    let observableMetadata = this.modelDB.createMap('metadata');
--    observableMetadata.changed.connect(this.onGenericChange, this);
--
--    let cell = options.cell;
--    let trusted = this.modelDB.createValue('trusted');
--    trusted.changed.connect(this.onTrustedChanged, this);
--
--    if (!cell) {
--      trusted.set(false);
--      return;
--    }
--    trusted.set(!!cell.metadata['trusted']);
--    delete cell.metadata['trusted'];
--
--    if (Array.isArray(cell.source)) {
--      this.value.text = (cell.source as string[]).join('');
--    } else {
--      this.value.text = cell.source as string;
--    }
--    let metadata = JSONExt.deepCopy(cell.metadata);
--    if (this.type !== 'raw') {
--      delete metadata['format'];
--    }
--    if (this.type !== 'code') {
--      delete metadata['collapsed'];
--      delete metadata['scrolled'];
--    }
--
--    for (let key in metadata) {
--      observableMetadata.set(key, metadata[key]);
--    }
--  }
--
--  /**
--   * The type of cell.
--   */
--  readonly type: nbformat.CellType;
--
--  /**
--   * A signal emitted when the state of the model changes.
--   */
--  readonly contentChanged = new Signal<this, void>(this);
--
--  /**
--   * A signal emitted when a model state changes.
--   */
--  readonly stateChanged = new Signal<this, IChangedArgs<any>>(this);
--
--  /**
--   * The id for the cell.
--   */
--  readonly id: string;
--
--  /**
--   * The metadata associated with the cell.
--   */
--  get metadata(): IObservableJSON {
--    return this.modelDB.get('metadata') as IObservableJSON;
--  }
--
--  /**
--   * Get the trusted state of the model.
--   */
--  get trusted(): boolean {
--    return this.modelDB.getValue('trusted') as boolean;
--  }
--
--  /**
--   * Set the trusted state of the model.
--   */
--  set trusted(newValue: boolean) {
--    let oldValue = this.trusted;
--    if (oldValue === newValue) {
--      return;
--    }
--    this.modelDB.setValue('trusted', newValue);
--  }
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.ICell {
--    let metadata: nbformat.IBaseCellMetadata = Object.create(null);
--    for (let key of this.metadata.keys()) {
--      let value = JSON.parse(JSON.stringify(this.metadata.get(key)));
--      metadata[key] = value as JSONValue;
--    }
--    if (this.trusted) {
--      metadata['trusted'] = true;
--    }
--    return {
--      cell_type: this.type,
--      source: this.value.text,
--      metadata
--    } as nbformat.ICell;
--  }
--
--  /**
--   * Handle a change to the trusted state.
--   *
--   * The default implementation is a no-op.
--   */
--  onTrustedChanged(
--    trusted: IObservableValue,
--    args: ObservableValue.IChangedArgs
--  ): void {
--    /* no-op */
--  }
--
--  /**
--   * Handle a change to the observable value.
--   */
--  protected onGenericChange(): void {
--    this.contentChanged.emit(void 0);
--  }
--}
--
--/**
-- * The namespace for `CellModel` statics.
-- */
--export namespace CellModel {
--  /**
--   * The options used to initialize a `CellModel`.
--   */
--  export interface IOptions {
--    /**
--     * The source cell data.
--     */
--    cell?: nbformat.IBaseCell;
--
--    /**
--     * An IModelDB in which to store cell data.
--     */
--    modelDB?: IModelDB;
--
--    /**
--     * A unique identifier for this cell.
--     */
--    id?: string;
--  }
--}
--
--/**
-- * A base implementation for cell models with attachments.
-- */
--export class AttachmentsCellModel extends CellModel {
--  /**
--   * Construct a new cell with optional attachments.
--   */
--  constructor(options: AttachmentsCellModel.IOptions) {
--    super(options);
--    let factory =
--      options.contentFactory || AttachmentsCellModel.defaultContentFactory;
--    let attachments: nbformat.IAttachments | undefined;
--    let cell = options.cell;
--    if (cell && (cell.cell_type === 'raw' || cell.cell_type === 'markdown')) {
--      attachments = (cell as nbformat.IRawCell | nbformat.IMarkdownCell)
--        .attachments;
--    }
--
--    this._attachments = factory.createAttachmentsModel({
--      values: attachments,
--      modelDB: this.modelDB
--    });
--    this._attachments.stateChanged.connect(this.onGenericChange, this);
--  }
--
--  /**
--   * Get the attachments of the model.
--   */
--  get attachments(): IAttachmentsModel {
--    return this._attachments;
--  }
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IRawCell | nbformat.IMarkdownCell {
--    let cell = super.toJSON() as nbformat.IRawCell | nbformat.IMarkdownCell;
--    if (this.attachments.length) {
--      cell.attachments = this.attachments.toJSON();
--    }
--    return cell;
--  }
--
--  private _attachments: IAttachmentsModel | null = null;
--}
--
--/**
-- * The namespace for `AttachmentsCellModel` statics.
-- */
--export namespace AttachmentsCellModel {
--  /**
--   * The options used to initialize a `AttachmentsCellModel`.
--   */
--  export interface IOptions extends CellModel.IOptions {
--    /**
--     * The factory for attachment model creation.
--     */
--    contentFactory?: IContentFactory;
--  }
--
--  /**
--   * A factory for creating code cell model content.
--   */
--  export interface IContentFactory {
--    /**
--     * Create an output area.
--     */
--    createAttachmentsModel(
--      options: IAttachmentsModel.IOptions
--    ): IAttachmentsModel;
--  }
--
--  /**
--   * The default implementation of an `IContentFactory`.
--   */
--  export class ContentFactory implements IContentFactory {
--    /**
--     * Create an attachments model.
--     */
--    createAttachmentsModel(
--      options: IAttachmentsModel.IOptions
--    ): IAttachmentsModel {
--      return new AttachmentsModel(options);
--    }
--  }
--
--  /**
--   * The shared `ContentFactory` instance.
--   */
--  export const defaultContentFactory = new ContentFactory();
--}
--
--/**
-- * An implementation of a raw cell model.
-- */
--export class RawCellModel extends AttachmentsCellModel {
--  /**
--   * The type of the cell.
--   */
--  get type(): 'raw' {
--    return 'raw';
--  }
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IRawCell {
--    return super.toJSON() as nbformat.IRawCell;
--  }
--}
--
--/**
-- * An implementation of a markdown cell model.
-- */
--export class MarkdownCellModel extends AttachmentsCellModel {
--  /**
--   * Construct a markdown cell model from optional cell content.
--   */
--  constructor(options: CellModel.IOptions) {
--    super(options);
--    // Use the Github-flavored markdown mode.
--    this.mimeType = 'text/x-ipythongfm';
--  }
--
--  /**
--   * The type of the cell.
--   */
--  get type(): 'markdown' {
--    return 'markdown';
--  }
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IMarkdownCell {
--    return super.toJSON() as nbformat.IMarkdownCell;
--  }
--}
--
--/**
-- * An implementation of a code cell Model.
-- */
--export class CodeCellModel extends CellModel implements ICodeCellModel {
--  /**
--   * Construct a new code cell with optional original cell content.
--   */
--  constructor(options: CodeCellModel.IOptions) {
--    super(options);
--    let factory = options.contentFactory || CodeCellModel.defaultContentFactory;
--    let trusted = this.trusted;
--    let cell = options.cell as nbformat.ICodeCell;
--    let outputs: nbformat.IOutput[] = [];
--    let executionCount = this.modelDB.createValue('executionCount');
--    if (!executionCount.get()) {
--      if (cell && cell.cell_type === 'code') {
--        executionCount.set(cell.execution_count || null);
--        outputs = cell.outputs;
--      } else {
--        executionCount.set(null);
--      }
--    }
--    executionCount.changed.connect(this._onExecutionCountChanged, this);
--
--    this._outputs = factory.createOutputArea({ trusted, values: outputs });
--    this._outputs.changed.connect(this.onGenericChange, this);
--
--    // We keep `collapsed` and `jupyter.outputs_hidden` metadata in sync, since
--    // they are redundant in nbformat 4.4. See
--    // https://github.com/jupyter/nbformat/issues/137
--    this.metadata.changed.connect(Private.collapseChanged, this);
--
--    // Sync `collapsed` and `jupyter.outputs_hidden` for the first time, giving
--    // preference to `collapsed`.
--    if (this.metadata.has('collapsed')) {
--      let collapsed = this.metadata.get('collapsed');
--      Private.collapseChanged(this.metadata, {
--        type: 'change',
--        key: 'collapsed',
--        oldValue: collapsed,
--        newValue: collapsed
--      });
--    } else if (this.metadata.has('jupyter')) {
--      let jupyter = this.metadata.get('jupyter') as JSONObject;
--      if (jupyter.hasOwnProperty('outputs_hidden')) {
--        Private.collapseChanged(this.metadata, {
--          type: 'change',
--          key: 'jupyter',
--          oldValue: jupyter,
--          newValue: jupyter
--        });
--      }
--    }
--  }
--
--  /**
--   * The type of the cell.
--   */
--  get type(): 'code' {
--    return 'code';
--  }
--
--  /**
--   * The execution count of the cell.
--   */
--  get executionCount(): nbformat.ExecutionCount {
--    return this.modelDB.getValue('executionCount') as nbformat.ExecutionCount;
--  }
--  set executionCount(newValue: nbformat.ExecutionCount) {
--    let oldValue = this.executionCount;
--    if (newValue === oldValue) {
--      return;
--    }
--    this.modelDB.setValue('executionCount', newValue || null);
--  }
--
--  /**
--   * The cell outputs.
--   */
--  get outputs(): IOutputAreaModel {
--    return this._outputs;
--  }
--
--  /**
--   * Dispose of the resources held by the model.
--   */
--  dispose(): void {
--    if (this.isDisposed) {
--      return;
--    }
--    this._outputs.dispose();
--    this._outputs = null;
--    super.dispose();
--  }
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.ICodeCell {
--    let cell = super.toJSON() as nbformat.ICodeCell;
--    cell.execution_count = this.executionCount || null;
--    cell.outputs = this.outputs.toJSON();
--    return cell;
--  }
--
--  /**
--   * Handle a change to the trusted state.
--   */
--  onTrustedChanged(
--    trusted: IObservableValue,
--    args: ObservableValue.IChangedArgs
--  ): void {
--    if (this._outputs) {
--      this._outputs.trusted = args.newValue as boolean;
--    }
--    this.stateChanged.emit({
--      name: 'trusted',
--      oldValue: args.oldValue,
--      newValue: args.newValue
--    });
--  }
--
--  /**
--   * Handle a change to the execution count.
--   */
--  private _onExecutionCountChanged(
--    count: IObservableValue,
--    args: ObservableValue.IChangedArgs
--  ): void {
--    this.contentChanged.emit(void 0);
--    this.stateChanged.emit({
--      name: 'executionCount',
--      oldValue: args.oldValue,
--      newValue: args.newValue
--    });
--  }
--
--  private _outputs: IOutputAreaModel = null;
--}
--
--/**
-- * The namespace for `CodeCellModel` statics.
-- */
--export namespace CodeCellModel {
--  /**
--   * The options used to initialize a `CodeCellModel`.
--   */
--  export interface IOptions extends CellModel.IOptions {
--    /**
--     * The factory for output area model creation.
--     */
--    contentFactory?: IContentFactory;
--  }
--
--  /**
--   * A factory for creating code cell model content.
--   */
--  export interface IContentFactory {
--    /**
--     * Create an output area.
--     */
--    createOutputArea(options: IOutputAreaModel.IOptions): IOutputAreaModel;
--  }
--
--  /**
--   * The default implementation of an `IContentFactory`.
--   */
--  export class ContentFactory implements IContentFactory {
--    /**
--     * Create an output area.
--     */
--    createOutputArea(options: IOutputAreaModel.IOptions): IOutputAreaModel {
--      return new OutputAreaModel(options);
--    }
--  }
--
--  /**
--   * The shared `ContentFactory` instance.
--   */
--  export const defaultContentFactory = new ContentFactory();
--}
--
--namespace Private {
--  export function collapseChanged(
--    metadata: IObservableJSON,
--    args: IObservableMap.IChangedArgs<JSONValue>
--  ) {
--    if (args.key === 'collapsed') {
--      const jupyter = (metadata.get('jupyter') || {}) as JSONObject;
--      const { outputs_hidden, ...newJupyter } = jupyter;
--
--      if (outputs_hidden !== args.newValue) {
--        if (args.newValue !== undefined) {
--          newJupyter['outputs_hidden'] = args.newValue;
--        }
--        if (Object.keys(newJupyter).length === 0) {
--          metadata.delete('jupyter');
--        } else {
--          metadata.set('jupyter', newJupyter);
--        }
--      }
--    } else if (args.key === 'jupyter') {
--      const jupyter = (args.newValue || {}) as JSONObject;
--      if (jupyter.hasOwnProperty('outputs_hidden')) {
--        metadata.set('collapsed', jupyter.outputs_hidden);
--      } else {
--        metadata.delete('collapsed');
--      }
--    }
--  }
--}
+
 diff --git a/packages/cells/src/widget.ts b/packages/cells/src/widget.ts
 index b9191cd0402..6d2784b9639 100644
 --- a/packages/cells/src/widget.ts
@@ -2004,19 +189,19 @@ index b9191cd0402..6d2784b9639 100644
  
  import { KernelMessage, Kernel } from '@jupyterlab/services';
  
--import { JSONValue, PromiseDelegate, JSONObject } from '@phosphor/coreutils';
+-import { JSONValue, PromiseDelegate, JSONObject } from '@lumino/coreutils';
 +import {
 +  JSONObject,
 +  PromiseDelegate,
 +  ReadonlyJSONObject,
 +  ReadonlyJSONValue
-+} from '@phosphor/coreutils';
++} from '@lumino/coreutils';
 +
-+import { Datastore, MapField, RegisterField } from '@phosphor/datastore';
++import { Datastore, MapField, RegisterField } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
  
- import { Message } from '@phosphor/messaging';
+ import { Message } from '@lumino/messaging';
  
 @@ -47,12 +58,7 @@ import {
  
@@ -2831,153 +1016,7 @@ index b9191cd0402..6d2784b9639 100644
 -  }
 +  export interface IOptions extends Cell.IOptions {}
  }
-diff --git a/packages/cells/tsconfig.json b/packages/cells/tsconfig.json
-index 7243747dc01..0cf4f5f08cc 100644
---- a/packages/cells/tsconfig.json
-+++ b/packages/cells/tsconfig.json
-@@ -22,7 +22,7 @@
-       "path": "../coreutils"
-     },
-     {
--      "path": "../observables"
-+      "path": "../datastore"
-     },
-     {
-       "path": "../outputarea"
-diff --git a/packages/codeeditor/package.json b/packages/codeeditor/package.json
-index 706c4bd645b..4d5fadccc57 100644
---- a/packages/codeeditor/package.json
-+++ b/packages/codeeditor/package.json
-@@ -36,8 +36,9 @@
-   },
-   "dependencies": {
-     "@jupyterlab/coreutils": "^3.0.0",
--    "@jupyterlab/observables": "^2.2.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-     "@phosphor/disposable": "^1.2.0",
-     "@phosphor/dragdrop": "^1.3.3",
-     "@phosphor/messaging": "^1.2.3",
-diff --git a/packages/codeeditor/src/data.ts b/packages/codeeditor/src/data.ts
-new file mode 100644
-index 00000000000..a17aad2c2b1
---- /dev/null
-+++ b/packages/codeeditor/src/data.ts
-@@ -0,0 +1,113 @@
-+// Copyright (c) Jupyter Development Team.
-+// Distributed under the terms of the Modified BSD License.
-+
-+import { DatastoreExt } from '@jupyterlab/datastore';
-+
-+import {
-+  Datastore,
-+  Fields,
-+  MapField,
-+  RegisterField,
-+  TextField
-+} from '@phosphor/datastore';
-+
-+import { CodeEditor } from './editor';
-+
-+/**
-+ * A namespace for interfaces describing how a code editor holds its data.
-+ */
-+export namespace ICodeEditorData {
-+  /**
-+   * An interface for a CodeEditor schema.
-+   */
-+  export type Schema = {
-+    /**
-+     * The schema id.
-+     */
-+    id: string;
-+
-+    /**
-+     * The schema fields.
-+     */
-+    fields: {
-+      /**
-+       * The mime type for the editor.
-+       */
-+      readonly mimeType: RegisterField<string>;
-+
-+      /**
-+       * The text content of the editor.
-+       */
-+      readonly text: TextField;
-+
-+      /**
-+       * The cursors for the editor.
-+       */
-+      readonly selections: MapField<CodeEditor.ITextSelection[]>;
-+    };
-+  };
-+
-+  /**
-+   * A description of where data is stored in a code editor.
-+   */
-+  export type DataLocation = DatastoreExt.DataLocation & {
-+    /**
-+     * The record in which the data is located.
-+     */
-+    record: DatastoreExt.RecordLocation<Schema>;
-+  };
-+}
-+
-+/**
-+ * Concrete utitlites for working with code editor data.
-+ */
-+export namespace CodeEditorData {
-+  /**
-+   * Create an in-memory datastore capable of holding the data for an editor.
-+   */
-+  export function createStore(id: number = 1): Datastore {
-+    return Datastore.create({
-+      id,
-+      schemas: [SCHEMA]
-+    });
-+  }
-+
-+  /**
-+   * A concrete CodeEditor schema, available at runtime.
-+   */
-+  export const SCHEMA: ICodeEditorData.Schema = {
-+    /**
-+     * The schema id.
-+     */
-+    id: '@jupyterlab/codeeditor:codeeditor:v1',
-+
-+    /**
-+     * Concrete realizations of the schema fields, available at runtime.
-+     */
-+    fields: {
-+      mimeType: Fields.String(),
-+      text: Fields.Text(),
-+      selections: Fields.Map<CodeEditor.ITextSelection[]>()
-+    }
-+  };
-+
-+  /*
-+   * Clear editor data. The record is not actually removed, but its data
-+   * is emptied as much as possible to allow it to garbage collect.
-+   */
-+  export function clear(data: ICodeEditorData.DataLocation): void {
-+    let { datastore, record } = data;
-+    const editorData = DatastoreExt.getRecord(datastore, record);
-+
-+    const selections: { [x: string]: CodeEditor.ITextSelection[] | null } = {};
-+    Object.keys(editorData.selections).forEach(key => (selections[key] = null));
-+
-+    DatastoreExt.withTransaction(datastore, () => {
-+      DatastoreExt.updateRecord(datastore, record, {
-+        selections,
-+        text: { index: 0, remove: editorData.text.length, text: '' },
-+        mimeType: 'text/plain'
-+      });
-+    });
-+  }
-+}
+
 diff --git a/packages/codeeditor/src/editor.ts b/packages/codeeditor/src/editor.ts
 index 5b9e48c3187..1a6d3d712a1 100644
 --- a/packages/codeeditor/src/editor.ts
@@ -2988,13 +1027,13 @@ index 5b9e48c3187..1a6d3d712a1 100644
  
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
- import { JSONObject } from '@phosphor/coreutils';
+ import { JSONObject } from '@lumino/coreutils';
  
-+import { Datastore } from '@phosphor/datastore';
++import { Datastore } from '@lumino/datastore';
 +
- import { IDisposable } from '@phosphor/disposable';
+ import { IDisposable } from '@lumino/disposable';
  
- import { ISignal, Signal } from '@phosphor/signaling';
+ import { ISignal, Signal } from '@lumino/signaling';
  
 -import { IChangedArgs } from '@jupyterlab/coreutils';
 -
@@ -3253,19 +1292,19 @@ index 8f34fe73c9b..b63ecb8aea1 100644
 -import { IObservableJSON } from '@jupyterlab/observables';
 +import { DatastoreExt } from '@jupyterlab/datastore';
  
--import { JSONExt, JSONObject } from '@phosphor/coreutils';
+-import { JSONExt, JSONObject } from '@lumino/coreutils';
 +import {
 +  JSONExt,
 +  JSONObject,
 +  JSONValue,
 +  ReadonlyJSONObject
-+} from '@phosphor/coreutils';
++} from '@lumino/coreutils';
 +
-+import { Datastore, MapField, Schema } from '@phosphor/datastore';
++import { Datastore, MapField, Schema } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
  
- import { Message } from '@phosphor/messaging';
+ import { Message } from '@lumino/messaging';
  
 @@ -44,7 +53,10 @@ const COMMIT_CLASS = 'jp-JSONEditor-commitButton';
  /**
@@ -3464,9 +1503,9 @@ index 270f1126db9..b0214c6863d 100644
  
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
- import { MimeData } from '@phosphor/coreutils';
+ import { MimeData } from '@lumino/coreutils';
  
- import { IDragEvent } from '@phosphor/dragdrop';
+ import { IDragEvent } from '@lumino/dragdrop';
 @@ -48,7 +50,12 @@ export class CodeEditorWrapper extends Widget {
        config: options.config,
        selectionStyle: options.selectionStyle
@@ -3534,13 +1573,13 @@ index ba3485bd937..d3e1985327b 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/observables": "^2.2.0",
      "@jupyterlab/statusbar": "^1.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/commands": "^1.6.3",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-     "@phosphor/disposable": "^1.2.0",
-     "@phosphor/signaling": "^1.2.3",
-     "@phosphor/widgets": "^1.8.0",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/commands": "^1.6.3",
+     "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
+     "@lumino/disposable": "^1.2.0",
+     "@lumino/signaling": "^1.2.3",
+     "@lumino/widgets": "^1.8.0",
 diff --git a/packages/codemirror/src/editor.ts b/packages/codemirror/src/editor.ts
 index d68ff9601f0..204ac6e6b06 100644
 --- a/packages/codemirror/src/editor.ts
@@ -3553,14 +1592,14 @@ index d68ff9601f0..204ac6e6b06 100644
 +
  import { CodeEditor } from '@jupyterlab/codeeditor';
  
- import { UUID } from '@phosphor/coreutils';
+ import { UUID } from '@lumino/coreutils';
  
 -import {
 -  IObservableMap,
 -  IObservableString,
 -  ICollaborator
 -} from '@jupyterlab/observables';
-+import { Datastore, MapField, TextField } from '@phosphor/datastore';
++import { Datastore, MapField, TextField } from '@lumino/datastore';
 +
 +import { ICollaborator } from '@jupyterlab/observables';
  
@@ -3817,15 +1856,15 @@ index 888747cfb40..02032ae1652 100644
  
  import {
    interactiveItem,
-@@ -19,6 +19,10 @@ import { CommandRegistry } from '@phosphor/commands';
+@@ -19,6 +19,10 @@ import { CommandRegistry } from '@lumino/commands';
  
- import { JSONObject } from '@phosphor/coreutils';
+ import { JSONObject } from '@lumino/coreutils';
  
-+import { Datastore, RegisterField } from '@phosphor/datastore';
++import { Datastore, RegisterField } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
 +
- import { Menu } from '@phosphor/widgets';
+ import { Menu } from '@lumino/widgets';
  
  /**
 @@ -150,9 +154,9 @@ export namespace EditorSyntaxStatus {
@@ -3926,8 +1965,8 @@ index cd1f8b4b8ad..25c32dd6173 100644
      "@jupyterlab/coreutils": "^3.0.0",
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/completer/src/handler.ts b/packages/completer/src/handler.ts
 index 4e783d85072..83ca71007fe 100644
 --- a/packages/completer/src/handler.ts
@@ -3938,9 +1977,9 @@ index 4e783d85072..83ca71007fe 100644
  
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
- import { ReadonlyJSONObject, JSONObject, JSONArray } from '@phosphor/coreutils';
+ import { ReadonlyJSONObject, JSONObject, JSONArray } from '@lumino/coreutils';
  
- import { IDisposable } from '@phosphor/disposable';
+ import { IDisposable } from '@lumino/disposable';
 @@ -84,12 +86,16 @@ export class CompletionHandler implements IDisposable {
  
      // Clean up and disconnect from old editor.
@@ -4058,7 +2097,7 @@ index cf53e00d243..a7e77761d6b 100644
 +    "@jupyterlab/outputarea": "^1.0.1",
      "@jupyterlab/rendermime": "^1.0.1",
      "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
+     "@lumino/algorithm": "^1.1.3",
 diff --git a/packages/console/src/foreign.ts b/packages/console/src/foreign.ts
 index 1b746cb308e..d891d2ee618 100644
 --- a/packages/console/src/foreign.ts
@@ -4073,7 +2112,7 @@ index 1b746cb308e..d891d2ee618 100644
 +
  import { KernelMessage } from '@jupyterlab/services';
  
- import { IDisposable } from '@phosphor/disposable';
+ import { IDisposable } from '@lumino/disposable';
 @@ -102,10 +106,18 @@ export class ForeignHandler implements IDisposable {
        case 'execute_input':
          let inputMsg = msg as KernelMessage.IExecuteInputMsg;
@@ -4149,9 +2188,9 @@ index 39001027026..ad523a5b488 100644
 +
  import { KernelMessage } from '@jupyterlab/services';
  
- import { IDisposable } from '@phosphor/disposable';
+ import { IDisposable } from '@lumino/disposable';
  
- import { Signal } from '@phosphor/signaling';
+ import { Signal } from '@lumino/signaling';
  
 -import { IClientSession } from '@jupyterlab/apputils';
 -
@@ -4639,7 +2678,7 @@ index 192a269ffd7..c0e2d26bce3 100644
 --- a/packages/console/style/index.css
 +++ b/packages/console/style/index.css
 @@ -9,6 +9,7 @@
- @import url('~@phosphor/dragdrop/style/index.css');
+ @import url('~@lumino/dragdrop/style/index.css');
  @import url('~@jupyterlab/codeeditor/style/index.css');
  @import url('~@jupyterlab/rendermime/style/index.css');
 +@import url('~@jupyterlab/outputarea/style/index.css');
@@ -5089,13 +3128,13 @@ index fcb9cc3718a..187773c825f 100644
 +
  import { Contents } from '@jupyterlab/services';
  
- import { JSONValue } from '@phosphor/coreutils';
+ import { JSONValue } from '@lumino/coreutils';
  
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
 +
- import { ISignal, Signal } from '@phosphor/signaling';
+ import { ISignal, Signal } from '@lumino/signaling';
  
- import { Widget } from '@phosphor/widgets';
+ import { Widget } from '@lumino/widgets';
  
 -import { MainAreaWidget } from '@jupyterlab/apputils';
 -
@@ -5744,7 +3783,7 @@ index fe1d5ddaa16..9ea74f21ab9 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/fileeditor": "^1.0.1",
      "@jupyterlab/notebook": "^1.0.1",
-     "@phosphor/coreutils": "^1.3.1",
+     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/documentsearch/src/providers/notebooksearchprovider.ts b/packages/documentsearch/src/providers/notebooksearchprovider.ts
 index 20cf0e1b985..80703202321 100644
 --- a/packages/documentsearch/src/providers/notebooksearchprovider.ts
@@ -5760,9 +3799,9 @@ index 20cf0e1b985..80703202321 100644
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +import { NotebookPanel } from '@jupyterlab/notebook';
  
-+import { IDisposable } from '@phosphor/disposable';
- import { Signal, ISignal } from '@phosphor/signaling';
- import { Widget } from '@phosphor/widgets';
++import { IDisposable } from '@lumino/disposable';
+ import { Signal, ISignal } from '@lumino/signaling';
+ import { Widget } from '@lumino/widgets';
  
 @@ -50,8 +52,13 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
      this._query = query;
@@ -5906,7 +3945,7 @@ index f71fd00f786..883d073c61e 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/docregistry": "^1.0.1",
      "@jupyterlab/statusbar": "^1.0.1",
-     "@phosphor/coreutils": "^1.3.1",
+     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/fileeditor/src/widget.ts b/packages/fileeditor/src/widget.ts
 index 84a7de4c906..dbf615b6310 100644
 --- a/packages/fileeditor/src/widget.ts
@@ -5915,7 +3954,7 @@ index 84a7de4c906..dbf615b6310 100644
  // Copyright (c) Jupyter Development Team.
  // Distributed under the terms of the Modified BSD License.
  
--import { StackedLayout, Widget } from '@phosphor/widgets';
+-import { StackedLayout, Widget } from '@lumino/widgets';
 +import {
 +  CodeEditor,
 +  IEditorServices,
@@ -5938,11 +3977,11 @@ index 84a7de4c906..dbf615b6310 100644
 -  CodeEditorWrapper
 -} from '@jupyterlab/codeeditor';
 -
- import { PromiseDelegate } from '@phosphor/coreutils';
+ import { PromiseDelegate } from '@lumino/coreutils';
  
- import { Message } from '@phosphor/messaging';
+ import { Message } from '@lumino/messaging';
  
-+import { StackedLayout, Widget } from '@phosphor/widgets';
++import { StackedLayout, Widget } from '@lumino/widgets';
 +
  /**
   * The data attribute added to a widget that can run code.
@@ -6275,7 +4314,7 @@ index e88150e6230..1d475306910 100644
 +
  import { IDocumentManager } from '@jupyterlab/docmanager';
  
- import { ArrayExt } from '@phosphor/algorithm';
+ import { ArrayExt } from '@lumino/algorithm';
 @@ -956,10 +958,13 @@ function addCommands(
        const { context, content } = current;
  
@@ -6383,13 +4422,13 @@ index baedcceeb41..915d9bc0674 100644
      "@jupyterlab/services": "^4.0.1",
      "@jupyterlab/statusbar": "^1.0.1",
      "@jupyterlab/ui-components": "^1.0.0",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-+    "@phosphor/disposable": "^1.2.0",
-     "@phosphor/domutils": "^1.1.3",
-     "@phosphor/dragdrop": "^1.3.3",
-     "@phosphor/messaging": "^1.2.3",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
++    "@lumino/disposable": "^1.2.0",
+     "@lumino/domutils": "^1.1.3",
+     "@lumino/dragdrop": "^1.3.3",
+     "@lumino/messaging": "^1.2.3",
 diff --git a/packages/notebook/src/actions.tsx b/packages/notebook/src/actions.tsx
 index 3c1733ab633..b03605cbf75 100644
 --- a/packages/notebook/src/actions.tsx
@@ -6421,16 +4460,16 @@ index 3c1733ab633..b03605cbf75 100644
 +  RawCellData
  } from '@jupyterlab/cells';
  
--import { ArrayExt, each, toArray } from '@phosphor/algorithm';
+-import { ArrayExt, each, toArray } from '@lumino/algorithm';
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
 +import { OutputAreaData } from '@jupyterlab/outputarea';
 +
 +import { KernelMessage } from '@jupyterlab/services';
 +
-+import { ArrayExt, each } from '@phosphor/algorithm';
++import { ArrayExt, each } from '@lumino/algorithm';
  
- import { JSONObject } from '@phosphor/coreutils';
+ import { JSONObject } from '@lumino/coreutils';
  
 @@ -99,6 +106,7 @@ export namespace NotebookActions {
     * The leading whitespace in the second cell will be removed.
@@ -7489,647 +5528,7 @@ index 3c1733ab633..b03605cbf75 100644
 +    cell.editor.model.value = newHeader + source;
    }
  }
-diff --git a/packages/notebook/src/celllist.ts b/packages/notebook/src/celllist.ts
-deleted file mode 100644
-index 72c0793040b..00000000000
---- a/packages/notebook/src/celllist.ts
-+++ /dev/null
-@@ -1,516 +0,0 @@
--// Copyright (c) Jupyter Development Team.
--// Distributed under the terms of the Modified BSD License.
--
--import {
--  ArrayExt,
--  IIterator,
--  IterableOrArrayLike,
--  each,
--  toArray,
--  ArrayIterator
--} from '@phosphor/algorithm';
--
--import { ISignal, Signal } from '@phosphor/signaling';
--
--import { ICellModel } from '@jupyterlab/cells';
--
--import {
--  IObservableMap,
--  ObservableMap,
--  IObservableList,
--  IObservableUndoableList,
--  IModelDB
--} from '@jupyterlab/observables';
--
--import { NotebookModel } from './model';
--
--/**
-- * A cell list object that supports undo/redo.
-- */
--export class CellList implements IObservableUndoableList<ICellModel> {
--  /**
--   * Construct the cell list.
--   */
--  constructor(modelDB: IModelDB, factory: NotebookModel.IContentFactory) {
--    this._factory = factory;
--    this._cellOrder = modelDB.createList<string>('cellOrder');
--    this._cellMap = new ObservableMap<ICellModel>();
--
--    this._cellOrder.changed.connect(this._onOrderChanged, this);
--  }
--
--  type: 'List';
--
--  /**
--   * A signal emitted when the cell list has changed.
--   */
--  get changed(): ISignal<this, IObservableList.IChangedArgs<ICellModel>> {
--    return this._changed;
--  }
--
--  /**
--   * Test whether the cell list has been disposed.
--   */
--  get isDisposed(): boolean {
--    return this._isDisposed;
--  }
--
--  /**
--   * Test whether the list is empty.
--   *
--   * @returns `true` if the cell list is empty, `false` otherwise.
--   *
--   * #### Notes
--   * This is a read-only property.
--   *
--   * #### Complexity
--   * Constant.
--   *
--   * #### Iterator Validity
--   * No changes.
--   */
--  get isEmpty(): boolean {
--    return this._cellOrder.length === 0;
--  }
--
--  /**
--   * Get the length of the cell list.
--   *
--   * @return The number of cells in the cell list.
--   *
--   * #### Notes
--   * This is a read-only property.
--   *
--   * #### Complexity
--   * Constant.
--   *
--   * #### Iterator Validity
--   * No changes.
--   */
--  get length(): number {
--    return this._cellOrder.length;
--  }
--
--  /**
--   * Create an iterator over the cells in the cell list.
--   *
--   * @returns A new iterator starting at the front of the cell list.
--   *
--   * #### Complexity
--   * Constant.
--   *
--   * #### Iterator Validity
--   * No changes.
--   */
--  iter(): IIterator<ICellModel> {
--    let arr: ICellModel[] = [];
--    for (let id of toArray(this._cellOrder)) {
--      arr.push(this._cellMap.get(id));
--    }
--    return new ArrayIterator<ICellModel>(arr);
--  }
--
--  /**
--   * Dispose of the resources held by the cell list.
--   */
--  dispose(): void {
--    if (this._isDisposed) {
--      return;
--    }
--    this._isDisposed = true;
--    Signal.clearData(this);
--    // Clean up the cell map and cell order objects.
--    for (let cell of this._cellMap.values()) {
--      cell.dispose();
--    }
--    this._cellMap.dispose();
--    this._cellOrder.dispose();
--  }
--
--  /**
--   * Get the cell at the specified index.
--   *
--   * @param index - The positive integer index of interest.
--   *
--   * @returns The cell at the specified index.
--   *
--   * #### Complexity
--   * Constant.
--   *
--   * #### Iterator Validity
--   * No changes.
--   *
--   * #### Undefined Behavior
--   * An `index` which is non-integral or out of range.
--   */
--  get(index: number): ICellModel {
--    return this._cellMap.get(this._cellOrder.get(index)) as ICellModel;
--  }
--
--  /**
--   * Set the cell at the specified index.
--   *
--   * @param index - The positive integer index of interest.
--   *
--   * @param cell - The cell to set at the specified index.
--   *
--   * #### Complexity
--   * Constant.
--   *
--   * #### Iterator Validity
--   * No changes.
--   *
--   * #### Undefined Behavior
--   * An `index` which is non-integral or out of range.
--   *
--   * #### Notes
--   * This should be considered to transfer ownership of the
--   * cell to the `CellList`. As such, `cell.dispose()` should
--   * not be called by other actors.
--   */
--  set(index: number, cell: ICellModel): void {
--    // Set the internal data structures.
--    this._cellMap.set(cell.id, cell);
--    this._cellOrder.set(index, cell.id);
--  }
--
--  /**
--   * Add a cell to the back of the cell list.
--   *
--   * @param cell - The cell to add to the back of the cell list.
--   *
--   * @returns The new length of the cell list.
--   *
--   * #### Complexity
--   * Constant.
--   *
--   * #### Iterator Validity
--   * No changes.
--   *
--   * #### Notes
--   * This should be considered to transfer ownership of the
--   * cell to the `CellList`. As such, `cell.dispose()` should
--   * not be called by other actors.
--   */
--  push(cell: ICellModel): number {
--    // Set the internal data structures.
--    this._cellMap.set(cell.id, cell);
--    let num = this._cellOrder.push(cell.id);
--    return num;
--  }
--
--  /**
--   * Insert a cell into the cell list at a specific index.
--   *
--   * @param index - The index at which to insert the cell.
--   *
--   * @param cell - The cell to set at the specified index.
--   *
--   * @returns The new length of the cell list.
--   *
--   * #### Complexity
--   * Linear.
--   *
--   * #### Iterator Validity
--   * No changes.
--   *
--   * #### Notes
--   * The `index` will be clamped to the bounds of the cell list.
--   *
--   * #### Undefined Behavior
--   * An `index` which is non-integral.
--   *
--   * #### Notes
--   * This should be considered to transfer ownership of the
--   * cell to the `CellList`. As such, `cell.dispose()` should
--   * not be called by other actors.
--   */
--  insert(index: number, cell: ICellModel): void {
--    // Set the internal data structures.
--    this._cellMap.set(cell.id, cell);
--    this._cellOrder.insert(index, cell.id);
--  }
--
--  /**
--   * Remove the first occurrence of a cell from the cell list.
--   *
--   * @param cell - The cell of interest.
--   *
--   * @returns The index of the removed cell, or `-1` if the cell
--   *   is not contained in the cell list.
--   *
--   * #### Complexity
--   * Linear.
--   *
--   * #### Iterator Validity
--   * Iterators pointing at the removed cell and beyond are invalidated.
--   */
--  removeValue(cell: ICellModel): number {
--    let index = ArrayExt.findFirstIndex(
--      toArray(this._cellOrder),
--      id => this._cellMap.get(id) === cell
--    );
--    this.remove(index);
--    return index;
--  }
--
--  /**
--   * Remove and return the cell at a specific index.
--   *
--   * @param index - The index of the cell of interest.
--   *
--   * @returns The cell at the specified index, or `undefined` if the
--   *   index is out of range.
--   *
--   * #### Complexity
--   * Constant.
--   *
--   * #### Iterator Validity
--   * Iterators pointing at the removed cell and beyond are invalidated.
--   *
--   * #### Undefined Behavior
--   * An `index` which is non-integral.
--   */
--  remove(index: number): ICellModel {
--    let id = this._cellOrder.get(index);
--    this._cellOrder.remove(index);
--    let cell = this._cellMap.get(id);
--    return cell;
--  }
--
--  /**
--   * Remove all cells from the cell list.
--   *
--   * #### Complexity
--   * Linear.
--   *
--   * #### Iterator Validity
--   * All current iterators are invalidated.
--   */
--  clear(): void {
--    this._cellOrder.clear();
--  }
--
--  /**
--   * Move a cell from one index to another.
--   *
--   * @parm fromIndex - The index of the element to move.
--   *
--   * @param toIndex - The index to move the element to.
--   *
--   * #### Complexity
--   * Constant.
--   *
--   * #### Iterator Validity
--   * Iterators pointing at the lesser of the `fromIndex` and the `toIndex`
--   * and beyond are invalidated.
--   *
--   * #### Undefined Behavior
--   * A `fromIndex` or a `toIndex` which is non-integral.
--   */
--  move(fromIndex: number, toIndex: number): void {
--    this._cellOrder.move(fromIndex, toIndex);
--  }
--
--  /**
--   * Push a set of cells to the back of the cell list.
--   *
--   * @param cells - An iterable or array-like set of cells to add.
--   *
--   * @returns The new length of the cell list.
--   *
--   * #### Complexity
--   * Linear.
--   *
--   * #### Iterator Validity
--   * No changes.
--   *
--   * #### Notes
--   * This should be considered to transfer ownership of the
--   * cells to the `CellList`. As such, `cell.dispose()` should
--   * not be called by other actors.
--   */
--  pushAll(cells: IterableOrArrayLike<ICellModel>): number {
--    let newValues = toArray(cells);
--    each(newValues, cell => {
--      // Set the internal data structures.
--      this._cellMap.set(cell.id, cell);
--      this._cellOrder.push(cell.id);
--    });
--    return this.length;
--  }
--
--  /**
--   * Insert a set of items into the cell list at the specified index.
--   *
--   * @param index - The index at which to insert the cells.
--   *
--   * @param cells - The cells to insert at the specified index.
--   *
--   * @returns The new length of the cell list.
--   *
--   * #### Complexity.
--   * Linear.
--   *
--   * #### Iterator Validity
--   * No changes.
--   *
--   * #### Notes
--   * The `index` will be clamped to the bounds of the cell list.
--   *
--   * #### Undefined Behavior.
--   * An `index` which is non-integral.
--   *
--   * #### Notes
--   * This should be considered to transfer ownership of the
--   * cells to the `CellList`. As such, `cell.dispose()` should
--   * not be called by other actors.
--   */
--  insertAll(index: number, cells: IterableOrArrayLike<ICellModel>): number {
--    let newValues = toArray(cells);
--    each(newValues, cell => {
--      this._cellMap.set(cell.id, cell);
--      this._cellOrder.beginCompoundOperation();
--      this._cellOrder.insert(index++, cell.id);
--      this._cellOrder.endCompoundOperation();
--    });
--    return this.length;
--  }
--
--  /**
--   * Remove a range of items from the cell list.
--   *
--   * @param startIndex - The start index of the range to remove (inclusive).
--   *
--   * @param endIndex - The end index of the range to remove (exclusive).
--   *
--   * @returns The new length of the cell list.
--   *
--   * #### Complexity
--   * Linear.
--   *
--   * #### Iterator Validity
--   * Iterators pointing to the first removed cell and beyond are invalid.
--   *
--   * #### Undefined Behavior
--   * A `startIndex` or `endIndex` which is non-integral.
--   */
--  removeRange(startIndex: number, endIndex: number): number {
--    this._cellOrder.removeRange(startIndex, endIndex);
--    return this.length;
--  }
--
--  /**
--   * Whether the object can redo changes.
--   */
--  get canRedo(): boolean {
--    return this._cellOrder.canRedo;
--  }
--
--  /**
--   * Whether the object can undo changes.
--   */
--  get canUndo(): boolean {
--    return this._cellOrder.canUndo;
--  }
--
--  /**
--   * Begin a compound operation.
--   *
--   * @param isUndoAble - Whether the operation is undoable.
--   *   The default is `true`.
--   */
--  beginCompoundOperation(isUndoAble?: boolean): void {
--    this._cellOrder.beginCompoundOperation(isUndoAble);
--  }
--
--  /**
--   * End a compound operation.
--   */
--  endCompoundOperation(): void {
--    this._cellOrder.endCompoundOperation();
--  }
--
--  /**
--   * Undo an operation.
--   */
--  undo(): void {
--    this._cellOrder.undo();
--  }
--
--  /**
--   * Redo an operation.
--   */
--  redo(): void {
--    this._cellOrder.redo();
--  }
--
--  /**
--   * Clear the change stack.
--   */
--  clearUndo(): void {
--    // Dispose of cells not in the current
--    // cell order.
--    for (let key of this._cellMap.keys()) {
--      if (
--        ArrayExt.findFirstIndex(toArray(this._cellOrder), id => id === key) ===
--        -1
--      ) {
--        let cell = this._cellMap.get(key) as ICellModel;
--        cell.dispose();
--        this._cellMap.delete(key);
--      }
--    }
--    this._cellOrder.clearUndo();
--  }
--
--  private _onOrderChanged(
--    order: IObservableUndoableList<string>,
--    change: IObservableList.IChangedArgs<string>
--  ): void {
--    if (change.type === 'add' || change.type === 'set') {
--      each(change.newValues, id => {
--        if (!this._cellMap.has(id)) {
--          let cellDB = this._factory.modelDB;
--          let cellType = cellDB.createValue(id + '.type');
--          let cell: ICellModel;
--          switch (cellType.get()) {
--            case 'code':
--              cell = this._factory.createCodeCell({ id: id });
--              break;
--            case 'markdown':
--              cell = this._factory.createMarkdownCell({ id: id });
--              break;
--            default:
--              cell = this._factory.createRawCell({ id: id });
--              break;
--          }
--          this._cellMap.set(id, cell);
--        }
--      });
--    }
--    let newValues: ICellModel[] = [];
--    let oldValues: ICellModel[] = [];
--    each(change.newValues, id => {
--      newValues.push(this._cellMap.get(id));
--    });
--    each(change.oldValues, id => {
--      oldValues.push(this._cellMap.get(id));
--    });
--    this._changed.emit({
--      type: change.type,
--      oldIndex: change.oldIndex,
--      newIndex: change.newIndex,
--      oldValues,
--      newValues
--    });
--  }
--
--  private _isDisposed: boolean = false;
--  private _cellOrder: IObservableUndoableList<string> = null;
--  private _cellMap: IObservableMap<ICellModel> = null;
--  private _changed = new Signal<this, IObservableList.IChangedArgs<ICellModel>>(
--    this
--  );
--  private _factory: NotebookModel.IContentFactory = null;
--}
-diff --git a/packages/notebook/src/data.ts b/packages/notebook/src/data.ts
-new file mode 100644
-index 00000000000..f82889cfd13
---- /dev/null
-+++ b/packages/notebook/src/data.ts
-@@ -0,0 +1,113 @@
-+// Copyright (c) Jupyter Development Team.
-+// Distributed under the terms of the Modified BSD License.
-+
-+import { DatastoreExt } from '@jupyterlab/datastore';
-+
-+import { ICellData, CellData } from '@jupyterlab/cells';
-+
-+import { IOutputData, OutputData } from '@jupyterlab/rendermime';
-+
-+import { ReadonlyJSONValue } from '@phosphor/coreutils';
-+
-+import {
-+  Datastore,
-+  Fields,
-+  ListField,
-+  MapField,
-+  RegisterField
-+} from '@phosphor/datastore';
-+
-+/**
-+ * Interfaces for specifying how notebooks store data in datastores.
-+ */
-+export namespace INotebookData {
-+  /**
-+   * A specification for where notebook data is stored in a datastore.
-+   */
-+  export type DataLocation = DatastoreExt.DataLocation & {
-+    /**
-+     * The top-level record for the notebook data.
-+     */
-+    record: DatastoreExt.RecordLocation<Schema>;
-+
-+    /**
-+     * The table holding cell data.
-+     */
-+    cells: DatastoreExt.TableLocation<ICellData.Schema>;
-+
-+    /**
-+     * The table holding output data.
-+     */
-+    outputs: DatastoreExt.TableLocation<IOutputData.Schema>;
-+  };
-+
-+  /**
-+   * An type alias for a notebook data schema.
-+   */
-+  export type Schema = {
-+    /**
-+     * The schema id.
-+     */
-+    id: string;
-+
-+    /**
-+     * The schema fields.
-+     */
-+    fields: {
-+      /**
-+       * The major nbformat version number.
-+       */
-+      readonly nbformat: RegisterField<number>;
-+
-+      /**
-+       * The minor nbformat version number.
-+       */
-+      readonly nbformatMinor: RegisterField<number>;
-+
-+      /**
-+       * The list of cell IDs in the notebook.
-+       */
-+      readonly cells: ListField<string>;
-+
-+      /**
-+       * The metadata for the notebook.
-+       */
-+      readonly metadata: MapField<ReadonlyJSONValue>;
-+    };
-+  };
-+}
-+
-+/**
-+ * Utilities for working with notebook data.
-+ */
-+export namespace NotebookData {
-+  /**
-+   * Create an in-memory datastore capable of holding the data for an output area.
-+   */
-+  export function createStore(id: number = 1): Datastore {
-+    return Datastore.create({
-+      id,
-+      schemas: [SCHEMA, CellData.SCHEMA, OutputData.SCHEMA]
-+    });
-+  }
-+
-+  /**
-+   * A concrete notebook schema, available at runtime.
-+   */
-+  export const SCHEMA: INotebookData.Schema = {
-+    /**
-+     * The schema id.
-+     */
-+    id: '@jupyterlab/notebook:notebookmodel.v1',
-+
-+    /**
-+     * Concrete realizations of the schema fields, available at runtime.
-+     */
-+    fields: {
-+      nbformat: Fields.Number(),
-+      nbformatMinor: Fields.Number(),
-+      cells: Fields.List<string>(),
-+      metadata: Fields.Map<ReadonlyJSONValue>()
-+    }
-+  };
-+}
+
 diff --git a/packages/notebook/src/default-toolbar.tsx b/packages/notebook/src/default-toolbar.tsx
 index 8e1b4e634a5..1651c31555b 100644
 --- a/packages/notebook/src/default-toolbar.tsx
@@ -8190,7 +5589,7 @@ index 40206731324..64d1a1aebe5 100644
  
  import { nbformat } from '@jupyterlab/coreutils';
  
--import { UUID } from '@phosphor/coreutils';
+-import { UUID } from '@lumino/coreutils';
 +import { IOutputData, OutputData } from '@jupyterlab/rendermime';
  
 -import {
@@ -8199,13 +5598,13 @@ index 40206731324..64d1a1aebe5 100644
 -  IObservableList,
 -  IModelDB
 -} from '@jupyterlab/observables';
-+import { ReadonlyJSONObject, UUID } from '@phosphor/coreutils';
++import { ReadonlyJSONObject, UUID } from '@lumino/coreutils';
  
 -import { CellList } from './celllist';
 -import { showDialog, Dialog } from '@jupyterlab/apputils';
-+import { Datastore } from '@phosphor/datastore';
++import { Datastore } from '@lumino/datastore';
 +
-+import { ISignal, Signal } from '@phosphor/signaling';
++import { ISignal, Signal } from '@lumino/signaling';
 +
 +import { INotebookData, NotebookData } from './data';
  
@@ -9099,15 +6498,15 @@ index 421166e002b..36262a3f8d1 100644
  // Copyright (c) Jupyter Development Team.
  // Distributed under the terms of the Modified BSD License.
  
--import { ArrayExt, each, chain } from '@phosphor/algorithm';
+-import { ArrayExt, each, chain } from '@lumino/algorithm';
 -
--import { JSONObject, JSONValue } from '@phosphor/coreutils';
+-import { JSONObject, JSONValue } from '@lumino/coreutils';
 -
--import { ConflatableMessage, Message, MessageLoop } from '@phosphor/messaging';
+-import { ConflatableMessage, Message, MessageLoop } from '@lumino/messaging';
 -
--import { h, VirtualDOM, VirtualNode } from '@phosphor/virtualdom';
+-import { h, VirtualDOM, VirtualNode } from '@lumino/virtualdom';
 -
--import { PanelLayout, Widget } from '@phosphor/widgets';
+-import { PanelLayout, Widget } from '@lumino/widgets';
 -
  import { Collapse, Styling } from '@jupyterlab/apputils';
  
@@ -9123,19 +6522,19 @@ index 421166e002b..36262a3f8d1 100644
 -import { IObservableMap, ObservableJSON } from '@jupyterlab/observables';
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
-+import { ArrayExt, each, chain } from '@phosphor/algorithm';
++import { ArrayExt, each, chain } from '@lumino/algorithm';
 +
-+import { JSONObject, JSONValue, ReadonlyJSONValue } from '@phosphor/coreutils';
++import { JSONObject, JSONValue, ReadonlyJSONValue } from '@lumino/coreutils';
 +
-+import { Datastore, MapField } from '@phosphor/datastore';
++import { Datastore, MapField } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
 +
-+import { ConflatableMessage, Message, MessageLoop } from '@phosphor/messaging';
++import { ConflatableMessage, Message, MessageLoop } from '@lumino/messaging';
 +
-+import { h, VirtualDOM, VirtualNode } from '@phosphor/virtualdom';
++import { h, VirtualDOM, VirtualNode } from '@lumino/virtualdom';
 +
-+import { PanelLayout, Widget } from '@phosphor/widgets';
++import { PanelLayout, Widget } from '@lumino/widgets';
 +
 +import { INotebookData } from './data';
  
@@ -9650,7 +7049,7 @@ index 99d7b0d0e24..17fbdc3b476 100644
  
 @@ -10,6 +10,8 @@ import { IconItem } from '@jupyterlab/statusbar';
  
- import { toArray } from '@phosphor/algorithm';
+ import { toArray } from '@lumino/algorithm';
  
 +import { Notebook } from '.';
 +
@@ -9729,30 +7128,30 @@ index 94bffc3b031..2b15af4adf4 100644
 +++ b/packages/notebook/src/widget.ts
 @@ -3,38 +3,38 @@
  
- import { ArrayExt, each } from '@phosphor/algorithm';
+ import { ArrayExt, each } from '@lumino/algorithm';
  
--import { JSONValue } from '@phosphor/coreutils';
-+import { JSONValue, MimeData } from '@phosphor/coreutils';
+-import { JSONValue } from '@lumino/coreutils';
++import { JSONValue, MimeData } from '@lumino/coreutils';
  
--import { Message } from '@phosphor/messaging';
-+import { Datastore, ListField, MapField } from '@phosphor/datastore';
+-import { Message } from '@lumino/messaging';
++import { Datastore, ListField, MapField } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
  
--import { MimeData } from '@phosphor/coreutils';
-+import { IDragEvent, Drag } from '@phosphor/dragdrop';
+-import { MimeData } from '@lumino/coreutils';
++import { IDragEvent, Drag } from '@lumino/dragdrop';
 +
-+import { Message } from '@phosphor/messaging';
++import { Message } from '@lumino/messaging';
  
- import { AttachedProperty } from '@phosphor/properties';
+ import { AttachedProperty } from '@lumino/properties';
  
- import { ISignal, Signal } from '@phosphor/signaling';
+ import { ISignal, Signal } from '@lumino/signaling';
  
--import { Drag, IDragEvent } from '@phosphor/dragdrop';
+-import { Drag, IDragEvent } from '@lumino/dragdrop';
 -
- import { PanelLayout, Widget } from '@phosphor/widgets';
+ import { PanelLayout, Widget } from '@lumino/widgets';
  
- import { h, VirtualDOM } from '@phosphor/virtualdom';
+ import { h, VirtualDOM } from '@lumino/virtualdom';
  
  import {
 -  ICellModel,
@@ -10423,343 +7822,14 @@ index e0699df8f62..9584188ea10 100644
      "@jupyterlab/rendermime": "^1.0.1",
      "@jupyterlab/rendermime-interfaces": "^1.3.0",
      "@jupyterlab/services": "^4.0.1",
--    "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
--    "@phosphor/disposable": "^1.2.0",
-+    "@phosphor/datastore": "0.7.2",
-     "@phosphor/messaging": "^1.2.3",
-     "@phosphor/signaling": "^1.2.3",
-     "@phosphor/widgets": "^1.8.0"
-diff --git a/packages/outputarea/src/data.ts b/packages/outputarea/src/data.ts
-new file mode 100644
-index 00000000000..cf973ca7b3e
---- /dev/null
-+++ b/packages/outputarea/src/data.ts
-@@ -0,0 +1,324 @@
-+// Copyright (c) Jupyter Development Team.
-+// Distributed under the terms of the Modified BSD License.
-+
-+import { nbformat } from '@jupyterlab/coreutils';
-+
-+import { DatastoreExt } from '@jupyterlab/datastore';
-+
-+import { IOutputData, OutputData, OutputModel } from '@jupyterlab/rendermime';
-+
-+import { UUID } from '@phosphor/coreutils';
-+
-+import {
-+  Datastore,
-+  Fields,
-+  ListField,
-+  RegisterField
-+} from '@phosphor/datastore';
-+
-+/**
-+ * The namespace for IOutputAreaData interfaces.
-+ */
-+export namespace IOutputAreaData {
-+  /**
-+   * An type alias for an output area data schema.
-+   */
-+  export type Schema = {
-+    /**
-+     * The id for the schema.
-+     */
-+    id: string;
-+
-+    /**
-+     * The data fields in the schema.
-+     */
-+    fields: {
-+      /**
-+       * Whether the output area is trusted.
-+       */
-+      readonly trusted: RegisterField<boolean>;
-+
-+      /**
-+       * The list of outputs in the output area.
-+       */
-+      readonly outputs: ListField<string>;
-+    };
-+  };
-+
-+  /**
-+   * A set of locations in a datastore in which an output area
-+   * stores its data.
-+   */
-+  export type DataLocation = DatastoreExt.DataLocation & {
-+    /**
-+     * A record in a datastore to hold the output area model.
-+     */
-+    record: DatastoreExt.RecordLocation<Schema>;
-+
-+    /**
-+     * A table in a datastore for individual outputs.
-+     */
-+    outputs: DatastoreExt.TableLocation<IOutputData.Schema>;
-+  };
-+}
-+
-+/**
-+ * Functions for performing operations on IOutputAreaData.
-+ */
-+export namespace OutputAreaData {
-+  /**
-+   * A concrete output area schema, available at runtime.
-+   */
-+  export const SCHEMA: IOutputAreaData.Schema = {
-+    /**
-+     * The schema id.
-+     */
-+    id: '@jupyterlab/outputarea:outputareamodel.v1',
-+
-+    /**
-+     * The fields for the schema.
-+     */
-+    fields: {
-+      trusted: Fields.Boolean(),
-+      outputs: Fields.List<string>()
-+    }
-+  };
-+
-+  /**
-+   * Create an in-memory datastore capable of holding the data for an output area.
-+   */
-+  export function createStore(id: number = 1): Datastore {
-+    return Datastore.create({
-+      id,
-+      schemas: [SCHEMA, OutputData.SCHEMA]
-+    });
-+  }
-+
-+  /**
-+   * Deserialize an output area model from JSON to a datastore location.
-+   */
-+  export function fromJSON(
-+    loc: IOutputAreaData.DataLocation,
-+    values: nbformat.IOutput[]
-+  ): void {
-+    DatastoreExt.withTransaction(loc.datastore, () => {
-+      clear(loc);
-+      values.forEach(value => appendItem(loc, value));
-+    });
-+  }
-+
-+  /**
-+   * Set whether the model is trusted.
-+   */
-+  export function setTrusted(
-+    loc: IOutputAreaData.DataLocation,
-+    value: boolean
-+  ) {
-+    const { datastore, record, outputs } = loc;
-+    if (
-+      value ===
-+      DatastoreExt.getField(datastore, { ...record, field: 'trusted' })
-+    ) {
-+      return;
-+    }
-+    DatastoreExt.withTransaction(datastore, () => {
-+      const list = DatastoreExt.getField(datastore, {
-+        ...record,
-+        field: 'outputs'
-+      });
-+      DatastoreExt.updateField(
-+        datastore,
-+        { ...record, field: 'trusted' },
-+        true
-+      );
-+      for (let i = 0; i < list.length; i++) {
-+        const id = list[i];
-+        const outputRecord = { ...outputs, record: id };
-+        DatastoreExt.updateField(
-+          datastore,
-+          { ...outputRecord, field: 'trusted' },
-+          true
-+        );
-+      }
-+    });
-+  }
-+
-+  /**
-+   * Set the value at the specified index.
-+   */
-+  export function setItem(
-+    loc: IOutputAreaData.DataLocation,
-+    index: number,
-+    value: nbformat.IOutput
-+  ): void {
-+    const { datastore, record, outputs } = loc;
-+    const list = DatastoreExt.getField(datastore, {
-+      ...record,
-+      field: 'outputs'
-+    });
-+    const trusted = DatastoreExt.getField(datastore, {
-+      ...record,
-+      field: 'trusted'
-+    });
-+    // Normalize stream data.
-+    Private.normalize(value);
-+    const outputData = {
-+      datastore,
-+      record: { ...outputs, record: list[index] }
-+    };
-+    OutputModel.fromJSON(outputData, value, trusted);
-+  }
-+
-+  /**
-+   * Clear all of the output.
-+   */
-+  export function clear(loc: IOutputAreaData.DataLocation): void {
-+    const { datastore, record, outputs } = loc;
-+    const list = DatastoreExt.getField(datastore, {
-+      ...record,
-+      field: 'outputs'
-+    });
-+    DatastoreExt.withTransaction(datastore, () => {
-+      DatastoreExt.updateField(
-+        datastore,
-+        { ...record, field: 'outputs' },
-+        { index: 0, remove: list.length, values: [] }
-+      );
-+      list.forEach(output => {
-+        OutputModel.clear({
-+          datastore,
-+          record: { ...outputs, record: output }
-+        });
-+      });
-+    });
-+  }
-+
-+  /**
-+   * Serialize the model to JSON.
-+   */
-+  export function toJSON(
-+    loc: IOutputAreaData.DataLocation
-+  ): nbformat.IOutput[] {
-+    const { datastore, record, outputs } = loc;
-+    const list = DatastoreExt.getField(datastore, {
-+      ...record,
-+      field: 'outputs'
-+    });
-+    return list.map(id =>
-+      OutputModel.toJSON({ datastore, record: { ...outputs, record: id } })
-+    );
-+  }
-+
-+  /**
-+   * Add an array of output items to the list.
-+   *
-+   * #### Notes
-+   * This removes overwritten characters, and consolidates items if they should
-+   * be combined with a previous entry rather than a new entry.
-+   */
-+  export function appendItem(
-+    loc: IOutputAreaData.DataLocation,
-+    value: nbformat.IOutput
-+  ): void {
-+    const { datastore, record, outputs } = loc;
-+    let trusted = DatastoreExt.getField(datastore, {
-+      ...record,
-+      field: 'trusted'
-+    });
-+
-+    DatastoreExt.withTransaction(datastore, () => {
-+      // Normalize the value.
-+      Private.normalize(value);
-+
-+      const list = DatastoreExt.getField(datastore, {
-+        ...record,
-+        field: 'outputs'
-+      });
-+
-+      // Consolidate outputs if they are stream outputs of the same kind.
-+      if (list.length) {
-+        const index = list.length - 1;
-+        const id = list[index];
-+        const outputData = {
-+          datastore,
-+          record: { ...outputs, record: id }
-+        };
-+        const lastValue = OutputModel.toJSON(outputData);
-+        if (nbformat.isStream(value) && lastValue.name === value.name) {
-+          lastValue.text += value.text as string;
-+          lastValue.text = Private.removeOverwrittenChars(
-+            lastValue.text as string
-+          );
-+          value.text = lastValue.text;
-+          OutputModel.fromJSON(outputData, value, trusted);
-+          return;
-+        }
-+      }
-+
-+      if (nbformat.isStream(value)) {
-+        value.text = Private.removeOverwrittenChars(value.text as string);
-+      }
-+
-+      const id = UUID.uuid4();
-+      const outputData = { datastore, record: { ...outputs, record: id } };
-+      OutputModel.fromJSON(outputData, value, trusted);
-+
-+      DatastoreExt.updateField(
-+        datastore,
-+        { ...record, field: 'outputs' },
-+        { index: list.length, remove: 0, values: [id] }
-+      );
-+    });
-+  }
-+}
-+
-+/**
-+ * A namespace for module-private functionality.
-+ */
-+namespace Private {
-+  /**
-+   * Normalize an output.
-+   */
-+  export function normalize(value: nbformat.IOutput): void {
-+    if (nbformat.isStream(value)) {
-+      if (Array.isArray(value.text)) {
-+        value.text = (value.text as string[]).join('\n');
-+      }
-+    }
-+  }
-+
-+  /**
-+   * Remove characters that are overridden by backspace characters.
-+   */
-+  function fixBackspace(txt: string): string {
-+    let tmp = txt;
-+    do {
-+      txt = tmp;
-+      // Cancel out anything-but-newline followed by backspace
-+      tmp = txt.replace(/[^\n]\x08/gm, '');
-+    } while (tmp.length < txt.length);
-+    return txt;
-+  }
-+
-+  /**
-+   * Remove chunks that should be overridden by the effect of
-+   * carriage return characters.
-+   */
-+  function fixCarriageReturn(txt: string): string {
-+    txt = txt.replace(/\r+\n/gm, '\n'); // \r followed by \n --> newline
-+    while (txt.search(/\r[^$]/g) > -1) {
-+      const base = txt.match(/^(.*)\r+/m)[1];
-+      let insert = txt.match(/\r+(.*)$/m)[1];
-+      insert = insert + base.slice(insert.length, base.length);
-+      txt = txt.replace(/\r+.*$/m, '\r').replace(/^.*\r/m, insert);
-+    }
-+    return txt;
-+  }
-+
-+  /*
-+   * Remove characters overridden by backspaces and carriage returns
-+   */
-+  export function removeOverwrittenChars(text: string): string {
-+    return fixCarriageReturn(fixBackspace(text));
-+  }
-+}
+-    "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
+-    "@lumino/disposable": "^1.2.0",
++    "@lumino/datastore": "0.7.2",
+     "@lumino/messaging": "^1.2.3",
+     "@lumino/signaling": "^1.2.3",
+     "@lumino/widgets": "^1.8.0"
+
 diff --git a/packages/outputarea/src/index.ts b/packages/outputarea/src/index.ts
 index dba46488e23..02a73b2e475 100644
 --- a/packages/outputarea/src/index.ts
@@ -10771,468 +7841,7 @@ index dba46488e23..02a73b2e475 100644
 -export * from './model';
 +export * from './data';
  export * from './widget';
-diff --git a/packages/outputarea/src/model.ts b/packages/outputarea/src/model.ts
-deleted file mode 100644
-index cd2d8c4fb85..00000000000
---- a/packages/outputarea/src/model.ts
-+++ /dev/null
-@@ -1,456 +0,0 @@
--// Copyright (c) Jupyter Development Team.
--// Distributed under the terms of the Modified BSD License.
--
--import { each, map, toArray } from '@phosphor/algorithm';
--
--import { IDisposable } from '@phosphor/disposable';
--
--import { ISignal, Signal } from '@phosphor/signaling';
--
--import { nbformat } from '@jupyterlab/coreutils';
--
--import { IObservableList, ObservableList } from '@jupyterlab/observables';
--
--import { IOutputModel, OutputModel } from '@jupyterlab/rendermime';
--
--/**
-- * The model for an output area.
-- */
--export interface IOutputAreaModel extends IDisposable {
--  /**
--   * A signal emitted when the model state changes.
--   */
--  readonly stateChanged: ISignal<IOutputAreaModel, void>;
--
--  /**
--   * A signal emitted when the model changes.
--   */
--  readonly changed: ISignal<IOutputAreaModel, IOutputAreaModel.ChangedArgs>;
--
--  /**
--   * The length of the items in the model.
--   */
--  readonly length: number;
--
--  /**
--   * Whether the output area is trusted.
--   */
--  trusted: boolean;
--
--  /**
--   * The output content factory used by the model.
--   */
--  readonly contentFactory: IOutputAreaModel.IContentFactory;
--
--  /**
--   * Get an item at the specified index.
--   */
--  get(index: number): IOutputModel;
--
--  /**
--   * Add an output, which may be combined with previous output.
--   *
--   * #### Notes
--   * The output bundle is copied.
--   * Contiguous stream outputs of the same `name` are combined.
--   */
--  add(output: nbformat.IOutput): number;
--
--  /**
--   * Set the value at the specified index.
--   */
--  set(index: number, output: nbformat.IOutput): void;
--
--  /**
--   * Clear all of the output.
--   *
--   * @param wait - Delay clearing the output until the next message is added.
--   */
--  clear(wait?: boolean): void;
--
--  /**
--   * Deserialize the model from JSON.
--   *
--   * #### Notes
--   * This will clear any existing data.
--   */
--  fromJSON(values: nbformat.IOutput[]): void;
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IOutput[];
--}
--
--/**
-- * The namespace for IOutputAreaModel interfaces.
-- */
--export namespace IOutputAreaModel {
--  /**
--   * The options used to create a output area model.
--   */
--  export interface IOptions {
--    /**
--     * The initial values for the model.
--     */
--    values?: nbformat.IOutput[];
--
--    /**
--     * Whether the output is trusted.  The default is false.
--     */
--    trusted?: boolean;
--
--    /**
--     * The output content factory used by the model.
--     *
--     * If not given, a default factory will be used.
--     */
--    contentFactory?: IContentFactory;
--  }
--
--  /**
--   * A type alias for changed args.
--   */
--  export type ChangedArgs = IObservableList.IChangedArgs<IOutputModel>;
--
--  /**
--   * The interface for an output content factory.
--   */
--  export interface IContentFactory {
--    /**
--     * Create an output model.
--     */
--    createOutputModel(options: IOutputModel.IOptions): IOutputModel;
--  }
--}
--
--/**
-- * The default implementation of the IOutputAreaModel.
-- */
--export class OutputAreaModel implements IOutputAreaModel {
--  /**
--   * Construct a new observable outputs instance.
--   */
--  constructor(options: IOutputAreaModel.IOptions = {}) {
--    this._trusted = !!options.trusted;
--    this.contentFactory =
--      options.contentFactory || OutputAreaModel.defaultContentFactory;
--    this.list = new ObservableList<IOutputModel>();
--    if (options.values) {
--      each(options.values, value => {
--        this._add(value);
--      });
--    }
--    this.list.changed.connect(this._onListChanged, this);
--  }
--
--  /**
--   * A signal emitted when the model state changes.
--   */
--  get stateChanged(): ISignal<IOutputAreaModel, void> {
--    return this._stateChanged;
--  }
--
--  /**
--   * A signal emitted when the model changes.
--   */
--  get changed(): ISignal<this, IOutputAreaModel.ChangedArgs> {
--    return this._changed;
--  }
--
--  /**
--   * Get the length of the items in the model.
--   */
--  get length(): number {
--    return this.list ? this.list.length : 0;
--  }
--
--  /**
--   * Get whether the model is trusted.
--   */
--  get trusted(): boolean {
--    return this._trusted;
--  }
--
--  /**
--   * Set whether the model is trusted.
--   *
--   * #### Notes
--   * Changing the value will cause all of the models to re-set.
--   */
--  set trusted(value: boolean) {
--    if (value === this._trusted) {
--      return;
--    }
--    let trusted = (this._trusted = value);
--    for (let i = 0; i < this.list.length; i++) {
--      let item = this.list.get(i);
--      let value = item.toJSON();
--      item.dispose();
--      item = this._createItem({ value, trusted });
--      this.list.set(i, item);
--    }
--  }
--
--  /**
--   * The output content factory used by the model.
--   */
--  readonly contentFactory: IOutputAreaModel.IContentFactory;
--
--  /**
--   * Test whether the model is disposed.
--   */
--  get isDisposed(): boolean {
--    return this._isDisposed;
--  }
--
--  /**
--   * Dispose of the resources used by the model.
--   */
--  dispose(): void {
--    if (this.isDisposed) {
--      return;
--    }
--    this._isDisposed = true;
--    this.list.dispose();
--    Signal.clearData(this);
--  }
--
--  /**
--   * Get an item at the specified index.
--   */
--  get(index: number): IOutputModel {
--    return this.list.get(index);
--  }
--
--  /**
--   * Set the value at the specified index.
--   */
--  set(index: number, value: nbformat.IOutput): void {
--    // Normalize stream data.
--    Private.normalize(value);
--    let item = this._createItem({ value, trusted: this._trusted });
--    this.list.set(index, item);
--  }
--
--  /**
--   * Add an output, which may be combined with previous output.
--   *
--   * #### Notes
--   * The output bundle is copied.
--   * Contiguous stream outputs of the same `name` are combined.
--   */
--  add(output: nbformat.IOutput): number {
--    // If we received a delayed clear message, then clear now.
--    if (this.clearNext) {
--      this.clear();
--      this.clearNext = false;
--    }
--
--    return this._add(output);
--  }
--
--  /**
--   * Clear all of the output.
--   *
--   * @param wait Delay clearing the output until the next message is added.
--   */
--  clear(wait: boolean = false): void {
--    this._lastStream = '';
--    if (wait) {
--      this.clearNext = true;
--      return;
--    }
--    each(this.list, (item: IOutputModel) => {
--      item.dispose();
--    });
--    this.list.clear();
--  }
--
--  /**
--   * Deserialize the model from JSON.
--   *
--   * #### Notes
--   * This will clear any existing data.
--   */
--  fromJSON(values: nbformat.IOutput[]) {
--    this.clear();
--    each(values, value => {
--      this._add(value);
--    });
--  }
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IOutput[] {
--    return toArray(map(this.list, (output: IOutputModel) => output.toJSON()));
--  }
--
--  /**
--   * Add an item to the list.
--   */
--  private _add(value: nbformat.IOutput): number {
--    let trusted = this._trusted;
--
--    // Normalize the value.
--    Private.normalize(value);
--
--    // Consolidate outputs if they are stream outputs of the same kind.
--    if (
--      nbformat.isStream(value) &&
--      this._lastStream &&
--      value.name === this._lastName
--    ) {
--      // In order to get a list change event, we add the previous
--      // text to the current item and replace the previous item.
--      // This also replaces the metadata of the last item.
--      this._lastStream += value.text as string;
--      this._lastStream = Private.removeOverwrittenChars(this._lastStream);
--      value.text = this._lastStream;
--      let item = this._createItem({ value, trusted });
--      let index = this.length - 1;
--      let prev = this.list.get(index);
--      prev.dispose();
--      this.list.set(index, item);
--      return index;
--    }
--
--    if (nbformat.isStream(value)) {
--      value.text = Private.removeOverwrittenChars(value.text as string);
--    }
--
--    // Create the new item.
--    let item = this._createItem({ value, trusted });
--
--    // Update the stream information.
--    if (nbformat.isStream(value)) {
--      this._lastStream = value.text as string;
--      this._lastName = value.name;
--    } else {
--      this._lastStream = '';
--    }
--
--    // Add the item to our list and return the new length.
--    return this.list.push(item);
--  }
--
--  /**
--   * A flag that is set when we want to clear the output area
--   * *after* the next addition to it.
--   */
--  protected clearNext = false;
--
--  /**
--   * An observable list containing the output models
--   * for this output area.
--   */
--  protected list: IObservableList<IOutputModel> = null;
--
--  /**
--   * Create an output item and hook up its signals.
--   */
--  private _createItem(options: IOutputModel.IOptions): IOutputModel {
--    let factory = this.contentFactory;
--    let item = factory.createOutputModel(options);
--    item.changed.connect(this._onGenericChange, this);
--    return item;
--  }
--
--  /**
--   * Handle a change to the list.
--   */
--  private _onListChanged(
--    sender: IObservableList<IOutputModel>,
--    args: IObservableList.IChangedArgs<IOutputModel>
--  ) {
--    this._changed.emit(args);
--  }
--
--  /**
--   * Handle a change to an item.
--   */
--  private _onGenericChange(): void {
--    this._stateChanged.emit(void 0);
--  }
--
--  private _lastStream: string;
--  private _lastName: 'stdout' | 'stderr';
--  private _trusted = false;
--  private _isDisposed = false;
--  private _stateChanged = new Signal<IOutputAreaModel, void>(this);
--  private _changed = new Signal<this, IOutputAreaModel.ChangedArgs>(this);
--}
--
--/**
-- * The namespace for OutputAreaModel class statics.
-- */
--export namespace OutputAreaModel {
--  /**
--   * The default implementation of a `IModelOutputFactory`.
--   */
--  export class ContentFactory implements IOutputAreaModel.IContentFactory {
--    /**
--     * Create an output model.
--     */
--    createOutputModel(options: IOutputModel.IOptions): IOutputModel {
--      return new OutputModel(options);
--    }
--  }
--
--  /**
--   * The default output model factory.
--   */
--  export const defaultContentFactory = new ContentFactory();
--}
--
--/**
-- * A namespace for module-private functionality.
-- */
--namespace Private {
--  /**
--   * Normalize an output.
--   */
--  export function normalize(value: nbformat.IOutput): void {
--    if (nbformat.isStream(value)) {
--      if (Array.isArray(value.text)) {
--        value.text = (value.text as string[]).join('\n');
--      }
--    }
--  }
--
--  /**
--   * Remove characters that are overridden by backspace characters.
--   */
--  function fixBackspace(txt: string): string {
--    let tmp = txt;
--    do {
--      txt = tmp;
--      // Cancel out anything-but-newline followed by backspace
--      tmp = txt.replace(/[^\n]\x08/gm, '');
--    } while (tmp.length < txt.length);
--    return txt;
--  }
--
--  /**
--   * Remove chunks that should be overridden by the effect of
--   * carriage return characters.
--   */
--  function fixCarriageReturn(txt: string): string {
--    txt = txt.replace(/\r+\n/gm, '\n'); // \r followed by \n --> newline
--    while (txt.search(/\r[^$]/g) > -1) {
--      const base = txt.match(/^(.*)\r+/m)[1];
--      let insert = txt.match(/\r+(.*)$/m)[1];
--      insert = insert + base.slice(insert.length, base.length);
--      txt = txt.replace(/\r+.*$/m, '\r').replace(/^.*\r/m, insert);
--    }
--    return txt;
--  }
--
--  /*
--   * Remove characters overridden by backspaces and carriage returns
--   */
--  export function removeOverwrittenChars(text: string): string {
--    return fixCarriageReturn(fixBackspace(text));
--  }
--}
+
 diff --git a/packages/outputarea/src/widget.ts b/packages/outputarea/src/widget.ts
 index 13e13411f82..c118a92c52c 100644
 --- a/packages/outputarea/src/widget.ts
@@ -11262,22 +7871,22 @@ index 13e13411f82..c118a92c52c 100644
    JSONObject,
    PromiseDelegate,
    ReadonlyJSONObject
- } from '@phosphor/coreutils';
+ } from '@lumino/coreutils';
  
-+import { Datastore, ListField } from '@phosphor/datastore';
++import { Datastore, ListField } from '@lumino/datastore';
 +
- import { Message } from '@phosphor/messaging';
+ import { Message } from '@lumino/messaging';
  
- import { Signal } from '@phosphor/signaling';
+ import { Signal } from '@lumino/signaling';
  
--import { Panel, PanelLayout } from '@phosphor/widgets';
+-import { Panel, PanelLayout } from '@lumino/widgets';
 -
--import { Widget } from '@phosphor/widgets';
+-import { Widget } from '@lumino/widgets';
 -
 -import { IClientSession } from '@jupyterlab/apputils';
 -
 -import { nbformat } from '@jupyterlab/coreutils';
-+import { Panel, PanelLayout, Widget } from '@phosphor/widgets';
++import { Panel, PanelLayout, Widget } from '@lumino/widgets';
  
 -import { IOutputModel, IRenderMimeRegistry } from '@jupyterlab/rendermime';
 -
@@ -11731,251 +8340,15 @@ index 24f7c1459f3..c1c5827cece 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/rendermime-interfaces": "^1.3.0",
      "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-     "@phosphor/messaging": "^1.2.3",
--    "@phosphor/signaling": "^1.2.3",
-     "@phosphor/widgets": "^1.8.0",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
+     "@lumino/messaging": "^1.2.3",
+-    "@lumino/signaling": "^1.2.3",
+     "@lumino/widgets": "^1.8.0",
      "lodash.escape": "^4.0.1",
      "marked": "0.6.2"
-diff --git a/packages/rendermime/src/attachmentmodel.ts b/packages/rendermime/src/attachmentmodel.ts
-deleted file mode 100644
-index ec99a5b8cc3..00000000000
---- a/packages/rendermime/src/attachmentmodel.ts
-+++ /dev/null
-@@ -1,231 +0,0 @@
--/*-----------------------------------------------------------------------------
--| Copyright (c) Jupyter Development Team.
--| Distributed under the terms of the Modified BSD License.
--|----------------------------------------------------------------------------*/
--
--import { nbformat } from '@jupyterlab/coreutils';
--
--import { IObservableJSON, ObservableJSON } from '@jupyterlab/observables';
--
--import { IRenderMime } from '@jupyterlab/rendermime-interfaces';
--
--import {
--  JSONExt,
--  JSONObject,
--  JSONValue,
--  ReadonlyJSONObject
--} from '@phosphor/coreutils';
--
--import { ISignal, Signal } from '@phosphor/signaling';
--
--import { MimeModel } from './mimemodel';
--
--/**
-- * The interface for an attachment model.
-- */
--export interface IAttachmentModel extends IRenderMime.IMimeModel {
--  /**
--   * A signal emitted when the attachment model changes.
--   */
--  readonly changed: ISignal<this, void>;
--
--  /**
--   * Dispose of the resources used by the attachment model.
--   */
--  dispose(): void;
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IMimeBundle;
--}
--
--/**
-- * The namespace for IAttachmentModel sub-interfaces.
-- */
--export namespace IAttachmentModel {
--  /**
--   * The options used to create a notebook attachment model.
--   */
--  export interface IOptions {
--    /**
--     * The raw attachment value.
--     */
--    value: nbformat.IMimeBundle;
--  }
--}
--
--/**
-- * The default implementation of a notebook attachment model.
-- */
--export class AttachmentModel implements IAttachmentModel {
--  /**
--   * Construct a new attachment model.
--   */
--  constructor(options: IAttachmentModel.IOptions) {
--    let { data } = Private.getBundleOptions(options);
--    this._data = new ObservableJSON({ values: data as JSONObject });
--    this._rawData = data;
--    // Make a copy of the data.
--    let value = options.value;
--    for (let key in value) {
--      // Ignore data and metadata that were stripped.
--      switch (key) {
--        case 'data':
--          break;
--        default:
--          this._raw[key] = Private.extract(value, key);
--      }
--    }
--  }
--
--  /**
--   * A signal emitted when the attachment model changes.
--   */
--  get changed(): ISignal<this, void> {
--    return this._changed;
--  }
--
--  /**
--   * Dispose of the resources used by the attachment model.
--   */
--  dispose(): void {
--    this._data.dispose();
--    Signal.clearData(this);
--  }
--
--  /**
--   * The data associated with the model.
--   */
--  get data(): ReadonlyJSONObject {
--    return this._rawData;
--  }
--
--  /**
--   * The metadata associated with the model.
--   */
--  get metadata(): ReadonlyJSONObject {
--    return undefined;
--  }
--
--  /**
--   * Set the data associated with the model.
--   *
--   * #### Notes
--   * Depending on the implementation of the mime model,
--   * this call may or may not have deferred effects,
--   */
--  setData(options: IRenderMime.IMimeModel.ISetDataOptions): void {
--    if (options.data) {
--      this._updateObservable(this._data, options.data);
--      this._rawData = options.data;
--    }
--    this._changed.emit(void 0);
--  }
--
--  /**
--   * Serialize the model to JSON.
--   */
--  toJSON(): nbformat.IMimeBundle {
--    let attachment: JSONValue = {};
--    for (let key in this._raw) {
--      attachment[key] = Private.extract(this._raw, key);
--    }
--    return attachment as nbformat.IMimeBundle;
--  }
--
--  // All attachments are untrusted
--  readonly trusted: boolean = false;
--
--  /**
--   * Update an observable JSON object using a readonly JSON object.
--   */
--  private _updateObservable(
--    observable: IObservableJSON,
--    data: ReadonlyJSONObject
--  ) {
--    let oldKeys = observable.keys();
--    let newKeys = Object.keys(data);
--
--    // Handle removed keys.
--    for (let key of oldKeys) {
--      if (newKeys.indexOf(key) === -1) {
--        observable.delete(key);
--      }
--    }
--
--    // Handle changed data.
--    for (let key of newKeys) {
--      let oldValue = observable.get(key);
--      let newValue = data[key];
--      if (oldValue !== newValue) {
--        observable.set(key, newValue as JSONValue);
--      }
--    }
--  }
--
--  private _changed = new Signal<this, void>(this);
--  private _raw: JSONObject = {};
--  private _rawData: ReadonlyJSONObject;
--  private _data: IObservableJSON;
--}
--
--/**
-- * The namespace for AttachmentModel statics.
-- */
--export namespace AttachmentModel {
--  /**
--   * Get the data for an attachment.
--   *
--   * @params bundle - A kernel attachment MIME bundle.
--   *
--   * @returns - The data for the payload.
--   */
--  export function getData(bundle: nbformat.IMimeBundle): JSONObject {
--    return Private.getData(bundle);
--  }
--}
--
--/**
-- * The namespace for module private data.
-- */
--namespace Private {
--  /**
--   * Get the data from a notebook attachment.
--   */
--  export function getData(bundle: nbformat.IMimeBundle): JSONObject {
--    return convertBundle(bundle);
--  }
--
--  /**
--   * Get the bundle options given attachment model options.
--   */
--  export function getBundleOptions(
--    options: IAttachmentModel.IOptions
--  ): MimeModel.IOptions {
--    let data = getData(options.value);
--    return { data };
--  }
--
--  /**
--   * Extract a value from a JSONObject.
--   */
--  export function extract(value: JSONObject, key: string): JSONValue {
--    let item = value[key];
--    if (JSONExt.isPrimitive(item)) {
--      return item;
--    }
--    return JSONExt.deepCopy(item);
--  }
--
--  /**
--   * Convert a mime bundle to mime data.
--   */
--  function convertBundle(bundle: nbformat.IMimeBundle): JSONObject {
--    let map: JSONObject = Object.create(null);
--    for (let mimeType in bundle) {
--      map[mimeType] = extract(bundle, mimeType);
--    }
--    return map;
--  }
--}
+
 diff --git a/packages/rendermime/src/index.ts b/packages/rendermime/src/index.ts
 index e21201ea14d..949dfef41bb 100644
 --- a/packages/rendermime/src/index.ts
@@ -12007,10 +8380,10 @@ index 0624057d172..42efebd665a 100644
    JSONObject,
 @@ -9,25 +15,105 @@ import {
    ReadonlyJSONObject
- } from '@phosphor/coreutils';
+ } from '@lumino/coreutils';
  
--import { ISignal, Signal } from '@phosphor/signaling';
-+import { Datastore, Fields, Record, RegisterField } from '@phosphor/datastore';
+-import { ISignal, Signal } from '@lumino/signaling';
++import { Datastore, Fields, Record, RegisterField } from '@lumino/datastore';
  
 -import { nbformat } from '@jupyterlab/coreutils';
 +import { MimeModel } from './mimemodel';
@@ -12475,9 +8848,9 @@ index 7e616a7faa0..d78be9e255a 100644
    "dependencies": {
      "@jupyterlab/coreutils": "^3.0.0",
 -    "@jupyterlab/observables": "^2.2.0",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
-     "@phosphor/disposable": "^1.2.0",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
+     "@lumino/disposable": "^1.2.0",
 diff --git a/packages/services/src/contents/index.ts b/packages/services/src/contents/index.ts
 index 79be3a6c5f2..905b161e742 100644
 --- a/packages/services/src/contents/index.ts
@@ -12488,9 +8861,9 @@ index 79be3a6c5f2..905b161e742 100644
  
 -import { ModelDB } from '@jupyterlab/observables';
 -
- import { JSONObject } from '@phosphor/coreutils';
+ import { JSONObject } from '@lumino/coreutils';
  
- import { each } from '@phosphor/algorithm';
+ import { each } from '@lumino/algorithm';
 @@ -253,13 +251,6 @@ export namespace Contents {
       */
      driveName(path: string): string;
@@ -12547,233 +8920,7 @@ index fc86490bf28..a78a8595407 100644
  export * from './nbconvert';
  
  export { Builder } from './builder';
-diff --git a/packages/services/src/wsconnection.ts b/packages/services/src/wsconnection.ts
-new file mode 100644
-index 00000000000..2b257668ecd
---- /dev/null
-+++ b/packages/services/src/wsconnection.ts
-@@ -0,0 +1,221 @@
-+// Copyright (c) Jupyter Development Team.
-+// Distributed under the terms of the Modified BSD License.
-+
-+import { PromiseDelegate } from '@phosphor/coreutils';
-+
-+import { IDisposable } from '@phosphor/disposable';
-+
-+/**
-+ * Abstract base for a class that sends/receives messages over websocket.
-+ */
-+export abstract class WSConnection<TSendMsg, TRecvMsg> implements IDisposable {
-+  /**
-+   * Dispose of the resources held by the connection.
-+   */
-+  dispose(): void {
-+    if (this.isDisposed) {
-+      return;
-+    }
-+    this._isDisposed = true;
-+    this._clearSocket();
-+  }
-+
-+  /**
-+   * Test whether the connection has been disposed.
-+   */
-+  get isDisposed(): boolean {
-+    return this._isDisposed;
-+  }
-+
-+  /**
-+   * Test whether the connection is ready.
-+   */
-+  get isReady(): boolean {
-+    return !this._wsStopped;
-+  }
-+
-+  /**
-+   * A promise that resolves once the connection is open.
-+   */
-+  get ready(): Promise<void> {
-+    return this._readyDelegate.promise;
-+  }
-+
-+  /**
-+   * Factory function for a WebSocket.
-+   */
-+  protected abstract wsFactory(): WebSocket;
-+
-+  /**
-+   * Send a message over the websocket.
-+   *
-+   * @param msg - The JSON value to send.
-+   *
-+   */
-+  protected sendMessage(msg: TSendMsg) {
-+    if (!this._ws || this._wsStopped) {
-+      throw new Error('Web socket not connected');
-+    }
-+
-+    const value = this.serializeWSMessage(msg);
-+
-+    this._ws.send(value);
-+  }
-+
-+  /**
-+   * Handle a received, decoded WS message.
-+   *
-+   * @param msg - The decoded message that was received.
-+   *
-+   * @returns Whether the message was handled.
-+   */
-+  protected abstract handleMessage(msg: TRecvMsg): boolean;
-+
-+  /**
-+   * Whether a closed connection should reconnect.
-+   *
-+   * @return - Returns false if it should not reconnect.
-+   * Otherwise it returns a number indicating the delay before reconnecting
-+   * in ms. Return 0 to reconnect as soon as possible.
-+   */
-+  protected shouldReconnect(): false | number {
-+    if (this.reconnectAttempt >= this.reconnectLimit) {
-+      console.log(
-+        `Websocket reconnect abandoned after ${this.reconnectAttempt} attempts`
-+      );
-+      return false;
-+    }
-+    return 1e3 * Math.pow(2, this.reconnectAttempt++);
-+  }
-+
-+  protected serializeWSMessage(
-+    msg: TSendMsg
-+  ): string | ArrayBuffer | Blob | ArrayBufferView {
-+    return JSON.stringify(msg);
-+  }
-+
-+  protected deserializeWSMessage(data: unknown): TRecvMsg {
-+    if (typeof data !== 'string') {
-+      console.error(`Invalid websocket message data type: ${typeof data}`);
-+      return;
-+    }
-+    try {
-+      return JSON.parse(data);
-+    } catch (error) {
-+      console.error(`Invalid message: ${error.message}`);
-+      return;
-+    }
-+  }
-+
-+  /**
-+   * Create the websocket connection and add socket status handlers.
-+   */
-+  protected _createSocket = () => {
-+    this._clearSocket();
-+    this._wsStopped = false;
-+    this._ws = this.wsFactory();
-+    this._readyDelegate = new PromiseDelegate<void>();
-+
-+    this._ws.onmessage = this._onWSMessage.bind(this);
-+    this._ws.onopen = this._onWSOpen.bind(this);
-+    this._ws.onclose = this._onWSClose.bind(this);
-+    this._ws.onerror = this._onWSError.bind(this);
-+  };
-+
-+  /**
-+   * Clear the socket state.
-+   */
-+  private _clearSocket(): void {
-+    this._wsStopped = true;
-+    if (this._ws !== null) {
-+      // Clear the websocket event handlers and the socket itself.
-+      this._ws.onopen = this._noOp;
-+      this._ws.onclose = this._noOp;
-+      this._ws.onerror = this._noOp;
-+      this._ws.onmessage = this._noOp;
-+      this._ws.close();
-+      this._ws = null;
-+    }
-+  }
-+
-+  private _onWSOpen(evt: Event): void {
-+    if (!this.isDisposed) {
-+      this.reconnectAttempt = 0;
-+      this._wsStopped = false;
-+      this._readyDelegate.resolve(undefined);
-+    }
-+  }
-+
-+  private _onWSMessage(evt: MessageEvent) {
-+    if (this._wsStopped) {
-+      // If the socket is being closed, ignore any messages
-+      return;
-+    }
-+    const msg = this.deserializeWSMessage(evt.data);
-+
-+    let handled = this.handleMessage(msg);
-+    if (!handled) {
-+      console.log('Unhandled websocket message.', msg);
-+    }
-+  }
-+
-+  private _onWSClose(evt: CloseEvent) {
-+    if (this._wsStopped || !this._ws) {
-+      return;
-+    }
-+    console.warn(`Websocket closed: ${evt.code}`);
-+    this._reconnectSocket();
-+  }
-+
-+  private _onWSError(evt: Event) {
-+    if (!this._isDisposed) {
-+      this._readyDelegate.reject(evt);
-+    }
-+  }
-+
-+  private _reconnectSocket(): void {
-+    const delay = this.shouldReconnect();
-+    if (delay === false) {
-+      return;
-+    }
-+
-+    console.log(`Websocket will attempt to reconnect in ${delay * 1e-3}s`);
-+    this._wsStopped = true;
-+
-+    setTimeout(() => {
-+      if (this.isDisposed) {
-+        return;
-+      }
-+      this._createSocket();
-+      this.ready
-+        .then(() => {
-+          console.log('Websocket reconnected');
-+        })
-+        .catch(reason => {
-+          console.warn(`Websocket reconnect failed`, reason);
-+        });
-+    }, delay);
-+  }
-+
-+  protected readonly reconnectLimit = 7;
-+  protected reconnectAttempt = 0;
-+  protected _ws: WebSocket | null = null;
-+  protected _wsStopped = true;
-+
-+  private _isDisposed = false;
-+  private _readyDelegate: PromiseDelegate<void> | null = null;
-+
-+  private readonly _noOp = () => {
-+    /* no-op */
-+  };
-+}
-+
-+/**
-+ * The namespace for WSConnection statics.
-+ */
-+export namespace WSConnection {
-+  /**
-+   * A websocket factory function.
-+   */
-+  export type WSFactory = () => WebSocket;
-+}
+
 diff --git a/packages/services/tsconfig.json b/packages/services/tsconfig.json
 index 1c324ae71e1..4446231729e 100644
 --- a/packages/services/tsconfig.json
@@ -12799,7 +8946,7 @@ index 475aaaee885..49b52f43852 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/inspector": "^1.0.1",
      "@jupyterlab/rendermime": "^1.0.1",
-     "@phosphor/commands": "^1.6.3",
+     "@lumino/commands": "^1.6.3",
 diff --git a/packages/settingeditor/src/raweditor.ts b/packages/settingeditor/src/raweditor.ts
 index d88ea31c264..40e85646cb5 100644
 --- a/packages/settingeditor/src/raweditor.ts
@@ -12812,7 +8959,7 @@ index d88ea31c264..40e85646cb5 100644
 +
  import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
  
- import { CommandRegistry } from '@phosphor/commands';
+ import { CommandRegistry } from '@lumino/commands';
 @@ -71,7 +73,7 @@ export class RawEditor extends SplitPanel {
        factory: editorFactory
      }));
@@ -12935,8 +9082,8 @@ index 325339b7cfc..aaeb662e22e 100644
      "@jupyterlab/coreutils": "^3.0.0",
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/statusbar/src/defaults/lineCol.tsx b/packages/statusbar/src/defaults/lineCol.tsx
 index 2240c2da940..653626d95c3 100644
 --- a/packages/statusbar/src/defaults/lineCol.tsx
@@ -12947,7 +9094,7 @@ index 2240c2da940..653626d95c3 100644
  
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
 +
  import { interactiveItem, showPopup, Popup, TextItem } from '..';
  
