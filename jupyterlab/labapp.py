@@ -36,6 +36,10 @@ from .handlers.extension_manager_handler import (
     extensions_handler_path, ExtensionManager, ExtensionHandler
 )
 from .handlers.error_handler import ErrorHandler
+from .datastore import (
+    CollaborationHandler, collaboration_path,
+    CollaborationsManagerHandler, datastore_rest_path
+)
 
 
 DEV_NOTE = """You're running JupyterLab from source.
@@ -645,6 +649,12 @@ class LabApp(NBClassicConfigShimMixin, LabServerApp):
         builder = Builder(self.core_mode, app_options=build_handler_options)
         build_handler = (build_path, BuildHandler, {'builder': builder})
         handlers.append(build_handler)
+
+        collaborations_url = ujoin(base_url, collaboration_path)
+        collaborations_handler = (collaborations_url, CollaborationHandler, {})        
+        colab_manager_url = ujoin(base_url, datastore_rest_path)
+        colab_manager_handler = (colab_manager_url, CollaborationsManagerHandler, {})
+        handlers.append(collaborations_handler, colab_manager_handler]
 
         errored = False
 

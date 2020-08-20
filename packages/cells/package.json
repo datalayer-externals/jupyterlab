@@ -47,7 +47,7 @@
     "@jupyterlab/coreutils": "^5.0.0-alpha.11",
     "@jupyterlab/filebrowser": "^3.0.0-alpha.11",
     "@jupyterlab/nbformat": "^3.0.0-alpha.11",
-    "@jupyterlab/observables": "^4.0.0-alpha.11",
+    "@jupyterlab/datastore": "^4.0.0-alpha.11",
     "@jupyterlab/outputarea": "^3.0.0-alpha.11",
     "@jupyterlab/rendermime": "^3.0.0-alpha.11",
     "@jupyterlab/services": "^6.0.0-alpha.11",

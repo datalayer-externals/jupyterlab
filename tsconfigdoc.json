@@ -66,6 +66,9 @@
       "path": "./packages/csvviewer-extension"
     },
     {
+      "path": "./packages/datastore"
+    },
+    {
       "path": "./packages/debugger"
     },
     {
