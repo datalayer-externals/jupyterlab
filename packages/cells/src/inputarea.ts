@@ -11,7 +11,7 @@ import { CodeEditor, CodeEditorWrapper } from '@jupyterlab/codeeditor';
 
 import { CodeMirrorEditorFactory } from '@jupyterlab/codemirror';
 
-import { ICellModel } from './model';
+import { ICellModel } from './data';
 
 /**
  * The class name added to input area widgets.
@@ -47,7 +47,7 @@ export class InputArea extends Widget {
   constructor(options: InputArea.IOptions) {
     super();
     this.addClass(INPUT_AREA_CLASS);
-    const model = (this.model = options.model);
+    const data = (this.data = options.data);
     const contentFactory = (this.contentFactory =
       options.contentFactory || InputArea.defaultContentFactory);
 
@@ -56,8 +56,9 @@ export class InputArea extends Widget {
     prompt.addClass(INPUT_AREA_PROMPT_CLASS);
 
     // Editor
+    let editorModel = new CodeEditor.Model({ data });
     const editorOptions = {
-      model,
+      model: editorModel,
       factory: contentFactory.editorFactory,
       updateOnShow: options.updateOnShow
     };
@@ -72,7 +73,7 @@ export class InputArea extends Widget {
   /**
    * The model used by the widget.
    */
-  readonly model: ICellModel;
+  readonly data: ICellModel.DataLocation;
 
   /**
    * The content factory used by the widget.
@@ -160,7 +161,7 @@ export namespace InputArea {
     /**
      * The model used by the widget.
      */
-    model: ICellModel;
+    model: ICellData.DataLocation;
 
     /**
      * The content factory used by the widget to create children.

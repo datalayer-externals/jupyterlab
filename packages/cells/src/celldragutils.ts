@@ -9,11 +9,14 @@
  * Notebook widgets.
  */
 
+import { nbformat } from '@jupyterlab/coreutils';
+
+import { DatastoreExt } from '@jupyterlab/datastore';
+
 import { each, IterableOrArrayLike } from '@lumino/algorithm';
-import { ICodeCellModel } from './model';
-import { Cell } from './widget';
 import { h, VirtualDOM } from '@lumino/virtualdom';
-import * as nbformat from '@jupyterlab/nbformat';
+
+import { Cell } from './widget';
 
 /**
  * Constants for drag
@@ -142,9 +145,12 @@ export namespace CellDragUtils {
   ): HTMLElement {
     const count = selectedCells.length;
     let promptNumber: string;
-    if (activeCell.model.type === 'code') {
-      const executionCount = (activeCell.model as ICodeCellModel)
-        .executionCount;
+    const cellData = DatastoreExt.getRecord(
+      activeCell.data.datastore,
+      activeCell.data.record
+    );
+    if (cellData.type === 'code') {
+      let executionCount = cellData.executionCount;
       promptNumber = ' ';
       if (executionCount) {
         promptNumber = executionCount.toString();
@@ -153,7 +159,7 @@ export namespace CellDragUtils {
       promptNumber = '';
     }
 
-    const cellContent = activeCell.model.value.text.split('\n')[0].slice(0, 26);
+    const cellContent = cellData.text.split('\n')[0].slice(0, 26);
     if (count > 1) {
       if (promptNumber !== '') {
         return VirtualDOM.realize(
