@@ -13,6 +13,9 @@
       "path": "../codeeditor"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../docregistry"
     },
     {

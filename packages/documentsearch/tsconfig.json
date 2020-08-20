@@ -19,6 +19,9 @@
       "path": "../codemirror"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../fileeditor"
     },
     {

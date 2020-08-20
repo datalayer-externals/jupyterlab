@@ -36,6 +36,7 @@
     "@jupyterlab/cells": "^3.0.0-alpha.12",
     "@jupyterlab/codeeditor": "^3.0.0-alpha.12",
     "@jupyterlab/codemirror": "^3.0.0-alpha.12",
+    "@jupyterlab/datastore": "^3.0.0-alpha.12",
     "@jupyterlab/fileeditor": "^3.0.0-alpha.12",
     "@jupyterlab/notebook": "^3.0.0-alpha.12",
     "@jupyterlab/translation": "^3.0.0-alpha.12",

@@ -43,6 +43,7 @@
     "@jupyterlab/apputils": "^3.0.0-alpha.12",
     "@jupyterlab/codeeditor": "^3.0.0-alpha.12",
     "@jupyterlab/coreutils": "^5.0.0-alpha.12",
+    "@jupyterlab/datastore": "^3.0.0-alpha.12",
     "@jupyterlab/services": "^6.0.0-alpha.12",
     "@jupyterlab/statedb": "^3.0.0-alpha.12",
     "@jupyterlab/ui-components": "^3.0.0-alpha.12",

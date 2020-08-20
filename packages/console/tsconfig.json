@@ -19,10 +19,16 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../nbformat"
     },
     {
       "path": "../observables"
+    },
+    {
+      "path": "../outputarea"
     },
     {
       "path": "../rendermime"

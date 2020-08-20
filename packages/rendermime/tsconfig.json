@@ -19,7 +19,7 @@
       "path": "../nbformat"
     },
     {
-      "path": "../observables"
+      "path": "../datastore"
     },
     {
       "path": "../rendermime-interfaces"

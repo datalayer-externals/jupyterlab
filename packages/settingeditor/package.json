@@ -37,6 +37,7 @@
   "dependencies": {
     "@jupyterlab/apputils": "^3.0.0-alpha.12",
     "@jupyterlab/codeeditor": "^3.0.0-alpha.12",
+    "@jupyterlab/datastore": "^3.0.0-alpha.12",
     "@jupyterlab/inspector": "^3.0.0-alpha.12",
     "@jupyterlab/rendermime": "^3.0.0-alpha.12",
     "@jupyterlab/settingregistry": "^3.0.0-alpha.12",

@@ -1535,19 +1535,7 @@ index 270f1126db9..b0214c6863d 100644
    }
  
    private _updateOnShow: boolean;
-diff --git a/packages/codeeditor/tsconfig.json b/packages/codeeditor/tsconfig.json
-index b6147c37b78..53bbe505f6b 100644
---- a/packages/codeeditor/tsconfig.json
-+++ b/packages/codeeditor/tsconfig.json
-@@ -10,7 +10,7 @@
-       "path": "../coreutils"
-     },
-     {
--      "path": "../observables"
-+      "path": "../datastore"
-     }
-   ]
- }
+
 diff --git a/packages/codemirror-extension/src/index.ts b/packages/codemirror-extension/src/index.ts
 index 16c0e1a5f3a..a30670acace 100644
 --- a/packages/codemirror-extension/src/index.ts
@@ -1562,24 +1550,7 @@ index 16c0e1a5f3a..a30670acace 100644
      if (widget.content.editor instanceof CodeMirrorEditor) {
        let cm = widget.content.editor.editor;
        cm.setOption('keyMap', keyMap);
-diff --git a/packages/codemirror/package.json b/packages/codemirror/package.json
-index ba3485bd937..d3e1985327b 100644
---- a/packages/codemirror/package.json
-+++ b/packages/codemirror/package.json
-@@ -36,11 +36,13 @@
-     "@jupyterlab/apputils": "^1.0.1",
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/coreutils": "^3.0.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/observables": "^2.2.0",
-     "@jupyterlab/statusbar": "^1.0.1",
-     "@lumino/algorithm": "^1.1.3",
-     "@lumino/commands": "^1.6.3",
-     "@lumino/coreutils": "^1.3.1",
-+    "@lumino/datastore": "0.7.2",
-     "@lumino/disposable": "^1.2.0",
-     "@lumino/signaling": "^1.2.3",
-     "@lumino/widgets": "^1.8.0",
+
 diff --git a/packages/codemirror/src/editor.ts b/packages/codemirror/src/editor.ts
 index d68ff9601f0..204ac6e6b06 100644
 --- a/packages/codemirror/src/editor.ts
@@ -1916,20 +1887,6 @@ index 888747cfb40..02032ae1652 100644
    }
  
    /**
-diff --git a/packages/codemirror/tsconfig.json b/packages/codemirror/tsconfig.json
-index cef6c8e4442..a8a54b56b6f 100644
---- a/packages/codemirror/tsconfig.json
-+++ b/packages/codemirror/tsconfig.json
-@@ -15,6 +15,9 @@
-     {
-       "path": "../coreutils"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-     {
-       "path": "../observables"
-     },
 diff --git a/packages/completer-extension/src/index.ts b/packages/completer-extension/src/index.ts
 index f29b4b41c13..0328202ba28 100644
 --- a/packages/completer-extension/src/index.ts
@@ -1955,18 +1912,6 @@ index f29b4b41c13..0328202ba28 100644
        const contextConnector = new ContextConnector({ editor });
  
        // When the list of running sessions changes,
-diff --git a/packages/completer/package.json b/packages/completer/package.json
-index cd1f8b4b8ad..25c32dd6173 100644
---- a/packages/completer/package.json
-+++ b/packages/completer/package.json
-@@ -38,6 +38,7 @@
-     "@jupyterlab/apputils": "^1.0.1",
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/coreutils": "^3.0.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/services": "^4.0.1",
-     "@lumino/algorithm": "^1.1.3",
-     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/completer/src/handler.ts b/packages/completer/src/handler.ts
 index 4e783d85072..83ca71007fe 100644
 --- a/packages/completer/src/handler.ts
@@ -2070,34 +2015,6 @@ index 4e783d85072..83ca71007fe 100644
  }
  
  /**
-diff --git a/packages/completer/tsconfig.json b/packages/completer/tsconfig.json
-index edad9823e33..2280a700be8 100644
---- a/packages/completer/tsconfig.json
-+++ b/packages/completer/tsconfig.json
-@@ -15,6 +15,9 @@
-     {
-       "path": "../coreutils"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-     {
-       "path": "../services"
-     }
-diff --git a/packages/console/package.json b/packages/console/package.json
-index cf53e00d243..a7e77761d6b 100644
---- a/packages/console/package.json
-+++ b/packages/console/package.json
-@@ -39,7 +39,9 @@
-     "@jupyterlab/cells": "^1.0.1",
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/coreutils": "^3.0.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/observables": "^2.2.0",
-+    "@jupyterlab/outputarea": "^1.0.1",
-     "@jupyterlab/rendermime": "^1.0.1",
-     "@jupyterlab/services": "^4.0.1",
-     "@lumino/algorithm": "^1.1.3",
 diff --git a/packages/console/src/foreign.ts b/packages/console/src/foreign.ts
 index 1b746cb308e..d891d2ee618 100644
 --- a/packages/console/src/foreign.ts
@@ -2685,26 +2602,7 @@ index 192a269ffd7..c0e2d26bce3 100644
  @import url('~@jupyterlab/cells/style/index.css');
  
  @import url('./base.css');
-diff --git a/packages/console/tsconfig.json b/packages/console/tsconfig.json
-index 5ad754f1cd7..12612f0a093 100644
---- a/packages/console/tsconfig.json
-+++ b/packages/console/tsconfig.json
-@@ -18,9 +18,15 @@
-     {
-       "path": "../coreutils"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-     {
-       "path": "../observables"
-     },
-+    {
-+      "path": "../outputarea"
-+    },
-     {
-       "path": "../rendermime"
-     },
+
 diff --git a/packages/coreutils/src/pageconfig.ts b/packages/coreutils/src/pageconfig.ts
 index e84050ffe37..25d9fa0424b 100644
 --- a/packages/coreutils/src/pageconfig.ts
@@ -2842,19 +2740,6 @@ index 2507a012765..cecfd6f828d 100644
        return Promise.resolve(true);
      }
      let fileName = widget.title.label;
-diff --git a/packages/docregistry/package.json b/packages/docregistry/package.json
-index af3bdd37c5e..1da8dbd33fb 100644
---- a/packages/docregistry/package.json
-+++ b/packages/docregistry/package.json
-@@ -39,7 +39,7 @@
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/codemirror": "^1.0.1",
-     "@jupyterlab/coreutils": "^3.0.0",
--    "@jupyterlab/observables": "^2.2.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/rendermime": "^1.0.1",
-     "@jupyterlab/rendermime-interfaces": "^1.3.0",
-     "@jupyterlab/services": "^4.0.1",
 diff --git a/packages/docregistry/src/context.ts b/packages/docregistry/src/context.ts
 index 3618a08c553..62a2d89c130 100644
 --- a/packages/docregistry/src/context.ts
@@ -3759,31 +3644,6 @@ index f234672f596..bf3bb600bea 100644
    /**
     * A type alias for a standard model factory.
     */
-diff --git a/packages/docregistry/tsconfig.json b/packages/docregistry/tsconfig.json
-index d23fa25fb13..91da8486719 100644
---- a/packages/docregistry/tsconfig.json
-+++ b/packages/docregistry/tsconfig.json
-@@ -19,7 +19,7 @@
-       "path": "../coreutils"
-     },
-     {
--      "path": "../observables"
-+      "path": "../datastore"
-     },
-     {
-       "path": "../rendermime"
-diff --git a/packages/documentsearch/package.json b/packages/documentsearch/package.json
-index fe1d5ddaa16..9ea74f21ab9 100644
---- a/packages/documentsearch/package.json
-+++ b/packages/documentsearch/package.json
-@@ -37,6 +37,7 @@
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/codemirror": "^1.0.1",
-     "@jupyterlab/coreutils": "^3.0.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/fileeditor": "^1.0.1",
-     "@jupyterlab/notebook": "^1.0.1",
-     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/documentsearch/src/providers/notebooksearchprovider.ts b/packages/documentsearch/src/providers/notebooksearchprovider.ts
 index 20cf0e1b985..80703202321 100644
 --- a/packages/documentsearch/src/providers/notebooksearchprovider.ts
@@ -3849,20 +3709,6 @@ index 20cf0e1b985..80703202321 100644
    private _changed = new Signal<this, void>(this);
 +  private _cellListener: IDisposable;
  }
-diff --git a/packages/documentsearch/tsconfig.json b/packages/documentsearch/tsconfig.json
-index 219ad7850ee..eae26ac45e6 100644
---- a/packages/documentsearch/tsconfig.json
-+++ b/packages/documentsearch/tsconfig.json
-@@ -21,6 +21,9 @@
-     {
-       "path": "../coreutils"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-     {
-       "path": "../fileeditor"
-     },
 diff --git a/packages/fileeditor-extension/src/index.ts b/packages/fileeditor-extension/src/index.ts
 index 2379f659544..90521beb74e 100644
 --- a/packages/fileeditor-extension/src/index.ts
@@ -3934,18 +3780,6 @@ index 2379f659544..90521beb74e 100644
        let path = widget.context.path;
        let extension = PathExt.extname(path);
  
-diff --git a/packages/fileeditor/package.json b/packages/fileeditor/package.json
-index f71fd00f786..883d073c61e 100644
---- a/packages/fileeditor/package.json
-+++ b/packages/fileeditor/package.json
-@@ -37,6 +37,7 @@
-   "dependencies": {
-     "@jupyterlab/apputils": "^1.0.1",
-     "@jupyterlab/codeeditor": "^1.0.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/docregistry": "^1.0.1",
-     "@jupyterlab/statusbar": "^1.0.1",
-     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/fileeditor/src/widget.ts b/packages/fileeditor/src/widget.ts
 index 84a7de4c906..dbf615b6310 100644
 --- a/packages/fileeditor/src/widget.ts
@@ -4198,32 +4032,7 @@ index 84a7de4c906..dbf615b6310 100644
 +  private _editorWidget: FileEditorCodeWrapper | null = null;
    private _mimeTypeService: IEditorMimeTypeService;
  }
- 
-diff --git a/packages/fileeditor/tsconfig.json b/packages/fileeditor/tsconfig.json
-index daa66686b54..225f473c159 100644
---- a/packages/fileeditor/tsconfig.json
-+++ b/packages/fileeditor/tsconfig.json
-@@ -4,7 +4,9 @@
-     "outDir": "lib",
-     "rootDir": "src"
-   },
--  "include": ["src/*"],
-+  "include": [
-+    "src/*"
-+  ],
-   "references": [
-     {
-       "path": "../apputils"
-@@ -12,6 +14,9 @@
-     {
-       "path": "../codeeditor"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-     {
-       "path": "../docregistry"
-     },
+
 diff --git a/packages/inspector/src/handler.ts b/packages/inspector/src/handler.ts
 index e3c91aecd77..2eef879978e 100644
 --- a/packages/inspector/src/handler.ts
@@ -4247,61 +4056,6 @@ index e3c91aecd77..2eef879978e 100644
      const position = editor.getCursorPosition();
      const offset = Text.jsIndexToCharIndex(editor.getOffsetAt(position), text);
      const update: IInspector.IInspectorUpdate = { content: null };
-diff --git a/packages/metapackage/package.json b/packages/metapackage/package.json
-index ea9a39cb53f..084857d7841 100644
---- a/packages/metapackage/package.json
-+++ b/packages/metapackage/package.json
-@@ -47,6 +47,8 @@
-     "@jupyterlab/coreutils": "^3.0.0",
-     "@jupyterlab/csvviewer": "^1.0.1",
-     "@jupyterlab/csvviewer-extension": "^1.0.1",
-+    "@jupyterlab/datastore": "^1.0.0",
-+    "@jupyterlab/datastore-extension": "^1.0.0",
-     "@jupyterlab/docmanager": "^1.0.1",
-     "@jupyterlab/docmanager-extension": "^1.0.1",
-     "@jupyterlab/docregistry": "^1.0.1",
-diff --git a/packages/metapackage/src/index.ts b/packages/metapackage/src/index.ts
-index 38ee91d9b5c..aaeb8b47926 100644
---- a/packages/metapackage/src/index.ts
-+++ b/packages/metapackage/src/index.ts
-@@ -17,6 +17,8 @@ import '@jupyterlab/console-extension';
- import '@jupyterlab/coreutils';
- import '@jupyterlab/csvviewer';
- import '@jupyterlab/csvviewer-extension';
-+import '@jupyterlab/datastore';
-+import '@jupyterlab/datastore-extension';
- import '@jupyterlab/docmanager';
- import '@jupyterlab/docmanager-extension';
- import '@jupyterlab/docregistry';
-diff --git a/packages/metapackage/tsconfig.json b/packages/metapackage/tsconfig.json
-index dc0d758dfaf..7978a55f07c 100644
---- a/packages/metapackage/tsconfig.json
-+++ b/packages/metapackage/tsconfig.json
-@@ -54,6 +54,12 @@
-     {
-       "path": "../csvviewer-extension"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-+    {
-+      "path": "../datastore-extension"
-+    },
-     {
-       "path": "../docmanager"
-     },
-diff --git a/packages/notebook-extension/package.json b/packages/notebook-extension/package.json
-index 36edff7a67d..91ff8f93508 100644
---- a/packages/notebook-extension/package.json
-+++ b/packages/notebook-extension/package.json
-@@ -41,6 +41,7 @@
-     "@jupyterlab/cells": "^1.0.1",
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/coreutils": "^3.0.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/docmanager": "^1.0.1",
-     "@jupyterlab/filebrowser": "^1.0.1",
-     "@jupyterlab/launcher": "^1.0.1",
 diff --git a/packages/notebook-extension/src/index.ts b/packages/notebook-extension/src/index.ts
 index e88150e6230..1d475306910 100644
 --- a/packages/notebook-extension/src/index.ts
@@ -4392,43 +4146,6 @@ index e88150e6230..1d475306910 100644
            this.dispose();
            return;
          }
-diff --git a/packages/notebook-extension/tsconfig.json b/packages/notebook-extension/tsconfig.json
-index ff5d92896b3..3291e97884f 100644
---- a/packages/notebook-extension/tsconfig.json
-+++ b/packages/notebook-extension/tsconfig.json
-@@ -21,6 +21,9 @@
-     {
-       "path": "../coreutils"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-     {
-       "path": "../docmanager"
-     },
-diff --git a/packages/notebook/package.json b/packages/notebook/package.json
-index baedcceeb41..915d9bc0674 100644
---- a/packages/notebook/package.json
-+++ b/packages/notebook/package.json
-@@ -39,14 +39,17 @@
-     "@jupyterlab/cells": "^1.0.1",
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/coreutils": "^3.0.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/docregistry": "^1.0.1",
--    "@jupyterlab/observables": "^2.2.0",
-+    "@jupyterlab/outputarea": "^1.0.1",
-     "@jupyterlab/rendermime": "^1.0.1",
-     "@jupyterlab/services": "^4.0.1",
-     "@jupyterlab/statusbar": "^1.0.1",
-     "@jupyterlab/ui-components": "^1.0.0",
-     "@lumino/algorithm": "^1.1.3",
-     "@lumino/coreutils": "^1.3.1",
-+    "@lumino/datastore": "0.7.2",
-+    "@lumino/disposable": "^1.2.0",
-     "@lumino/domutils": "^1.1.3",
-     "@lumino/dragdrop": "^1.3.3",
-     "@lumino/messaging": "^1.2.3",
 diff --git a/packages/notebook/src/actions.tsx b/packages/notebook/src/actions.tsx
 index 3c1733ab633..b03605cbf75 100644
 --- a/packages/notebook/src/actions.tsx
@@ -7789,47 +7506,6 @@ index 9927f8adda6..2b3cd8bed50 100644
  @import url('~@jupyterlab/cells/style/index.css');
  @import url('~@jupyterlab/docregistry/style/index.css');
  
-diff --git a/packages/notebook/tsconfig.json b/packages/notebook/tsconfig.json
-index 76cf38a985b..4de341dccaa 100644
---- a/packages/notebook/tsconfig.json
-+++ b/packages/notebook/tsconfig.json
-@@ -18,11 +18,14 @@
-     {
-       "path": "../coreutils"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-     {
-       "path": "../docregistry"
-     },
-     {
--      "path": "../observables"
-+      "path": "../outputarea"
-     },
-     {
-       "path": "../rendermime"
-diff --git a/packages/outputarea/package.json b/packages/outputarea/package.json
-index e0699df8f62..9584188ea10 100644
---- a/packages/outputarea/package.json
-+++ b/packages/outputarea/package.json
-@@ -37,13 +37,12 @@
-   "dependencies": {
-     "@jupyterlab/apputils": "^1.0.1",
-     "@jupyterlab/coreutils": "^3.0.0",
--    "@jupyterlab/observables": "^2.2.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/rendermime": "^1.0.1",
-     "@jupyterlab/rendermime-interfaces": "^1.3.0",
-     "@jupyterlab/services": "^4.0.1",
--    "@lumino/algorithm": "^1.1.3",
-     "@lumino/coreutils": "^1.3.1",
--    "@lumino/disposable": "^1.2.0",
-+    "@lumino/datastore": "0.7.2",
-     "@lumino/messaging": "^1.2.3",
-     "@lumino/signaling": "^1.2.3",
-     "@lumino/widgets": "^1.8.0"
-
 diff --git a/packages/outputarea/src/index.ts b/packages/outputarea/src/index.ts
 index dba46488e23..02a73b2e475 100644
 --- a/packages/outputarea/src/index.ts
@@ -8315,40 +7991,6 @@ index 13e13411f82..c118a92c52c 100644
  
      /**
       * The content factory used by the widget to create children.
-diff --git a/packages/outputarea/tsconfig.json b/packages/outputarea/tsconfig.json
-index 21861f5318c..cf88d3cb27d 100644
---- a/packages/outputarea/tsconfig.json
-+++ b/packages/outputarea/tsconfig.json
-@@ -13,7 +13,7 @@
-       "path": "../coreutils"
-     },
-     {
--      "path": "../observables"
-+      "path": "../datastore"
-     },
-     {
-       "path": "../rendermime"
-diff --git a/packages/rendermime/package.json b/packages/rendermime/package.json
-index 24f7c1459f3..c1c5827cece 100644
---- a/packages/rendermime/package.json
-+++ b/packages/rendermime/package.json
-@@ -38,13 +38,13 @@
-     "@jupyterlab/apputils": "^1.0.1",
-     "@jupyterlab/codemirror": "^1.0.1",
-     "@jupyterlab/coreutils": "^3.0.0",
--    "@jupyterlab/observables": "^2.2.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/rendermime-interfaces": "^1.3.0",
-     "@jupyterlab/services": "^4.0.1",
-     "@lumino/algorithm": "^1.1.3",
-     "@lumino/coreutils": "^1.3.1",
-+    "@lumino/datastore": "0.7.2",
-     "@lumino/messaging": "^1.2.3",
--    "@lumino/signaling": "^1.2.3",
-     "@lumino/widgets": "^1.8.0",
-     "lodash.escape": "^4.0.1",
-     "marked": "0.6.2"
-
 diff --git a/packages/rendermime/src/index.ts b/packages/rendermime/src/index.ts
 index e21201ea14d..949dfef41bb 100644
 --- a/packages/rendermime/src/index.ts
@@ -8826,31 +8468,6 @@ index 0624057d172..42efebd665a 100644
  }
  
  /**
-diff --git a/packages/rendermime/tsconfig.json b/packages/rendermime/tsconfig.json
-index 7498c987854..a18944a270c 100644
---- a/packages/rendermime/tsconfig.json
-+++ b/packages/rendermime/tsconfig.json
-@@ -16,7 +16,7 @@
-       "path": "../coreutils"
-     },
-     {
--      "path": "../observables"
-+      "path": "../datastore"
-     },
-     {
-       "path": "../rendermime-interfaces"
-diff --git a/packages/services/package.json b/packages/services/package.json
-index 7e616a7faa0..d78be9e255a 100644
---- a/packages/services/package.json
-+++ b/packages/services/package.json
-@@ -42,7 +42,6 @@
-   },
-   "dependencies": {
-     "@jupyterlab/coreutils": "^3.0.0",
--    "@jupyterlab/observables": "^2.2.0",
-     "@lumino/algorithm": "^1.1.3",
-     "@lumino/coreutils": "^1.3.1",
-     "@lumino/disposable": "^1.2.0",
 diff --git a/packages/services/src/contents/index.ts b/packages/services/src/contents/index.ts
 index 79be3a6c5f2..905b161e742 100644
 --- a/packages/services/src/contents/index.ts
@@ -8921,32 +8538,6 @@ index fc86490bf28..a78a8595407 100644
  
  export { Builder } from './builder';
 
-diff --git a/packages/services/tsconfig.json b/packages/services/tsconfig.json
-index 1c324ae71e1..4446231729e 100644
---- a/packages/services/tsconfig.json
-+++ b/packages/services/tsconfig.json
-@@ -10,9 +10,6 @@
-   "references": [
-     {
-       "path": "../coreutils"
--    },
--    {
--      "path": "../observables"
-     }
-   ]
- }
-diff --git a/packages/settingeditor/package.json b/packages/settingeditor/package.json
-index 475aaaee885..49b52f43852 100644
---- a/packages/settingeditor/package.json
-+++ b/packages/settingeditor/package.json
-@@ -38,6 +38,7 @@
-     "@jupyterlab/apputils": "^1.0.1",
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/coreutils": "^3.0.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/inspector": "^1.0.1",
-     "@jupyterlab/rendermime": "^1.0.1",
-     "@lumino/commands": "^1.6.3",
 diff --git a/packages/settingeditor/src/raweditor.ts b/packages/settingeditor/src/raweditor.ts
 index d88ea31c264..40e85646cb5 100644
 --- a/packages/settingeditor/src/raweditor.ts
@@ -9041,20 +8632,6 @@ index d88ea31c264..40e85646cb5 100644
    }
  
    private _updateToolbar(revert = this._canRevert, save = this._canSave): void {
-diff --git a/packages/settingeditor/tsconfig.json b/packages/settingeditor/tsconfig.json
-index e38e704a2b3..ab1a186813e 100644
---- a/packages/settingeditor/tsconfig.json
-+++ b/packages/settingeditor/tsconfig.json
-@@ -15,6 +15,9 @@
-     {
-       "path": "../coreutils"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-     {
-       "path": "../inspector"
-     },
 diff --git a/packages/statusbar-extension/src/index.ts b/packages/statusbar-extension/src/index.ts
 index 0628a1b6173..fa8138a226c 100644
 --- a/packages/statusbar-extension/src/index.ts
@@ -9072,18 +8649,6 @@ index 0628a1b6173..fa8138a226c 100644
          item.model!.editor = (newValue as IDocumentWidget<
            FileEditor
          >).content.editor;
-diff --git a/packages/statusbar/package.json b/packages/statusbar/package.json
-index 325339b7cfc..aaeb662e22e 100644
---- a/packages/statusbar/package.json
-+++ b/packages/statusbar/package.json
-@@ -34,6 +34,7 @@
-     "@jupyterlab/apputils": "^1.0.1",
-     "@jupyterlab/codeeditor": "^1.0.0",
-     "@jupyterlab/coreutils": "^3.0.0",
-+    "@jupyterlab/datastore": "^1.0.0",
-     "@jupyterlab/services": "^4.0.1",
-     "@lumino/algorithm": "^1.1.3",
-     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/statusbar/src/defaults/lineCol.tsx b/packages/statusbar/src/defaults/lineCol.tsx
 index 2240c2da940..653626d95c3 100644
 --- a/packages/statusbar/src/defaults/lineCol.tsx
@@ -9132,20 +8697,6 @@ index 2240c2da940..653626d95c3 100644
 +    private _selectionListener: IDisposable | null = null;
    }
  }
-diff --git a/packages/statusbar/tsconfig.json b/packages/statusbar/tsconfig.json
-index 5ed8ed31f74..0cf42477966 100644
---- a/packages/statusbar/tsconfig.json
-+++ b/packages/statusbar/tsconfig.json
-@@ -15,6 +15,9 @@
-     {
-       "path": "../coreutils"
-     },
-+    {
-+      "path": "../datastore"
-+    },
-     {
-       "path": "../services"
-     }
 diff --git a/packages/tooltip-extension/src/index.ts b/packages/tooltip-extension/src/index.ts
 index e1360b310b7..e69dde42ddb 100644
 --- a/packages/tooltip-extension/src/index.ts
