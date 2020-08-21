@@ -6,19 +6,16 @@ import { ISessionContext } from '@jupyterlab/apputils';
 import {
   Cell,
   CellDragUtils,
-  CellModel,
   CodeCell,
-  CodeCellModel,
-  ICodeCellModel,
-  isCodeCellModel,
-  IRawCellModel,
-  RawCell,
-  RawCellModel
+  CodeCellData,
+  RawCell
 } from '@jupyterlab/cells';
 
 import { IEditorMimeTypeService, CodeEditor } from '@jupyterlab/codeeditor';
 
 import * as nbformat from '@jupyterlab/nbformat';
+
+import { DatastoreExt } from '@jupyterlab/datastore';
 
 import { IObservableList, ObservableList } from '@jupyterlab/observables';
 
@@ -116,7 +113,6 @@ export class CodeConsole extends Widget {
 
     this.contentFactory =
       options.contentFactory || CodeConsole.defaultContentFactory;
-    this.modelFactory = options.modelFactory || CodeConsole.defaultModelFactory;
     this.rendermime = options.rendermime;
     this.sessionContext = options.sessionContext;
     this._mimeTypeService = options.mimeTypeService;
@@ -160,11 +156,6 @@ export class CodeConsole extends Widget {
    * The content factory used by the console.
    */
   readonly contentFactory: CodeConsole.IContentFactory;
-
-  /**
-   * The model factory for the console widget.
-   */
-  readonly modelFactory: CodeConsole.IModelFactory;
 
   /**
    * The rendermime instance used by the console.
@@ -231,12 +222,10 @@ export class CodeConsole extends Widget {
       cell.disposed.connect(this._onCellDisposed, this);
     }
     // Create the banner.
-    const model = this.modelFactory.createRawCell({});
-    model.value.text = '...';
+    banner.editor.model.value = '...';
     const banner = (this._banner = new RawCell({
-      model,
       contentFactory: this.contentFactory
-    })).initializeState();
+    }));
     banner.addClass(BANNER_CLASS);
     banner.readOnly = true;
     this._content.addWidget(banner);
@@ -261,7 +250,7 @@ export class CodeConsole extends Widget {
     const options = this._createCodeCellOptions();
     const cell = factory.createCodeCell(options);
     cell.readOnly = true;
-    cell.model.mimeType = this._mimetype;
+    cell.editor.model.mimeType = this._mimetype;
     return cell;
   }
 
@@ -300,7 +289,14 @@ export class CodeConsole extends Widget {
     if (!promptCell) {
       throw new Error('Cannot execute without a prompt cell');
     }
-    promptCell.model.trusted = true;
+    const { datastore, record } = promptCell.data;
+    DatastoreExt.withTransaction(datastore, () => {
+      DatastoreExt.updateField(
+        datastore,
+        { ...record, field: 'trusted' },
+        true
+      );
+    });
 
     if (force) {
       // Create a new prompt cell before kernel execution to allow typeahead.
@@ -343,10 +339,13 @@ export class CodeConsole extends Widget {
    */
   inject(code: string, metadata: JSONObject = {}): Promise<void> {
     const cell = this.createCodeCell();
-    cell.model.value.text = code;
-    for (const key of Object.keys(metadata)) {
-      cell.model.metadata.set(key, metadata[key]);
-    }
+    const { datastore, record } = cell.data;
+    DatastoreExt.withTransaction(datastore, () => {
+      DatastoreExt.updateRecord(datastore, record, {
+        text: { index: 0, remove: 0, text: code },
+        metadata
+      });
+    });
     this.addCell(cell);
     return this._execute(cell);
   }
@@ -385,14 +384,13 @@ export class CodeConsole extends Widget {
   serialize(): nbformat.ICodeCell[] {
     const cells: nbformat.ICodeCell[] = [];
     each(this._cells, cell => {
-      const model = cell.model;
-      if (isCodeCellModel(model)) {
-        cells.push(model.toJSON());
+      if (cell.type === 'code') {
+        CodeCellData.toJSON(cell.data);
       }
     });
 
     if (this.promptCell) {
-      cells.push(this.promptCell.model.toJSON());
+      cells.push(CodeCellData.toJSON(this.promptCell.data));
     }
     return cells;
   }
@@ -481,8 +479,9 @@ export class CodeConsole extends Widget {
     clientX: number,
     clientY: number
   ): Promise<void> {
-    const cellModel = this._focusedCell!.model as ICodeCellModel;
-    const selected: nbformat.ICell[] = [cellModel.toJSON()];
+    let selected: nbformat.ICell[] = [
+      CodeCellData.toJSON(this._focusedCell.data)
+    ];
 
     const dragImage = CellDragUtils.createCellDragImage(
       this._focusedCell!,
@@ -498,7 +497,7 @@ export class CodeConsole extends Widget {
     });
 
     this._drag.mimeData.setData(JUPYTER_CELL_MIME, selected);
-    const textContent = cellModel.value.text;
+    const textContent = this._focusedCell.editor.model.value;
     this._drag.mimeData.setData('text/plain', textContent);
 
     this._focusedCell = null;
@@ -601,7 +600,7 @@ export class CodeConsole extends Widget {
     const factory = this.contentFactory;
     const options = this._createCodeCellOptions();
     promptCell = factory.createCodeCell(options);
-    promptCell.model.mimeType = this._mimetype;
+    promptCell.editor.model.mimeType = this._mimetype;
     promptCell.addClass(PROMPT_CLASS);
 
     // Add the prompt cell to the DOM, making `this.promptCell` valid again.
@@ -657,7 +656,7 @@ export class CodeConsole extends Widget {
    * Execute the code in the current prompt cell.
    */
   private _execute(cell: CodeCell): Promise<void> {
-    const source = cell.model.value.text;
+    const source = cell.editor.model.value;
     this._history.push(source);
     // If the source of the console is just "clear", clear the console as we
     // do in IPython or QtConsole.
@@ -665,7 +664,13 @@ export class CodeConsole extends Widget {
       this.clear();
       return Promise.resolve(void 0);
     }
-    cell.model.contentChanged.connect(this.update, this);
+    const { datastore, record } = cell.data;
+    const listener = DatastoreExt.listenRecord(
+      datastore,
+      record,
+      this.update,
+      this
+    );
     const onSuccess = (value: KernelMessage.IExecuteReplyMsg) => {
       if (this.isDisposed) {
         return;
@@ -680,17 +685,21 @@ export class CodeConsole extends Widget {
           if (setNextInput) {
             const text = (setNextInput as any).text;
             // Ignore the `replace` value and always set the next cell.
-            cell.model.value.text = text;
+            cell.model.value = text;
           }
         }
       } else if (value && value.content.status === 'error') {
         each(this._cells, (cell: CodeCell) => {
-          if (cell.model.executionCount === null) {
+          const executionCount = DatastoreExt.getField(cell.data.datastore, {
+            ...cell.data.record,
+            field: 'executionCount'
+          });
+          if (executionCount === null) {
             cell.setPrompt('');
           }
         });
       }
-      cell.model.contentChanged.disconnect(this.update, this);
+      listener.dispose();
       this.update();
       this._executed.emit(new Date());
     };
@@ -698,7 +707,7 @@ export class CodeConsole extends Widget {
       if (this.isDisposed) {
         return;
       }
-      cell.model.contentChanged.disconnect(this.update, this);
+      listener.dispose();
       this.update();
     };
     return CodeCell.execute(cell, this.sessionContext).then(
@@ -712,14 +721,14 @@ export class CodeConsole extends Widget {
    */
   private _handleInfo(info: KernelMessage.IInfoReplyMsg['content']): void {
     if (info.status !== 'ok') {
-      this._banner!.model.value.text = 'Error in getting kernel banner';
+      this._banner!.editor.model.value = 'Error in getting kernel banner';
       return;
     }
-    this._banner!.model.value.text = info.banner;
+    this._banner!.editor.model.value = info.banner;
     const lang = info.language_info as nbformat.ILanguageInfoMetadata;
     this._mimetype = this._mimeTypeService.getMimeTypeByLanguage(lang);
     if (this.promptCell) {
-      this.promptCell.model.mimeType = this._mimetype;
+      this.promptCell.editor.model.mimeType = this._mimetype;
     }
   }
 
@@ -728,10 +737,8 @@ export class CodeConsole extends Widget {
    */
   private _createCodeCellOptions(): CodeCell.IOptions {
     const contentFactory = this.contentFactory;
-    const modelFactory = this.modelFactory;
-    const model = modelFactory.createCodeCell({});
     const rendermime = this.rendermime;
-    return { model, rendermime, contentFactory };
+    return { rendermime, contentFactory };
   }
 
   /**
@@ -756,8 +763,7 @@ export class CodeConsole extends Widget {
     if (!promptCell) {
       return Promise.resolve(false);
     }
-    const model = promptCell.model;
-    const code = model.value.text;
+    let code = promptCell.editor.model.value;
     return new Promise<boolean>((resolve, reject) => {
       const timer = setTimeout(() => {
         resolve(true);
@@ -854,11 +860,6 @@ export namespace CodeConsole {
     contentFactory: IContentFactory;
 
     /**
-     * The model factory for the console widget.
-     */
-    modelFactory?: IModelFactory;
-
-    /**
      * The mime renderer for the console widget.
      */
     rendermime: IRenderMimeRegistry;
@@ -937,83 +938,6 @@ export namespace CodeConsole {
    * A default content factory for the code console.
    */
   export const defaultContentFactory: IContentFactory = new ContentFactory();
-
-  /**
-   * A model factory for a console widget.
-   */
-  export interface IModelFactory {
-    /**
-     * The factory for code cell content.
-     */
-    readonly codeCellContentFactory: CodeCellModel.IContentFactory;
-
-    /**
-     * Create a new code cell.
-     *
-     * @param options - The options used to create the cell.
-     *
-     * @returns A new code cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     */
-    createCodeCell(options: CodeCellModel.IOptions): ICodeCellModel;
-
-    /**
-     * Create a new raw cell.
-     *
-     * @param options - The options used to create the cell.
-     *
-     * @returns A new raw cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     */
-    createRawCell(options: CellModel.IOptions): IRawCellModel;
-  }
-
-  /**
-   * The default implementation of an `IModelFactory`.
-   */
-  export class ModelFactory {
-    /**
-     * Create a new cell model factory.
-     */
-    constructor(options: IModelFactoryOptions = {}) {
-      this.codeCellContentFactory =
-        options.codeCellContentFactory || CodeCellModel.defaultContentFactory;
-    }
-
-    /**
-     * The factory for output area models.
-     */
-    readonly codeCellContentFactory: CodeCellModel.IContentFactory;
-
-    /**
-     * Create a new code cell.
-     *
-     * @param source - The data to use for the original source data.
-     *
-     * @returns A new code cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     *   If the contentFactory is not provided, the instance
-     *   `codeCellContentFactory` will be used.
-     */
-    createCodeCell(options: CodeCellModel.IOptions): ICodeCellModel {
-      if (!options.contentFactory) {
-        options.contentFactory = this.codeCellContentFactory;
-      }
-      return new CodeCellModel(options);
-    }
-
-    /**
-     * Create a new raw cell.
-     *
-     * @param source - The data to use for the original source data.
-     *
-     * @returns A new raw cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     */
-    createRawCell(options: CellModel.IOptions): IRawCellModel {
-      return new RawCellModel(options);
-    }
-  }
 
   /**
    * The options used to initialize a `ModelFactory`.

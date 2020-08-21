@@ -46,7 +46,6 @@ export class ConsolePanel extends MainAreaWidget<Panel> {
       basePath,
       name,
       manager,
-      modelFactory,
       sessionContext,
       translator
     } = options;
@@ -82,8 +81,7 @@ export class ConsolePanel extends MainAreaWidget<Panel> {
       rendermime,
       sessionContext: sessionContext,
       mimeTypeService,
-      contentFactory,
-      modelFactory
+      contentFactory
     });
     this.content.addWidget(this.console);
 
@@ -217,11 +215,6 @@ export namespace ConsolePanel {
      * An existing session context to use.
      */
     sessionContext?: ISessionContext;
-
-    /**
-     * The model factory for the console widget.
-     */
-    modelFactory?: CodeConsole.IModelFactory;
 
     /**
      * The service used to look up mime types.

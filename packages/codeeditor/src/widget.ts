@@ -1,6 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+import { DatastoreExt } from '@jupyterlab/datastore';
+
 import { MimeData } from '@lumino/coreutils';
 
 import { IDragEvent } from '@lumino/dragdrop';
@@ -9,7 +11,7 @@ import { Message } from '@lumino/messaging';
 
 import { Widget } from '@lumino/widgets';
 
-import { CodeEditor } from './';
+import { CodeEditor  } from './';
 
 /**
  * The class name added to an editor widget that has a primary selection.
@@ -48,7 +50,12 @@ export class CodeEditorWrapper extends Widget {
       config: options.config,
       selectionStyle: options.selectionStyle
     }));
-    editor.model.selections.changed.connect(this._onSelectionsChanged, this);
+    DatastoreExt.listenField(
+      editor.model.data.datastore,
+      { ...editor.model.data.record, field: 'selections' },
+      this._onSelectionsChanged,
+      this
+    );
     this._updateOnShow = options.updateOnShow !== false;
   }
 
@@ -280,7 +287,13 @@ export class CodeEditorWrapper extends Widget {
       return;
     }
     const offset = this.editor.getOffsetAt(position);
-    this.model.value.insert(offset, data);
+    DatastoreExt.withTransaction(this.model.data.datastore, () => {
+      DatastoreExt.updateField(
+        this.model.data.datastore,
+        { ...this.model.data.record, field: 'text' },
+        { index: offset, remove: 0, text: data }
+      );
+    });
   }
 
   private _updateOnShow: boolean;

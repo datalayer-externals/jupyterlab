@@ -229,7 +229,7 @@ const notebooks: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(CommandIDs.invokeNotebook, {
       execute: () => {
         const panel = notebooks.currentWidget;
-        if (panel && panel.content.activeCell?.model.type === 'code') {
+        if (panel && panel.content.activeCell?.type === 'code') {
           return app.commands.execute(CommandIDs.invoke, { id: panel.id });
         }
       }
@@ -274,9 +274,9 @@ const files: JupyterFrontEndPlugin<void> = {
     } = {};
 
     // When a new file editor is created, make the completer for it.
-    editorTracker.widgetAdded.connect((sender, widget) => {
+    editorTracker.widgetAdded.connect(async (sender, widget) => {
       const sessions = app.serviceManager.sessions;
-      const editor = widget.content.editor;
+      const editor = await widget.content.editor;
       const contextConnector = new ContextConnector({ editor });
 
       // Initially create the handler with the contextConnector.

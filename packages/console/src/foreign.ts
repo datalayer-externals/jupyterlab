@@ -7,6 +7,10 @@ import { CodeCell } from '@jupyterlab/cells';
 
 import * as nbformat from '@jupyterlab/nbformat';
 
+import { DatastoreExt } from '@jupyterlab/datastore';
+
+import { OutputAreaData } from '@jupyterlab/outputarea';
+
 import { KernelMessage } from '@jupyterlab/services';
 
 import { IDisposable } from '@lumino/disposable';
@@ -102,10 +106,18 @@ export class ForeignHandler implements IDisposable {
       case 'execute_input': {
         const inputMsg = msg as KernelMessage.IExecuteInputMsg;
         cell = this._newCell(parentMsgId);
-        const model = cell.model;
-        model.executionCount = inputMsg.content.execution_count;
-        model.value.text = inputMsg.content.code;
-        model.trusted = true;
+        const { datastore, record } = cell.data;
+        DatastoreExt.withTransaction(datastore, () => {
+          DatastoreExt.updateRecord(datastore, record, {
+            executionCount: inputMsg.content.execution_count,
+            text: {
+              index: 0,
+              remove: cell.editor.model.value.length,
+              text: inputMsg.content.code
+            },
+            trusted: true
+          });
+        });
         parent.update();
         return true;
       }
@@ -121,15 +133,24 @@ export class ForeignHandler implements IDisposable {
           ...msg.content,
           output_type: msgType
         };
-        cell.model.outputs.add(output);
+        if (this._clearNext) {
+          OutputAreaData.clear(cell.data);
+          this._clearNext = false;
+        } else {
+          OutputAreaData.appendItem(cell.data, output);
+        }
         parent.update();
         return true;
       }
       case 'clear_output': {
         const wait = (msg as KernelMessage.IClearOutputMsg).content.wait;
-        cell = this._parent.getCell(parentMsgId);
-        if (cell) {
-          cell.model.outputs.clear(wait);
+        if (wait) {
+          this._clearNext = true;
+        } else {
+          cell = this._parent.getCell(parentMsgId);
+          if (cell) {
+            OutputAreaData.clear(cell.data);
+          }
         }
         return true;
       }

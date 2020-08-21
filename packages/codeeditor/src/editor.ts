@@ -1,7 +1,11 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
+import { DatastoreExt } from '@jupyterlab/datastore';
+
 import { JSONObject } from '@lumino/coreutils';
+
+import { Datastore } from '@lumino/datastore';
 
 import { IDisposable } from '@lumino/disposable';
 
@@ -9,14 +13,8 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { IChangedArgs } from '@jupyterlab/coreutils';
 
-import {
-  IModelDB,
-  ModelDB,
-  IObservableValue,
-  ObservableValue,
-  IObservableMap,
-  IObservableString
-} from '@jupyterlab/observables';
+import { CodeEditorData, ICodeEditorData } from './data';
+
 import { ITranslator } from '@jupyterlab/translation';
 
 /**
@@ -112,7 +110,7 @@ export namespace CodeEditor {
   export const defaultSelectionStyle: ISelectionStyle = {
     className: '',
     displayName: '',
-    color: 'black'
+    color: '#2196F3'
   };
 
   /**
@@ -172,14 +170,9 @@ export namespace CodeEditor {
    */
   export interface IModel extends IDisposable {
     /**
-     * A signal emitted when a property changes.
-     */
-    mimeTypeChanged: ISignal<IModel, IChangedArgs<string>>;
-
-    /**
      * The text stored in the model.
      */
-    readonly value: IObservableString;
+    readonly value: string;
 
     /**
      * A mime type of the model.
@@ -192,13 +185,12 @@ export namespace CodeEditor {
     /**
      * The currently selected code.
      */
-    readonly selections: IObservableMap<ITextSelection[]>;
+    readonly selections: { [id: string]: ITextSelection[] };
 
     /**
-     * The underlying `IModelDB` instance in which model
-     * data is stored.
+     * The location in the datastore in which this codeeditor keeps its data.
      */
-    readonly modelDB: IModelDB;
+    readonly data: ICodeEditorData.DataLocation;
   }
 
   /**
@@ -211,61 +203,101 @@ export namespace CodeEditor {
     constructor(options?: Model.IOptions) {
       options = options || {};
 
-      if (options.modelDB) {
-        this.modelDB = options.modelDB;
+      if (options.data) {
+        this.data = options.data;
       } else {
-        this.modelDB = new ModelDB();
+        const datastore = (this._datastore = CodeEditorData.createStore());
+        this.data = {
+          datastore,
+          record: {
+            schema: CodeEditorData.SCHEMA,
+            record: 'data'
+          }
+        };
+      }
+      const { datastore, record } = this.data;
+      if (!DatastoreExt.getRecord(datastore, record)) {
+        this.isPrepopulated = false;
+        // Initialize the record if it hasn't been.
+        DatastoreExt.withTransaction(datastore, () => {
+          DatastoreExt.updateRecord(datastore, record, {
+            mimeType: options.mimeType || 'text/plain',
+            text: { index: 0, remove: 0, text: options.value || '' }
+          });
+        });
+      } else {
+        this.isPrepopulated = true;
+        // Possibly override any data existing in the record with options
+        // provided by the user.
+        if (options.value) {
+          this.value = options.value;
+        }
+        if (options.mimeType) {
+          this.mimeType = options.mimeType;
+        }
+        if (!this.mimeType) {
+          this.mimeType = 'text/plain';
+        }
       }
 
-      const value = this.modelDB.createString('value');
-      value.text = value.text || options.value || '';
-
-      const mimeType = this.modelDB.createValue('mimeType');
-      mimeType.set(options.mimeType || 'text/plain');
-      mimeType.changed.connect(this._onMimeTypeChanged, this);
-
-      this.modelDB.createMap('selections');
     }
 
     /**
-     * The underlying `IModelDB` instance in which model
-     * data is stored.
+     * The record in the datastore in which this codeeditor keeps its data.
      */
-    readonly modelDB: IModelDB;
+    readonly data: ICodeEditorData.DataLocation;
 
-    /**
-     * A signal emitted when a mimetype changes.
-     */
-    get mimeTypeChanged(): ISignal<this, IChangedArgs<string>> {
-      return this._mimeTypeChanged;
-    }
+    readonly isPrepopulated: boolean;
 
     /**
      * Get the value of the model.
      */
-    get value(): IObservableString {
-      return this.modelDB.get('value') as IObservableString;
+    get value(): string {
+      return DatastoreExt.getField(this.data.datastore, {
+        ...this.data.record,
+        field: 'text'
+      });
     }
-
+    set value(value: string) {
+      const current = this.value;
+      DatastoreExt.withTransaction(this.data.datastore, () => {
+        DatastoreExt.updateField(
+          this.data.datastore,
+          { ...this.data.record, field: 'text' },
+          {
+            index: 0,
+            remove: current.length,
+            text: value
+          }
+        );
+      });
     /**
      * Get the selections for the model.
      */
-    get selections(): IObservableMap<ITextSelection[]> {
-      return this.modelDB.get('selections') as IObservableMap<ITextSelection[]>;
+    get selections(): { [id: string]: ITextSelection[] } {
+      return DatastoreExt.getField(this.data.datastore, {
+        ...this.data.record,
+        field: 'selections'
+      });
     }
 
     /**
      * A mime type of the model.
      */
     get mimeType(): string {
-      return this.modelDB.getValue('mimeType') as string;
-    }
+      return DatastoreExt.getField(this.data.datastore, {
+        ...this.data.record,
+        field: 'mimeType'
+      });    }
     set mimeType(newValue: string) {
-      const oldValue = this.mimeType;
-      if (oldValue === newValue) {
-        return;
-      }
-      this.modelDB.setValue('mimeType', newValue);
+      const { datastore, record } = this.data;
+      DatastoreExt.withTransaction(datastore, () => {
+        DatastoreExt.updateField(
+          datastore,
+          { ...record, field: 'mimeType' },
+          newValue
+        );
+      });
     }
 
     /**
@@ -282,24 +314,16 @@ export namespace CodeEditor {
       if (this._isDisposed) {
         return;
       }
+      if (this._datastore) {
+        this._datastore.dispose();
+        this._datastore = null;
+      }
       this._isDisposed = true;
-      this.value.text = '';
       Signal.clearData(this);
     }
 
-    private _onMimeTypeChanged(
-      mimeType: IObservableValue,
-      args: ObservableValue.IChangedArgs
-    ): void {
-      this._mimeTypeChanged.emit({
-        name: 'mimeType',
-        oldValue: args.oldValue as string,
-        newValue: args.newValue as string
-      });
-    }
-
     private _isDisposed = false;
-    private _mimeTypeChanged = new Signal<this, IChangedArgs<string>>(this);
+    private _datastore: Datastore | null = null;
   }
 
   /**
@@ -726,9 +750,9 @@ export namespace CodeEditor {
       mimeType?: string;
 
       /**
-       * An optional modelDB for storing model state.
+       * A location in an existing datastore in which to store the model.
        */
-      modelDB?: IModelDB;
+      data?: ICodeEditorData.DataLocation;
     }
   }
 }
