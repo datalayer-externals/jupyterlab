@@ -35,10 +35,10 @@
     "watch": "tsc -b --watch"
   },
   "dependencies": {
-    "@jupyterlab/coreutils": "^5.0.0-alpha.12",
-    "@jupyterlab/datastore": "^3.0.0-alpha.12",
-    "@jupyterlab/rendermime": "^3.0.0-alpha.12",
-    "@jupyterlab/rendermime-interfaces": "^3.0.0-alpha.12",
+    "@jupyterlab/coreutils": "^5.0.0-alpha.14",
+    "@jupyterlab/datastore": "^3.0.0-alpha.14",
+    "@jupyterlab/rendermime": "^3.0.0-alpha.14",
+    "@jupyterlab/rendermime-interfaces": "^3.0.0-alpha.14",
     "@lumino/coreutils": "^1.4.3",
     "@lumino/datastore": "^0.10.3"
   },
