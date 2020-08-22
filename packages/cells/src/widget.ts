@@ -5,9 +5,13 @@
 
 import { ISessionContext } from '@jupyterlab/apputils';
 
+import { URLExt } from '@jupyterlab/coreutils';
+
 import { AttachmentsResolver } from '@jupyterlab/attachments';
 
 import { CodeEditor, CodeEditorWrapper } from '@jupyterlab/codeeditor';
+
+import { Debouncer } from '@lumino/polling';
 
 import { DirListing } from '@jupyterlab/filebrowser';
 
@@ -38,6 +42,7 @@ import { KernelMessage, Kernel } from '@jupyterlab/services';
 import {
   JSONObject,
   PromiseDelegate,
+  UUID,
   ReadonlyJSONObject,
   ReadonlyJSONValue
 } from '@lumino/coreutils';
@@ -65,7 +70,7 @@ import {
 
 import { InputArea, IInputPrompt, InputPrompt } from './inputarea';
 
-import { ICellData, CellData } from './data'
+import { ICellData, CellData } from './data';
 
 import { InputPlaceholder, OutputPlaceholder } from './placeholder';
 
@@ -293,7 +298,7 @@ export class Cell extends Widget {
   /**
    * Get the model used by the cell.
    */
-  get data(): ICellModel.DataLocation {
+  get data(): ICellData.DataLocation {
     return this._data;
   }
 
@@ -585,11 +590,12 @@ export class Cell extends Widget {
       if (this.syncEditable) {
         this.loadEditableState();
       }
+    }
   }
 
   private _metadataListener: IDisposable;
   private _readOnly = false;
-  private _data: ICellData.DataLocation = null;
+  private _data: ICellData.DataLocation;
   private _inputHidden = false;
   private _input: InputArea;
   private _inputWrapper: Widget;
@@ -868,26 +874,26 @@ export class CodeCell extends Cell {
     };
     const metadata = DatastoreExt.getField(datastore, loc);
 
-    try {
-      const collapsed = metadata['collapsed'] as boolean | undefined;
+    const collapsed = metadata['collapsed'] as boolean | undefined;
 
-      if (
-        (this.outputHidden && collapsed === true) ||
-        (!this.outputHidden && collapsed === undefined)
-      ) {
-        return;
-      }
+    if (
+      (this.outputHidden && collapsed === true) ||
+      (!this.outputHidden && collapsed === undefined)
+    ) {
+      return;
+    }
 
-      // Do not set jupyter.outputs_hidden since it is redundant. See
-      // and https://github.com/jupyter/nbformat/issues/137
-      // Do not set jupyter.outputs_hidden since it is redundant. See
-      // and https://github.com/jupyter/nbformat/issues/137
-      DatastoreExt.withTransaction(datastore, () => {
+    // Do not set jupyter.outputs_hidden since it is redundant. See
+    // and https://github.com/jupyter/nbformat/issues/137
+    // Do not set jupyter.outputs_hidden since it is redundant. See
+    // and https://github.com/jupyter/nbformat/issues/137
+    DatastoreExt.withTransaction(datastore, () => {
       if (this.outputHidden) {
         DatastoreExt.updateField(datastore, loc, { collapsed: true });
       } else {
         DatastoreExt.updateField(datastore, loc, { collapsed: null });
       }
+    });
   }
 
   /**
@@ -966,7 +972,7 @@ export class CodeCell extends Cell {
     if (metadata['scrolled'] === 'auto') {
       this.outputsScrolled = false;
     } else {
-      this.outputsScrolled = !!metadata.get('scrolled');
+      this.outputsScrolled = !!metadata['scrolled'];
     }
   }
 
@@ -1008,7 +1014,7 @@ export class CodeCell extends Cell {
   clone(): CodeCell {
     const constructor = this.constructor as typeof CodeCell;
     return new constructor({
-      model: this.data,
+      data: this.data,
       contentFactory: this.contentFactory,
       rendermime: this._rendermime
     });
@@ -1046,7 +1052,6 @@ export class CodeCell extends Cell {
   /**
    * Handle changes in the model.
    */
-  protected onStateChanged(model: ICellModel, args: IChangedArgs<any>): void {
   protected onExecutionCountChanged(
     sender: Datastore,
     args: RegisterField.Change<nbformat.ExecutionCount>
@@ -1156,7 +1161,6 @@ export namespace CodeCell {
    * An options object for initializing a base cell widget.
    */
   export interface IOptions extends Cell.IOptions {
-
     /**
      * The mime renderer for the cell widget.
      */
@@ -1185,14 +1189,10 @@ export namespace CodeCell {
       return;
     }
     const cellId = { cellId: cell.data.record.record };
-    metadata = {
-      ...model.metadata.toJSON(),
-      ...metadata,
-      ...cellId
-    };
+    metadata = { ...metadata, ...cellId };
     // TODO(@echarles)
-//    const { recordTiming } = metadata;
-//    model.clearExecution();
+    //    const { recordTiming } = metadata;
+    //    model.clearExecution();
     cell.outputHidden = false;
     cell.setPrompt('*');
     DatastoreExt.withTransaction(datastore, () => {
@@ -1215,6 +1215,8 @@ export namespace CodeCell {
         metadata
       );
       // cell.outputArea.future assigned synchronously in `execute`
+      // TODO(RTC)
+      /*
       if (recordTiming) {
         const recordTimingHook = (msg: KernelMessage.IIOPubMessage) => {
           let label: string;
@@ -1246,6 +1248,7 @@ export namespace CodeCell {
       } else {
         model.metadata.delete('execution');
       }
+      */
       // Save this execution's future so we can compare in the catch below.
       future = cell.outputArea.future;
       const msg = (await msgPromise)!;
@@ -1256,6 +1259,8 @@ export namespace CodeCell {
           msg.content.execution_count
         );
       });
+      // TODO(RTC)
+      /*
       const started = msg.metadata.started as string;
       if (recordTiming && started) {
         const timingInfo = Object.assign(
@@ -1271,6 +1276,7 @@ export namespace CodeCell {
         }
         model.metadata.set('execution', timingInfo);
       }
+      */
       return msg;
     } catch (e) {
       // If we started executing, and the cell is still indicating this
@@ -1446,17 +1452,24 @@ export abstract class AttachmentsCell extends Cell {
           const URI = this._generateURI(model.name);
           this.updateCellSourceWithAttachment(model.name, URI);
           void withContent().then(fullModel => {
-            this.model.attachments.set(URI, {
-              [fullModel.mimetype]: fullModel.content
-            });
+            console.log(fullModel);
+            // TODO(RTC)
+            /*
+              this.model.attachments.set(URI, {
+                [fullModel.mimetype]: fullModel.content
+              });
+            */
           });
         }
       } else {
         // Pure mimetype, no useful name to infer
         const URI = this._generateURI();
+        // TODO(RTC)
+        /*
         this.model.attachments.set(URI, {
           [mimeType]: event.mimeData.getData(mimeType)
         });
+        */
         this.updateCellSourceWithAttachment(URI, URI);
       }
     }
@@ -1494,15 +1507,17 @@ export abstract class AttachmentsCell extends Cell {
       if (!matches || matches.length !== 4) {
         return;
       }
+      // TODO(RTC)
+      /*
       const mimeType = matches[1];
       const encodedData = matches[3];
       const bundle: nbformat.IMimeBundle = { [mimeType]: encodedData };
       const URI = this._generateURI(blob.name);
-
       if (mimeType.startsWith('image/')) {
         this.model.attachments.set(URI, bundle);
         this.updateCellSourceWithAttachment(blob.name, URI);
       }
+      */
     };
     reader.onerror = evt => {
       console.error(`Failed to attach ${blob.name}` + evt);
@@ -1524,7 +1539,8 @@ export abstract class AttachmentsCell extends Cell {
   /**
    * The model used by the widget.
    */
-  readonly model: IAttachmentsCellModel;
+  // TODO(RTC)
+  // readonly model: IAttachmentsCellModel;
 }
 
 /** ****************************************************************************

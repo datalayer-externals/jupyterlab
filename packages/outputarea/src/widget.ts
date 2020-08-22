@@ -1,7 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { IClientSession } from '@jupyterlab/apputils';
+import { ISessionContext } from '@jupyterlab/apputils';
 
 import * as nbformat from '@jupyterlab/nbformat';
 
@@ -225,7 +225,8 @@ export class OutputArea extends Widget {
       return;
     }
     if (this._datastore) {
-      this._datastore.dispose();
+      // TODO(RTC)
+      // this._datastore.dispose();
       this._datastore = null;
     }
 
@@ -290,32 +291,6 @@ export class OutputArea extends Widget {
           record: output
         };
         this._setOutput(index, record);
-      }
-    });
-  }
-
-  /**
-   * Update indices in _displayIdMap in response to element remove from model items
-   * *
-   * @param startIndex - The index of first element removed
-   *
-   * @param count - The number of elements removed from model items
-   *
-   */
-  private _moveDisplayIdIndices(startIndex: number, count: number) {
-    this._displayIdMap.forEach((indices: number[]) => {
-      const rangeEnd = startIndex + count;
-      const numIndices = indices.length;
-      // reverse loop in order to prevent removing element affecting the index
-      for (let i = numIndices - 1; i >= 0; --i) {
-        const index = indices[i];
-        // remove model item indices in removed range
-        if (index >= startIndex && index < rangeEnd) {
-          indices.splice(i, 1);
-        } else if (index >= rangeEnd) {
-          // move model item indices that were larger than range end
-          indices[i] -= count;
-        }
       }
     });
   }
@@ -424,16 +399,8 @@ export class OutputArea extends Widget {
     // Check whether it is safe to reuse renderer:
     // - Preferred mime type has not changed
     // - Isolation has not changed
-    const mimeType = this.rendermime.preferredMimeType(
-      model.data,
-      model.trusted ? 'any' : 'ensure'
-    );
-    if (
-      renderer.renderModel &&
-      Private.currentPreferredMimetype.get(renderer) === mimeType &&
-      OutputArea.isIsolated(mimeType, model.metadata) ===
-        renderer instanceof Private.IsolatedRenderer
-    ) {
+    // TODO(RTC)
+    if (renderer.renderModel) {
       // Create a temporary output model view to pass of to the renderer.
       let model = new OutputModel({
         data: {
@@ -460,7 +427,6 @@ export class OutputArea extends Widget {
       ...loc,
       field: 'executionCount'
     });
-    let output = this.createOutputItem(model);
     if (output) {
       output.toggleClass(EXECUTE_CLASS, executionCount !== null);
     } else {

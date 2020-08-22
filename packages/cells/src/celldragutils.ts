@@ -149,7 +149,7 @@ export namespace CellDragUtils {
       activeCell.data.datastore,
       activeCell.data.record
     );
-    if (cellData.type === 'code') {
+    if (cellData?.type === 'code') {
       let executionCount = cellData.executionCount;
       promptNumber = ' ';
       if (executionCount) {
@@ -159,7 +159,7 @@ export namespace CellDragUtils {
       promptNumber = '';
     }
 
-    const cellContent = cellData.text.split('\n')[0].slice(0, 26);
+    const cellContent = cellData!.text.split('\n')[0].slice(0, 26);
     if (count > 1) {
       if (promptNumber !== '') {
         return VirtualDOM.realize(

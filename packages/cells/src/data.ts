@@ -198,7 +198,7 @@ export namespace CellData {
     let text = '';
     let type: nbformat.CellType = 'code';
     if (cell) {
-      metadata = JSONExt.deepCopy(cell.metadata);
+      metadata = JSONExt.deepCopy(cell.metadata) as JSONObject;
       trusted = !!metadata['trusted'];
       delete metadata['trusted'];
 
@@ -237,7 +237,7 @@ export namespace CellData {
    */
   export function toJSON(loc: ICellData.DataLocation): nbformat.ICell {
     let data = DatastoreExt.getRecord(loc.datastore, loc.record);
-    switch (data.type) {
+    switch (data?.type) {
       case 'code':
         return CodeCellData.toJSON(loc);
         break;
@@ -258,9 +258,11 @@ export namespace CellData {
     let cellData = DatastoreExt.getRecord(loc.datastore, loc.record);
 
     let attachments: { [x: string]: nbformat.IMimeBundle | null } = {};
-    Object.keys(cellData.attachments).forEach(key => (attachments[key] = null));
+    Object.keys(cellData!.attachments).forEach(
+      key => (attachments[key] = null)
+    );
     let metadata: { [x: string]: ReadonlyJSONValue | null } = {};
-    Object.keys(cellData.metadata).forEach(key => (metadata[key] = null));
+    Object.keys(cellData!.metadata).forEach(key => (metadata[key] = null));
 
     DatastoreExt.withTransaction(datastore, () => {
       DatastoreExt.updateRecord(datastore, record, {
@@ -269,7 +271,7 @@ export namespace CellData {
         executionCount: null,
         type: 'code',
         trusted: false,
-        outputs: { index: 0, remove: cellData.outputs.length, values: [] }
+        outputs: { index: 0, remove: cellData!.outputs.length, values: [] }
       });
       OutputAreaData.clear(loc);
       CodeEditorData.clear(loc);
@@ -421,13 +423,13 @@ namespace Private {
   export function baseToJSON(loc: ICellData.DataLocation): nbformat.ICell {
     const { datastore, record } = loc;
     let data = DatastoreExt.getRecord(datastore, record);
-    let metadata = data.metadata as JSONObject;
-    if (data.trusted) {
+    let metadata = data?.metadata as JSONObject;
+    if (data?.trusted) {
       metadata['trusted'] = true;
     }
     return {
-      cell_type: data.type,
-      source: data.text,
+      cell_type: data?.type,
+      source: data?.text,
       metadata
     } as nbformat.ICell;
   }
