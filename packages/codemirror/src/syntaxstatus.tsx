@@ -161,7 +161,8 @@ export namespace EditorSyntaxStatus {
     set editor(editor: CodeEditor.IEditor | null) {
       if (this._mimeTypeListener) {
         this._mimeTypeListener.dispose();
-        this._mimeTypeListener = null;
+        // TODO(RTC)
+        // this._mimeTypeListener = null;
       }
       const oldMode = this._mode;
       this._editor = editor;
@@ -170,12 +171,13 @@ export namespace EditorSyntaxStatus {
       } else {
         const spec = Mode.findByMIME(this._editor.model.mimeType);
         this._mode = spec.name || spec.mode;
-
-        DatastoreExt.listenField(
-          editor.model.data.datastore,
-          { ...editor.model.data.record, field: 'mimeType' },
-          this._onMIMETypeChange
-        );
+        if (editor) {
+          DatastoreExt.listenField(
+            editor.model.data.datastore,
+            { ...editor.model.data.record, field: 'mimeType' },
+            this._onMIMETypeChange
+          );
+        }
       }
 
       this._triggerChange(oldMode, this._mode);

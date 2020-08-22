@@ -338,11 +338,13 @@ export namespace LineCol {
         this._column = 1;
         this._line = 1;
       } else {
-        DatastoreExt.listenField(
-          editor.model.data.datastore,
-          { ...editor.model.data.record, field: 'selections' },
-          this._onSelectionChanged
-        );
+        if (editor) {
+          DatastoreExt.listenField(
+            editor.model.data.datastore,
+            { ...editor.model.data.record, field: 'selections' },
+            this._onSelectionChanged
+          );
+        }
 
         const pos = this._editor.getCursorPosition();
         this._column = pos.column + 1;

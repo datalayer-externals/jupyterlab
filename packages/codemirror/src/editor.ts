@@ -781,7 +781,10 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
       if (uuid !== this.uuid) {
         this._cleanSelections(uuid);
         if (args.current[uuid] !== null && args.current[uuid]) {
-          this._markSelections(uuid, args.current[uuid]);
+          this._markSelections(
+            uuid,
+            args.current[uuid] as CodeEditor.ITextSelection[]
+          );
         }
       }
     });
@@ -952,7 +955,7 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     changes.forEach(tc => {
       // Convert the change data to codemirror range and inserted text.
       const from = doc.posFromIndex(tc.index);
-      const to = doc.posFromIndex(tc.index  tc.removed.length);
+      const to = doc.posFromIndex(tc.index + tc.removed.length);
       const replacement = tc.inserted;
 
       // Apply the operation, setting the change guard so we can ignore
@@ -978,7 +981,6 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     const text = change.text.join('\n');
     this._changeGuard = true;
     // If this was a local change, update the table.
-    const value = this._model.value;
     const { datastore, record } = this.model.data;
     DatastoreExt.withTransaction(datastore, () => {
       DatastoreExt.updateField(
