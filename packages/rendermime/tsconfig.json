@@ -19,6 +19,9 @@
       "path": "../datastore"
     },
     {
+      "path": "../nbformat"
+    },
+    {
       "path": "../rendermime-interfaces"
     },
     {
@@ -26,9 +29,6 @@
     },
     {
       "path": "../translation"
-    },
-    {
-      "path": "../nbformat"
     }
   ]
 }
