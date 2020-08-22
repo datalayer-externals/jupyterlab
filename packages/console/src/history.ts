@@ -1,7 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { IClientSession } from '@jupyterlab/apputils';
+import { ISessionContext } from '@jupyterlab/apputils';
 
 import { CodeEditor } from '@jupyterlab/codeeditor';
 
@@ -106,7 +106,6 @@ export class ConsoleHistory implements IConsoleHistory {
     }
     if (this._listener) {
       this._listener.dispose();
-      this._listener = null;
     }
 
     this._editor = value;
@@ -349,7 +348,7 @@ export class ConsoleHistory implements IConsoleHistory {
   private _setByHistory = false;
   private _isDisposed = false;
   private _editor: CodeEditor.IEditor | null = null;
-  private _listener: IDisposable = null;
+  private _listener: IDisposable;
   private _filtered: string[] = [];
 }
 

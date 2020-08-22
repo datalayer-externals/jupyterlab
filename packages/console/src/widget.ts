@@ -222,10 +222,10 @@ export class CodeConsole extends Widget {
       cell.disposed.connect(this._onCellDisposed, this);
     }
     // Create the banner.
-    banner.editor.model.value = '...';
     const banner = (this._banner = new RawCell({
       contentFactory: this.contentFactory
     }));
+    banner.editor.model.value = '...';
     banner.addClass(BANNER_CLASS);
     banner.readOnly = true;
     this._content.addWidget(banner);
@@ -480,7 +480,7 @@ export class CodeConsole extends Widget {
     clientY: number
   ): Promise<void> {
     let selected: nbformat.ICell[] = [
-      CodeCellData.toJSON(this._focusedCell.data)
+      CodeCellData.toJSON(this._focusedCell!.data)
     ];
 
     const dragImage = CellDragUtils.createCellDragImage(
@@ -497,7 +497,7 @@ export class CodeConsole extends Widget {
     });
 
     this._drag.mimeData.setData(JUPYTER_CELL_MIME, selected);
-    const textContent = this._focusedCell.editor.model.value;
+    const textContent = this._focusedCell!.editor.model.value;
     this._drag.mimeData.setData('text/plain', textContent);
 
     this._focusedCell = null;
@@ -685,7 +685,7 @@ export class CodeConsole extends Widget {
           if (setNextInput) {
             const text = (setNextInput as any).text;
             // Ignore the `replace` value and always set the next cell.
-            cell.model.value = text;
+            cell.editor.model.value = text;
           }
         }
       } else if (value && value.content.status === 'error') {
@@ -939,20 +939,6 @@ export namespace CodeConsole {
    */
   export const defaultContentFactory: IContentFactory = new ContentFactory();
 
-  /**
-   * The options used to initialize a `ModelFactory`.
-   */
-  export interface IModelFactoryOptions {
-    /**
-     * The factory for output area models.
-     */
-    codeCellContentFactory?: CodeCellModel.IContentFactory;
-  }
-
-  /**
-   * The default `ModelFactory` instance.
-   */
-  export const defaultModelFactory = new ModelFactory({});
 }
 
 /**

@@ -172,7 +172,7 @@ export class FileEditor extends Widget {
    * A promise that resolves when the file editor is ready.
    */
   get ready(): Promise<void> {
-    return this._editorWidget.ready;
+    return this._editorWidget!.ready;
   }
 
   /**
@@ -226,8 +226,8 @@ export class FileEditor extends Widget {
    * Ensure that the widget has focus.
    */
   private _ensureFocus(): void {
-    if (!this._editorWidget.editor.hasFocus()) {
-      this._editorWidget.editor.focus();
+    if (!this._editorWidget!.editor.hasFocus()) {
+      this._editorWidget!.editor.focus();
     }
   }
 
@@ -236,7 +236,7 @@ export class FileEditor extends Widget {
    */
   private _onPathChanged(): void {
     const localPath = this._context.localPath;
-    this.model.mimeType = this._mimeTypeService.getMimeTypeByFilePath(
+    this.model!.mimeType = this._mimeTypeService.getMimeTypeByFilePath(
       localPath
     );
   }

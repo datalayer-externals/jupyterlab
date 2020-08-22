@@ -112,7 +112,7 @@ export class ForeignHandler implements IDisposable {
             executionCount: inputMsg.content.execution_count,
             text: {
               index: 0,
-              remove: cell.editor.model.value.length,
+              remove: cell!.editor.model.value.length,
               text: inputMsg.content.code
             },
             trusted: true
@@ -172,6 +172,7 @@ export class ForeignHandler implements IDisposable {
   private _enabled = false;
   private _parent: ForeignHandler.IReceiver;
   private _isDisposed = false;
+  private _clearNext = false;
 }
 
 /**

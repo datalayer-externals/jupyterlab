@@ -49,8 +49,6 @@
     "@jupyterlab/csvviewer-extension": "^3.0.0-alpha.14",
     "@jupyterlab/datastore": "^3.0.0-alpha.14",
     "@jupyterlab/datastore-extension": "^3.0.0-alpha.14",
-    "@jupyterlab/debugger": "^3.0.0-alpha.14",
-    "@jupyterlab/debugger-extension": "^3.0.0-alpha.14",
     "@jupyterlab/docmanager": "^3.0.0-alpha.14",
     "@jupyterlab/docmanager-extension": "^3.0.0-alpha.14",
     "@jupyterlab/docregistry": "^3.0.0-alpha.14",

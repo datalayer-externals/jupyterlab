@@ -330,7 +330,7 @@ function activateEditorCommands(
       if (name && widget) {
         const spec = Mode.findByName(name);
         if (spec) {
-          widget.content.model.mimeType = spec.mime;
+          widget.content.model!.mimeType = spec.mime;
         }
       }
     },
@@ -340,7 +340,7 @@ function activateEditorCommands(
       if (!widget) {
         return false;
       }
-      const mime = widget.content.model.mimeType;
+      const mime = widget.content.model!.mimeType;
       const spec = Mode.findByMIME(mime);
       const name = spec && spec.name;
       return args['name'] === name;
