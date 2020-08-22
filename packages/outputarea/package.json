@@ -41,8 +41,9 @@
   },
   "dependencies": {
     "@jupyterlab/apputils": "^3.0.0-alpha.12",
-    "@jupyterlab/nbformat": "^3.0.0-alpha.12",
+    "@jupyterlab/coreutils": "^5.0.0-alpha.12",
     "@jupyterlab/datastore": "^3.0.0-alpha.12",
+    "@jupyterlab/nbformat": "^3.0.0-alpha.12",
     "@jupyterlab/rendermime": "^3.0.0-alpha.12",
     "@jupyterlab/rendermime-interfaces": "^3.0.0-alpha.12",
     "@jupyterlab/services": "^6.0.0-alpha.12",

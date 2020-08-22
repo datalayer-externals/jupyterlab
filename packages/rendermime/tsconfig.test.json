@@ -12,10 +12,10 @@
       "path": "../coreutils"
     },
     {
-      "path": "../nbformat"
+      "path": "../datastore"
     },
     {
-      "path": "../observables"
+      "path": "../nbformat"
     },
     {
       "path": "../rendermime-interfaces"
@@ -45,10 +45,10 @@
       "path": "../coreutils"
     },
     {
-      "path": "../nbformat"
+      "path": "../datastore"
     },
     {
-      "path": "../observables"
+      "path": "../nbformat"
     },
     {
       "path": "../rendermime-interfaces"

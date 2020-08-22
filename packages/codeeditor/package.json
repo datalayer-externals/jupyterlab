@@ -41,8 +41,9 @@
   },
   "dependencies": {
     "@jupyterlab/coreutils": "^5.0.0-alpha.12",
-    "@jupyterlab/nbformat": "^3.0.0-alpha.12",
     "@jupyterlab/datastore": "^3.0.0-alpha.12",
+    "@jupyterlab/nbformat": "^3.0.0-alpha.12",
+    "@jupyterlab/observables": "^4.0.0-alpha.12",
     "@jupyterlab/translation": "^3.0.0-alpha.12",
     "@jupyterlab/ui-components": "^3.0.0-alpha.12",
     "@lumino/coreutils": "^1.4.3",

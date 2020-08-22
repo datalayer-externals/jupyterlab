@@ -18,13 +18,13 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../filebrowser"
     },
     {
       "path": "../nbformat"
-    },
-    {
-      "path": "../observables"
     },
     {
       "path": "../outputarea"
@@ -60,13 +60,13 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../filebrowser"
     },
     {
       "path": "../nbformat"
-    },
-    {
-      "path": "../observables"
     },
     {
       "path": "../outputarea"

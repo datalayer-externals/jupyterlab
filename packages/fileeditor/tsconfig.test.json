@@ -9,6 +9,9 @@
       "path": "../codeeditor"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../docregistry"
     },
     {
@@ -31,6 +34,9 @@
     },
     {
       "path": "../codeeditor"
+    },
+    {
+      "path": "../datastore"
     },
     {
       "path": "../docregistry"

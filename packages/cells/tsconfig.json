@@ -22,13 +22,13 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../filebrowser"
     },
     {
       "path": "../nbformat"
-    },
-    {
-      "path": "../datastore"
     },
     {
       "path": "../outputarea"

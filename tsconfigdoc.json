@@ -69,6 +69,9 @@
       "path": "./packages/datastore"
     },
     {
+      "path": "./packages/datastore-extension"
+    },
+    {
       "path": "./packages/debugger"
     },
     {

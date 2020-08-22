@@ -7,14 +7,9 @@ import { DatastoreExt } from '@jupyterlab/datastore';
 
 import { IOutputData, OutputData, OutputModel } from '@jupyterlab/rendermime';
 
-import { UUID } from '@phosphor/coreutils';
+import { UUID } from '@lumino/coreutils';
 
-import {
-  Datastore,
-  Fields,
-  ListField,
-  RegisterField
-} from '@phosphor/datastore';
+import { Datastore, Fields, ListField, RegisterField } from '@lumino/datastore';
 
 /**
  * The namespace for IOutputAreaData interfaces.

@@ -900,10 +900,10 @@ index 30ec621baca..15f2a2c73fe 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/rendermime": "^1.0.1",
      "@jupyterlab/rendermime-interfaces": "^1.3.0",
--    "@phosphor/disposable": "^1.2.0",
--    "@phosphor/signaling": "^1.2.3"
-+    "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2"
+-    "@lumino/disposable": "^1.2.0",
+-    "@lumino/signaling": "^1.2.3"
++    "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2"
    },
    "devDependencies": {
      "rimraf": "~2.6.2",
@@ -929,9 +929,9 @@ index 00000000000..82abb0df77d
 +  JSONObject,
 +  JSONValue,
 +  ReadonlyJSONObject
-+} from '@phosphor/coreutils';
++} from '@lumino/coreutils';
 +
-+import { MapField } from '@phosphor/datastore';
++import { MapField } from '@lumino/datastore';
 +
 +/**
 + * The namespace for IAttachmentsData interfaces.
@@ -1185,9 +1185,9 @@ index 2a55f28b65d..00000000000
 -
 -import { IRenderMime } from '@jupyterlab/rendermime-interfaces';
 -
--import { IDisposable } from '@phosphor/disposable';
+-import { IDisposable } from '@lumino/disposable';
 -
--import { ISignal, Signal } from '@phosphor/signaling';
+-import { ISignal, Signal } from '@lumino/signaling';
 -
 -/**
 - * The model for attachments.
@@ -1623,14 +1623,14 @@ index 3eca7dd4345..49176c4b9be 100644
      "@jupyterlab/outputarea": "^1.0.1",
      "@jupyterlab/rendermime": "^1.0.1",
      "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-+    "@phosphor/disposable": "^1.2.0",
-     "@phosphor/messaging": "^1.2.3",
--    "@phosphor/signaling": "^1.2.3",
-     "@phosphor/virtualdom": "^1.1.3",
-     "@phosphor/widgets": "^1.8.0",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
++    "@lumino/disposable": "^1.2.0",
+     "@lumino/messaging": "^1.2.3",
+-    "@lumino/signaling": "^1.2.3",
+     "@lumino/virtualdom": "^1.1.3",
+     "@lumino/widgets": "^1.8.0",
      "react": "~16.8.4"
 diff --git a/packages/cells/src/celldragutils.ts b/packages/cells/src/celldragutils.ts
 index d67bd588df2..0fb7b103ef9 100644
@@ -1644,11 +1644,11 @@ index d67bd588df2..0fb7b103ef9 100644
 +
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
- import { each, IterableOrArrayLike } from '@phosphor/algorithm';
+ import { each, IterableOrArrayLike } from '@lumino/algorithm';
 -import { ICodeCellModel } from './model';
 -import { Cell } from './widget';
 +
- import { h, VirtualDOM } from '@phosphor/virtualdom';
+ import { h, VirtualDOM } from '@lumino/virtualdom';
 -import { nbformat } from '@jupyterlab/coreutils';
 +
 +import { Cell } from './widget';
@@ -1706,7 +1706,7 @@ index 00000000000..0b56b86f45d
 +
 +import { IOutputData, OutputData } from '@jupyterlab/rendermime';
 +
-+import { JSONExt, JSONObject, ReadonlyJSONValue } from '@phosphor/coreutils';
++import { JSONExt, JSONObject, ReadonlyJSONValue } from '@lumino/coreutils';
 +
 +import {
 +  Datastore,
@@ -1714,7 +1714,7 @@ index 00000000000..0b56b86f45d
 +  ListField,
 +  MapField,
 +  RegisterField
-+} from '@phosphor/datastore';
++} from '@lumino/datastore';
 +
 +/**
 + * The namespace for `ICellData` interfaces, describing
@@ -2193,9 +2193,9 @@ index 14808559191..00000000000
 -| Distributed under the terms of the Modified BSD License.
 -|----------------------------------------------------------------------------*/
 -
--import { JSONExt, JSONObject, JSONValue } from '@phosphor/coreutils';
+-import { JSONExt, JSONObject, JSONValue } from '@lumino/coreutils';
 -
--import { ISignal, Signal } from '@phosphor/signaling';
+-import { ISignal, Signal } from '@lumino/signaling';
 -
 -import { IAttachmentsModel, AttachmentsModel } from '@jupyterlab/attachments';
 -
@@ -2203,7 +2203,7 @@ index 14808559191..00000000000
 -
 -import { IChangedArgs, nbformat } from '@jupyterlab/coreutils';
 -
--import { UUID } from '@phosphor/coreutils';
+-import { UUID } from '@lumino/coreutils';
 -
 -import {
 -  IObservableJSON,
@@ -2886,19 +2886,19 @@ index b9191cd0402..6d2784b9639 100644
  
  import { KernelMessage, Kernel } from '@jupyterlab/services';
  
--import { JSONValue, PromiseDelegate, JSONObject } from '@phosphor/coreutils';
+-import { JSONValue, PromiseDelegate, JSONObject } from '@lumino/coreutils';
 +import {
 +  JSONObject,
 +  PromiseDelegate,
 +  ReadonlyJSONObject,
 +  ReadonlyJSONValue
-+} from '@phosphor/coreutils';
++} from '@lumino/coreutils';
 +
-+import { Datastore, MapField, RegisterField } from '@phosphor/datastore';
++import { Datastore, MapField, RegisterField } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
  
- import { Message } from '@phosphor/messaging';
+ import { Message } from '@lumino/messaging';
  
 @@ -47,12 +58,7 @@ import {
  
@@ -3736,11 +3736,11 @@ index 706c4bd645b..4d5fadccc57 100644
      "@jupyterlab/coreutils": "^3.0.0",
 -    "@jupyterlab/observables": "^2.2.0",
 +    "@jupyterlab/datastore": "^1.0.0",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-     "@phosphor/disposable": "^1.2.0",
-     "@phosphor/dragdrop": "^1.3.3",
-     "@phosphor/messaging": "^1.2.3",
+     "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
+     "@lumino/disposable": "^1.2.0",
+     "@lumino/dragdrop": "^1.3.3",
+     "@lumino/messaging": "^1.2.3",
 diff --git a/packages/codeeditor/src/data.ts b/packages/codeeditor/src/data.ts
 new file mode 100644
 index 00000000000..a17aad2c2b1
@@ -3758,7 +3758,7 @@ index 00000000000..a17aad2c2b1
 +  MapField,
 +  RegisterField,
 +  TextField
-+} from '@phosphor/datastore';
++} from '@lumino/datastore';
 +
 +import { CodeEditor } from './editor';
 +
@@ -3870,13 +3870,13 @@ index 5b9e48c3187..1a6d3d712a1 100644
  
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
- import { JSONObject } from '@phosphor/coreutils';
+ import { JSONObject } from '@lumino/coreutils';
  
-+import { Datastore } from '@phosphor/datastore';
++import { Datastore } from '@lumino/datastore';
 +
- import { IDisposable } from '@phosphor/disposable';
+ import { IDisposable } from '@lumino/disposable';
  
- import { ISignal, Signal } from '@phosphor/signaling';
+ import { ISignal, Signal } from '@lumino/signaling';
  
 -import { IChangedArgs } from '@jupyterlab/coreutils';
 -
@@ -4135,19 +4135,19 @@ index 8f34fe73c9b..b63ecb8aea1 100644
 -import { IObservableJSON } from '@jupyterlab/observables';
 +import { DatastoreExt } from '@jupyterlab/datastore';
  
--import { JSONExt, JSONObject } from '@phosphor/coreutils';
+-import { JSONExt, JSONObject } from '@lumino/coreutils';
 +import {
 +  JSONExt,
 +  JSONObject,
 +  JSONValue,
 +  ReadonlyJSONObject
-+} from '@phosphor/coreutils';
++} from '@lumino/coreutils';
 +
-+import { Datastore, MapField, Schema } from '@phosphor/datastore';
++import { Datastore, MapField, Schema } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
  
- import { Message } from '@phosphor/messaging';
+ import { Message } from '@lumino/messaging';
  
 @@ -44,7 +53,10 @@ const COMMIT_CLASS = 'jp-JSONEditor-commitButton';
  /**
@@ -4346,9 +4346,9 @@ index 270f1126db9..b0214c6863d 100644
  
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
- import { MimeData } from '@phosphor/coreutils';
+ import { MimeData } from '@lumino/coreutils';
  
- import { IDragEvent } from '@phosphor/dragdrop';
+ import { IDragEvent } from '@lumino/dragdrop';
 @@ -48,7 +50,12 @@ export class CodeEditorWrapper extends Widget {
        config: options.config,
        selectionStyle: options.selectionStyle
@@ -4416,13 +4416,13 @@ index ba3485bd937..d3e1985327b 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/observables": "^2.2.0",
      "@jupyterlab/statusbar": "^1.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/commands": "^1.6.3",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-     "@phosphor/disposable": "^1.2.0",
-     "@phosphor/signaling": "^1.2.3",
-     "@phosphor/widgets": "^1.8.0",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/commands": "^1.6.3",
+     "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
+     "@lumino/disposable": "^1.2.0",
+     "@lumino/signaling": "^1.2.3",
+     "@lumino/widgets": "^1.8.0",
 diff --git a/packages/codemirror/src/editor.ts b/packages/codemirror/src/editor.ts
 index d68ff9601f0..204ac6e6b06 100644
 --- a/packages/codemirror/src/editor.ts
@@ -4435,14 +4435,14 @@ index d68ff9601f0..204ac6e6b06 100644
 +
  import { CodeEditor } from '@jupyterlab/codeeditor';
  
- import { UUID } from '@phosphor/coreutils';
+ import { UUID } from '@lumino/coreutils';
  
 -import {
 -  IObservableMap,
 -  IObservableString,
 -  ICollaborator
 -} from '@jupyterlab/observables';
-+import { Datastore, MapField, TextField } from '@phosphor/datastore';
++import { Datastore, MapField, TextField } from '@lumino/datastore';
 +
 +import { ICollaborator } from '@jupyterlab/observables';
  
@@ -4699,15 +4699,15 @@ index 888747cfb40..02032ae1652 100644
  
  import {
    interactiveItem,
-@@ -19,6 +19,10 @@ import { CommandRegistry } from '@phosphor/commands';
+@@ -19,6 +19,10 @@ import { CommandRegistry } from '@lumino/commands';
  
- import { JSONObject } from '@phosphor/coreutils';
+ import { JSONObject } from '@lumino/coreutils';
  
-+import { Datastore, RegisterField } from '@phosphor/datastore';
++import { Datastore, RegisterField } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
 +
- import { Menu } from '@phosphor/widgets';
+ import { Menu } from '@lumino/widgets';
  
  /**
 @@ -150,9 +154,9 @@ export namespace EditorSyntaxStatus {
@@ -4808,8 +4808,8 @@ index cd1f8b4b8ad..25c32dd6173 100644
      "@jupyterlab/coreutils": "^3.0.0",
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/completer/src/handler.ts b/packages/completer/src/handler.ts
 index 4e783d85072..83ca71007fe 100644
 --- a/packages/completer/src/handler.ts
@@ -4820,9 +4820,9 @@ index 4e783d85072..83ca71007fe 100644
  
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
- import { ReadonlyJSONObject, JSONObject, JSONArray } from '@phosphor/coreutils';
+ import { ReadonlyJSONObject, JSONObject, JSONArray } from '@lumino/coreutils';
  
- import { IDisposable } from '@phosphor/disposable';
+ import { IDisposable } from '@lumino/disposable';
 @@ -84,12 +86,16 @@ export class CompletionHandler implements IDisposable {
  
      // Clean up and disconnect from old editor.
@@ -4940,7 +4940,7 @@ index cf53e00d243..a7e77761d6b 100644
 +    "@jupyterlab/outputarea": "^1.0.1",
      "@jupyterlab/rendermime": "^1.0.1",
      "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
+     "@lumino/algorithm": "^1.1.3",
 diff --git a/packages/console/src/foreign.ts b/packages/console/src/foreign.ts
 index 1b746cb308e..d891d2ee618 100644
 --- a/packages/console/src/foreign.ts
@@ -4955,7 +4955,7 @@ index 1b746cb308e..d891d2ee618 100644
 +
  import { KernelMessage } from '@jupyterlab/services';
  
- import { IDisposable } from '@phosphor/disposable';
+ import { IDisposable } from '@lumino/disposable';
 @@ -102,10 +106,18 @@ export class ForeignHandler implements IDisposable {
        case 'execute_input':
          let inputMsg = msg as KernelMessage.IExecuteInputMsg;
@@ -5031,9 +5031,9 @@ index 39001027026..ad523a5b488 100644
 +
  import { KernelMessage } from '@jupyterlab/services';
  
- import { IDisposable } from '@phosphor/disposable';
+ import { IDisposable } from '@lumino/disposable';
  
- import { Signal } from '@phosphor/signaling';
+ import { Signal } from '@lumino/signaling';
  
 -import { IClientSession } from '@jupyterlab/apputils';
 -
@@ -5521,7 +5521,7 @@ index 192a269ffd7..c0e2d26bce3 100644
 --- a/packages/console/style/index.css
 +++ b/packages/console/style/index.css
 @@ -9,6 +9,7 @@
- @import url('~@phosphor/dragdrop/style/index.css');
+ @import url('~@lumino/dragdrop/style/index.css');
  @import url('~@jupyterlab/codeeditor/style/index.css');
  @import url('~@jupyterlab/rendermime/style/index.css');
 +@import url('~@jupyterlab/outputarea/style/index.css');
@@ -5629,9 +5629,9 @@ index 00000000000..b1d883b2911
 +    "@jupyterlab/application": "^1.0.1",
 +    "@jupyterlab/apputils": "^1.0.1",
 +    "@jupyterlab/datastore": "^1.0.0",
-+    "@phosphor/algorithm": "^1.1.3",
-+    "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
++    "@lumino/algorithm": "^1.1.3",
++    "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
 +    "react": "~16.8.4"
 +  },
 +  "devDependencies": {
@@ -5677,10 +5677,10 @@ index 00000000000..ddea99e70fb
 +  WidgetTracker,
 +  UseSignal
 +} from '@jupyterlab/apputils';
-+import { Fields, Datastore } from '@phosphor/datastore';
++import { Fields, Datastore } from '@lumino/datastore';
 +import * as React from 'react';
-+import { toArray } from '@phosphor/algorithm';
-+import { UUID } from '@phosphor/coreutils';
++import { toArray } from '@lumino/algorithm';
++import { UUID } from '@lumino/coreutils';
 +
 +type TODOState = {
 +  datastore: Datastore | undefined;
@@ -5918,11 +5918,11 @@ index 00000000000..ae1c416f102
 +  "dependencies": {
 +    "@jupyterlab/coreutils": "^3.0.0",
 +    "@jupyterlab/services": "^4.0.1",
-+    "@phosphor/algorithm": "^1.1.3",
-+    "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-+    "@phosphor/disposable": "^1.2.0",
-+    "@phosphor/messaging": "^1.2.3"
++    "@lumino/algorithm": "^1.1.3",
++    "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
++    "@lumino/disposable": "^1.2.0",
++    "@lumino/messaging": "^1.2.3"
 +  },
 +  "devDependencies": {
 +    "rimraf": "~2.6.2",
@@ -5943,11 +5943,11 @@ index 00000000000..30652d682f1
 +
 +import { URLExt } from '@jupyterlab/coreutils';
 +
-+import { PromiseDelegate } from '@phosphor/coreutils';
++import { PromiseDelegate } from '@lumino/coreutils';
 +
-+import { Datastore } from '@phosphor/datastore';
++import { Datastore } from '@lumino/datastore';
 +
-+import { IMessageHandler, Message, MessageLoop } from '@phosphor/messaging';
++import { IMessageHandler, Message, MessageLoop } from '@lumino/messaging';
 +
 +import { ServerConnection, WSConnection } from '@jupyterlab/services';
 +
@@ -6337,7 +6337,7 @@ index 00000000000..7b7cab61248
 +// Copyright (c) Jupyter Development Team.
 +// Distributed under the terms of the Modified BSD License.
 +
-+import { Schema, Datastore } from '@phosphor/datastore';
++import { Schema, Datastore } from '@lumino/datastore';
 +
 +import { CollaborationClient } from './client';
 +import { PageConfig } from '@jupyterlab/coreutils';
@@ -6368,14 +6368,14 @@ index 00000000000..ce955b9def9
 +++ b/packages/datastore/src/objiter.ts
 @@ -0,0 +1,273 @@
 +/*-----------------------------------------------------------------------------
-+| Copyright (c) 2014-2017, PhosphorJS Contributors
++| Copyright (c) 2014-2017, luminoJS Contributors
 +|
 +| Distributed under the terms of the BSD 3-Clause License.
 +|
 +| The full license is in the file LICENSE, distributed with this software.
 +|----------------------------------------------------------------------------*/
 +
-+import { IIterator } from '@phosphor/algorithm';
++import { IIterator } from '@lumino/algorithm';
 +
 +/**
 + * Create an iterator for the keys in an object.
@@ -6389,7 +6389,7 @@ index 00000000000..ce955b9def9
 + *
 + * #### Example
 + * ```typescript
-+ * import { each, keys } from '@phosphor/algorithm';
++ * import { each, keys } from '@lumino/algorithm';
 + *
 + * let data = { one: 1, two: 2, three: 3 };
 + *
@@ -6414,7 +6414,7 @@ index 00000000000..ce955b9def9
 + *
 + * #### Example
 + * ```typescript
-+ * import { each, values } from '@phosphor/algorithm';
++ * import { each, values } from '@lumino/algorithm';
 + *
 + * let data = { one: 1, two: 2, three: 3 };
 + *
@@ -6439,7 +6439,7 @@ index 00000000000..ce955b9def9
 + *
 + * #### Example
 + * ```typescript
-+ * import { each, items } from '@phosphor/algorithm';
++ * import { each, items } from '@lumino/algorithm';
 + *
 + * let data = { one: 1, two: 2, three: 3 };
 + *
@@ -6731,9 +6731,9 @@ index 00000000000..7169b195694
 +// Copyright (c) Jupyter Development Team.
 +// Distributed under the terms of the Modified BSD License.
 +
-+import { Datastore, Record, Schema, Table } from '@phosphor/datastore';
++import { Datastore, Record, Schema, Table } from '@lumino/datastore';
 +
-+import { DisposableDelegate, IDisposable } from '@phosphor/disposable';
++import { DisposableDelegate, IDisposable } from '@lumino/disposable';
 +
 +/**
 + * A namespace for Datastore helper functions.
@@ -7064,9 +7064,9 @@ index 00000000000..e8eaf962761
 +// Copyright (c) Jupyter Development Team.
 +// Distributed under the terms of the Modified BSD License.
 +
-+import { ReadonlyJSONObject, UUID } from '@phosphor/coreutils';
++import { ReadonlyJSONObject, UUID } from '@lumino/coreutils';
 +
-+import { Datastore } from '@phosphor/datastore';
++import { Datastore } from '@lumino/datastore';
 +
 +/**
 + * Namespace for datastore collaboration statics.
@@ -7842,13 +7842,13 @@ index fcb9cc3718a..187773c825f 100644
 +
  import { Contents } from '@jupyterlab/services';
  
- import { JSONValue } from '@phosphor/coreutils';
+ import { JSONValue } from '@lumino/coreutils';
  
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
 +
- import { ISignal, Signal } from '@phosphor/signaling';
+ import { ISignal, Signal } from '@lumino/signaling';
  
- import { Widget } from '@phosphor/widgets';
+ import { Widget } from '@lumino/widgets';
  
 -import { MainAreaWidget } from '@jupyterlab/apputils';
 -
@@ -8497,7 +8497,7 @@ index fe1d5ddaa16..9ea74f21ab9 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/fileeditor": "^1.0.1",
      "@jupyterlab/notebook": "^1.0.1",
-     "@phosphor/coreutils": "^1.3.1",
+     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/documentsearch/src/providers/notebooksearchprovider.ts b/packages/documentsearch/src/providers/notebooksearchprovider.ts
 index 20cf0e1b985..80703202321 100644
 --- a/packages/documentsearch/src/providers/notebooksearchprovider.ts
@@ -8513,9 +8513,9 @@ index 20cf0e1b985..80703202321 100644
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +import { NotebookPanel } from '@jupyterlab/notebook';
  
-+import { IDisposable } from '@phosphor/disposable';
- import { Signal, ISignal } from '@phosphor/signaling';
- import { Widget } from '@phosphor/widgets';
++import { IDisposable } from '@lumino/disposable';
+ import { Signal, ISignal } from '@lumino/signaling';
+ import { Widget } from '@lumino/widgets';
  
 @@ -50,8 +52,13 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
      this._query = query;
@@ -8659,7 +8659,7 @@ index f71fd00f786..883d073c61e 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/docregistry": "^1.0.1",
      "@jupyterlab/statusbar": "^1.0.1",
-     "@phosphor/coreutils": "^1.3.1",
+     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/fileeditor/src/widget.ts b/packages/fileeditor/src/widget.ts
 index 84a7de4c906..dbf615b6310 100644
 --- a/packages/fileeditor/src/widget.ts
@@ -8668,7 +8668,7 @@ index 84a7de4c906..dbf615b6310 100644
  // Copyright (c) Jupyter Development Team.
  // Distributed under the terms of the Modified BSD License.
  
--import { StackedLayout, Widget } from '@phosphor/widgets';
+-import { StackedLayout, Widget } from '@lumino/widgets';
 +import {
 +  CodeEditor,
 +  IEditorServices,
@@ -8691,11 +8691,11 @@ index 84a7de4c906..dbf615b6310 100644
 -  CodeEditorWrapper
 -} from '@jupyterlab/codeeditor';
 -
- import { PromiseDelegate } from '@phosphor/coreutils';
+ import { PromiseDelegate } from '@lumino/coreutils';
  
- import { Message } from '@phosphor/messaging';
+ import { Message } from '@lumino/messaging';
  
-+import { StackedLayout, Widget } from '@phosphor/widgets';
++import { StackedLayout, Widget } from '@lumino/widgets';
 +
  /**
   * The data attribute added to a widget that can run code.
@@ -9028,7 +9028,7 @@ index e88150e6230..1d475306910 100644
 +
  import { IDocumentManager } from '@jupyterlab/docmanager';
  
- import { ArrayExt } from '@phosphor/algorithm';
+ import { ArrayExt } from '@lumino/algorithm';
 @@ -956,10 +958,13 @@ function addCommands(
        const { context, content } = current;
  
@@ -9136,13 +9136,13 @@ index baedcceeb41..915d9bc0674 100644
      "@jupyterlab/services": "^4.0.1",
      "@jupyterlab/statusbar": "^1.0.1",
      "@jupyterlab/ui-components": "^1.0.0",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-+    "@phosphor/disposable": "^1.2.0",
-     "@phosphor/domutils": "^1.1.3",
-     "@phosphor/dragdrop": "^1.3.3",
-     "@phosphor/messaging": "^1.2.3",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
++    "@lumino/disposable": "^1.2.0",
+     "@lumino/domutils": "^1.1.3",
+     "@lumino/dragdrop": "^1.3.3",
+     "@lumino/messaging": "^1.2.3",
 diff --git a/packages/notebook/src/actions.tsx b/packages/notebook/src/actions.tsx
 index 3c1733ab633..b03605cbf75 100644
 --- a/packages/notebook/src/actions.tsx
@@ -9174,16 +9174,16 @@ index 3c1733ab633..b03605cbf75 100644
 +  RawCellData
  } from '@jupyterlab/cells';
  
--import { ArrayExt, each, toArray } from '@phosphor/algorithm';
+-import { ArrayExt, each, toArray } from '@lumino/algorithm';
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
 +import { OutputAreaData } from '@jupyterlab/outputarea';
 +
 +import { KernelMessage } from '@jupyterlab/services';
 +
-+import { ArrayExt, each } from '@phosphor/algorithm';
++import { ArrayExt, each } from '@lumino/algorithm';
  
- import { JSONObject } from '@phosphor/coreutils';
+ import { JSONObject } from '@lumino/coreutils';
  
 @@ -99,6 +106,7 @@ export namespace NotebookActions {
     * The leading whitespace in the second cell will be removed.
@@ -10258,9 +10258,9 @@ index 72c0793040b..00000000000
 -  each,
 -  toArray,
 -  ArrayIterator
--} from '@phosphor/algorithm';
+-} from '@lumino/algorithm';
 -
--import { ISignal, Signal } from '@phosphor/signaling';
+-import { ISignal, Signal } from '@lumino/signaling';
 -
 -import { ICellModel } from '@jupyterlab/cells';
 -
@@ -10779,7 +10779,7 @@ index 00000000000..f82889cfd13
 +
 +import { IOutputData, OutputData } from '@jupyterlab/rendermime';
 +
-+import { ReadonlyJSONValue } from '@phosphor/coreutils';
++import { ReadonlyJSONValue } from '@lumino/coreutils';
 +
 +import {
 +  Datastore,
@@ -10787,7 +10787,7 @@ index 00000000000..f82889cfd13
 +  ListField,
 +  MapField,
 +  RegisterField
-+} from '@phosphor/datastore';
++} from '@lumino/datastore';
 +
 +/**
 + * Interfaces for specifying how notebooks store data in datastores.
@@ -10943,7 +10943,7 @@ index 40206731324..64d1a1aebe5 100644
  
  import { nbformat } from '@jupyterlab/coreutils';
  
--import { UUID } from '@phosphor/coreutils';
+-import { UUID } from '@lumino/coreutils';
 +import { IOutputData, OutputData } from '@jupyterlab/rendermime';
  
 -import {
@@ -10952,13 +10952,13 @@ index 40206731324..64d1a1aebe5 100644
 -  IObservableList,
 -  IModelDB
 -} from '@jupyterlab/observables';
-+import { ReadonlyJSONObject, UUID } from '@phosphor/coreutils';
++import { ReadonlyJSONObject, UUID } from '@lumino/coreutils';
  
 -import { CellList } from './celllist';
 -import { showDialog, Dialog } from '@jupyterlab/apputils';
-+import { Datastore } from '@phosphor/datastore';
++import { Datastore } from '@lumino/datastore';
 +
-+import { ISignal, Signal } from '@phosphor/signaling';
++import { ISignal, Signal } from '@lumino/signaling';
 +
 +import { INotebookData, NotebookData } from './data';
  
@@ -11852,15 +11852,15 @@ index 421166e002b..36262a3f8d1 100644
  // Copyright (c) Jupyter Development Team.
  // Distributed under the terms of the Modified BSD License.
  
--import { ArrayExt, each, chain } from '@phosphor/algorithm';
+-import { ArrayExt, each, chain } from '@lumino/algorithm';
 -
--import { JSONObject, JSONValue } from '@phosphor/coreutils';
+-import { JSONObject, JSONValue } from '@lumino/coreutils';
 -
--import { ConflatableMessage, Message, MessageLoop } from '@phosphor/messaging';
+-import { ConflatableMessage, Message, MessageLoop } from '@lumino/messaging';
 -
--import { h, VirtualDOM, VirtualNode } from '@phosphor/virtualdom';
+-import { h, VirtualDOM, VirtualNode } from '@lumino/virtualdom';
 -
--import { PanelLayout, Widget } from '@phosphor/widgets';
+-import { PanelLayout, Widget } from '@lumino/widgets';
 -
  import { Collapse, Styling } from '@jupyterlab/apputils';
  
@@ -11876,19 +11876,19 @@ index 421166e002b..36262a3f8d1 100644
 -import { IObservableMap, ObservableJSON } from '@jupyterlab/observables';
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
-+import { ArrayExt, each, chain } from '@phosphor/algorithm';
++import { ArrayExt, each, chain } from '@lumino/algorithm';
 +
-+import { JSONObject, JSONValue, ReadonlyJSONValue } from '@phosphor/coreutils';
++import { JSONObject, JSONValue, ReadonlyJSONValue } from '@lumino/coreutils';
 +
-+import { Datastore, MapField } from '@phosphor/datastore';
++import { Datastore, MapField } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
 +
-+import { ConflatableMessage, Message, MessageLoop } from '@phosphor/messaging';
++import { ConflatableMessage, Message, MessageLoop } from '@lumino/messaging';
 +
-+import { h, VirtualDOM, VirtualNode } from '@phosphor/virtualdom';
++import { h, VirtualDOM, VirtualNode } from '@lumino/virtualdom';
 +
-+import { PanelLayout, Widget } from '@phosphor/widgets';
++import { PanelLayout, Widget } from '@lumino/widgets';
 +
 +import { INotebookData } from './data';
  
@@ -12403,7 +12403,7 @@ index 99d7b0d0e24..17fbdc3b476 100644
  
 @@ -10,6 +10,8 @@ import { IconItem } from '@jupyterlab/statusbar';
  
- import { toArray } from '@phosphor/algorithm';
+ import { toArray } from '@lumino/algorithm';
  
 +import { Notebook } from '.';
 +
@@ -12482,30 +12482,30 @@ index 94bffc3b031..2b15af4adf4 100644
 +++ b/packages/notebook/src/widget.ts
 @@ -3,38 +3,38 @@
  
- import { ArrayExt, each } from '@phosphor/algorithm';
+ import { ArrayExt, each } from '@lumino/algorithm';
  
--import { JSONValue } from '@phosphor/coreutils';
-+import { JSONValue, MimeData } from '@phosphor/coreutils';
+-import { JSONValue } from '@lumino/coreutils';
++import { JSONValue, MimeData } from '@lumino/coreutils';
  
--import { Message } from '@phosphor/messaging';
-+import { Datastore, ListField, MapField } from '@phosphor/datastore';
+-import { Message } from '@lumino/messaging';
++import { Datastore, ListField, MapField } from '@lumino/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
  
--import { MimeData } from '@phosphor/coreutils';
-+import { IDragEvent, Drag } from '@phosphor/dragdrop';
+-import { MimeData } from '@lumino/coreutils';
++import { IDragEvent, Drag } from '@lumino/dragdrop';
 +
-+import { Message } from '@phosphor/messaging';
++import { Message } from '@lumino/messaging';
  
- import { AttachedProperty } from '@phosphor/properties';
+ import { AttachedProperty } from '@lumino/properties';
  
- import { ISignal, Signal } from '@phosphor/signaling';
+ import { ISignal, Signal } from '@lumino/signaling';
  
--import { Drag, IDragEvent } from '@phosphor/dragdrop';
+-import { Drag, IDragEvent } from '@lumino/dragdrop';
 -
- import { PanelLayout, Widget } from '@phosphor/widgets';
+ import { PanelLayout, Widget } from '@lumino/widgets';
  
- import { h, VirtualDOM } from '@phosphor/virtualdom';
+ import { h, VirtualDOM } from '@lumino/virtualdom';
  
  import {
 -  ICellModel,
@@ -13176,13 +13176,13 @@ index e0699df8f62..9584188ea10 100644
      "@jupyterlab/rendermime": "^1.0.1",
      "@jupyterlab/rendermime-interfaces": "^1.3.0",
      "@jupyterlab/services": "^4.0.1",
--    "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
--    "@phosphor/disposable": "^1.2.0",
-+    "@phosphor/datastore": "0.7.2",
-     "@phosphor/messaging": "^1.2.3",
-     "@phosphor/signaling": "^1.2.3",
-     "@phosphor/widgets": "^1.8.0"
+-    "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
+-    "@lumino/disposable": "^1.2.0",
++    "@lumino/datastore": "0.7.2",
+     "@lumino/messaging": "^1.2.3",
+     "@lumino/signaling": "^1.2.3",
+     "@lumino/widgets": "^1.8.0"
 diff --git a/packages/outputarea/src/data.ts b/packages/outputarea/src/data.ts
 new file mode 100644
 index 00000000000..cf973ca7b3e
@@ -13198,14 +13198,14 @@ index 00000000000..cf973ca7b3e
 +
 +import { IOutputData, OutputData, OutputModel } from '@jupyterlab/rendermime';
 +
-+import { UUID } from '@phosphor/coreutils';
++import { UUID } from '@lumino/coreutils';
 +
 +import {
 +  Datastore,
 +  Fields,
 +  ListField,
 +  RegisterField
-+} from '@phosphor/datastore';
++} from '@lumino/datastore';
 +
 +/**
 + * The namespace for IOutputAreaData interfaces.
@@ -13533,11 +13533,11 @@ index cd2d8c4fb85..00000000000
 -// Copyright (c) Jupyter Development Team.
 -// Distributed under the terms of the Modified BSD License.
 -
--import { each, map, toArray } from '@phosphor/algorithm';
+-import { each, map, toArray } from '@lumino/algorithm';
 -
--import { IDisposable } from '@phosphor/disposable';
+-import { IDisposable } from '@lumino/disposable';
 -
--import { ISignal, Signal } from '@phosphor/signaling';
+-import { ISignal, Signal } from '@lumino/signaling';
 -
 -import { nbformat } from '@jupyterlab/coreutils';
 -
@@ -14015,22 +14015,22 @@ index 13e13411f82..c118a92c52c 100644
    JSONObject,
    PromiseDelegate,
    ReadonlyJSONObject
- } from '@phosphor/coreutils';
+ } from '@lumino/coreutils';
  
-+import { Datastore, ListField } from '@phosphor/datastore';
++import { Datastore, ListField } from '@lumino/datastore';
 +
- import { Message } from '@phosphor/messaging';
+ import { Message } from '@lumino/messaging';
  
- import { Signal } from '@phosphor/signaling';
+ import { Signal } from '@lumino/signaling';
  
--import { Panel, PanelLayout } from '@phosphor/widgets';
+-import { Panel, PanelLayout } from '@lumino/widgets';
 -
--import { Widget } from '@phosphor/widgets';
+-import { Widget } from '@lumino/widgets';
 -
 -import { IClientSession } from '@jupyterlab/apputils';
 -
 -import { nbformat } from '@jupyterlab/coreutils';
-+import { Panel, PanelLayout, Widget } from '@phosphor/widgets';
++import { Panel, PanelLayout, Widget } from '@lumino/widgets';
  
 -import { IOutputModel, IRenderMimeRegistry } from '@jupyterlab/rendermime';
 -
@@ -14484,12 +14484,12 @@ index 24f7c1459f3..c1c5827cece 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/rendermime-interfaces": "^1.3.0",
      "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
-+    "@phosphor/datastore": "0.7.2",
-     "@phosphor/messaging": "^1.2.3",
--    "@phosphor/signaling": "^1.2.3",
-     "@phosphor/widgets": "^1.8.0",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
++    "@lumino/datastore": "0.7.2",
+     "@lumino/messaging": "^1.2.3",
+-    "@lumino/signaling": "^1.2.3",
+     "@lumino/widgets": "^1.8.0",
      "lodash.escape": "^4.0.1",
      "marked": "0.6.2"
 diff --git a/packages/rendermime/src/attachmentmodel.ts b/packages/rendermime/src/attachmentmodel.ts
@@ -14514,9 +14514,9 @@ index ec99a5b8cc3..00000000000
 -  JSONObject,
 -  JSONValue,
 -  ReadonlyJSONObject
--} from '@phosphor/coreutils';
+-} from '@lumino/coreutils';
 -
--import { ISignal, Signal } from '@phosphor/signaling';
+-import { ISignal, Signal } from '@lumino/signaling';
 -
 -import { MimeModel } from './mimemodel';
 -
@@ -14760,10 +14760,10 @@ index 0624057d172..42efebd665a 100644
    JSONObject,
 @@ -9,25 +15,105 @@ import {
    ReadonlyJSONObject
- } from '@phosphor/coreutils';
+ } from '@lumino/coreutils';
  
--import { ISignal, Signal } from '@phosphor/signaling';
-+import { Datastore, Fields, Record, RegisterField } from '@phosphor/datastore';
+-import { ISignal, Signal } from '@lumino/signaling';
++import { Datastore, Fields, Record, RegisterField } from '@lumino/datastore';
  
 -import { nbformat } from '@jupyterlab/coreutils';
 +import { MimeModel } from './mimemodel';
@@ -15228,9 +15228,9 @@ index 7e616a7faa0..d78be9e255a 100644
    "dependencies": {
      "@jupyterlab/coreutils": "^3.0.0",
 -    "@jupyterlab/observables": "^2.2.0",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
-     "@phosphor/disposable": "^1.2.0",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
+     "@lumino/disposable": "^1.2.0",
 diff --git a/packages/services/src/contents/index.ts b/packages/services/src/contents/index.ts
 index 79be3a6c5f2..905b161e742 100644
 --- a/packages/services/src/contents/index.ts
@@ -15241,9 +15241,9 @@ index 79be3a6c5f2..905b161e742 100644
  
 -import { ModelDB } from '@jupyterlab/observables';
 -
- import { JSONObject } from '@phosphor/coreutils';
+ import { JSONObject } from '@lumino/coreutils';
  
- import { each } from '@phosphor/algorithm';
+ import { each } from '@lumino/algorithm';
 @@ -253,13 +251,6 @@ export namespace Contents {
       */
      driveName(path: string): string;
@@ -15309,9 +15309,9 @@ index 00000000000..2b257668ecd
 +// Copyright (c) Jupyter Development Team.
 +// Distributed under the terms of the Modified BSD License.
 +
-+import { PromiseDelegate } from '@phosphor/coreutils';
++import { PromiseDelegate } from '@lumino/coreutils';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
 +
 +/**
 + * Abstract base for a class that sends/receives messages over websocket.
@@ -15552,7 +15552,7 @@ index 475aaaee885..49b52f43852 100644
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/inspector": "^1.0.1",
      "@jupyterlab/rendermime": "^1.0.1",
-     "@phosphor/commands": "^1.6.3",
+     "@lumino/commands": "^1.6.3",
 diff --git a/packages/settingeditor/src/raweditor.ts b/packages/settingeditor/src/raweditor.ts
 index d88ea31c264..40e85646cb5 100644
 --- a/packages/settingeditor/src/raweditor.ts
@@ -15565,7 +15565,7 @@ index d88ea31c264..40e85646cb5 100644
 +
  import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
  
- import { CommandRegistry } from '@phosphor/commands';
+ import { CommandRegistry } from '@lumino/commands';
 @@ -71,7 +73,7 @@ export class RawEditor extends SplitPanel {
        factory: editorFactory
      }));
@@ -15688,8 +15688,8 @@ index 325339b7cfc..aaeb662e22e 100644
      "@jupyterlab/coreutils": "^3.0.0",
 +    "@jupyterlab/datastore": "^1.0.0",
      "@jupyterlab/services": "^4.0.1",
-     "@phosphor/algorithm": "^1.1.3",
-     "@phosphor/coreutils": "^1.3.1",
+     "@lumino/algorithm": "^1.1.3",
+     "@lumino/coreutils": "^1.3.1",
 diff --git a/packages/statusbar/src/defaults/lineCol.tsx b/packages/statusbar/src/defaults/lineCol.tsx
 index 2240c2da940..653626d95c3 100644
 --- a/packages/statusbar/src/defaults/lineCol.tsx
@@ -15700,7 +15700,7 @@ index 2240c2da940..653626d95c3 100644
  
 +import { DatastoreExt } from '@jupyterlab/datastore';
 +
-+import { IDisposable } from '@phosphor/disposable';
++import { IDisposable } from '@lumino/disposable';
 +
  import { interactiveItem, showPopup, Popup, TextItem } from '..';
  
@@ -15786,103 +15786,103 @@ index 88df6f77338..df42085d9ac 100644
      universal-user-agent "^2.0.0"
      url-template "^2.0.8"
  
--"@phosphor/algorithm@^1.1.3":
+-"@lumino/algorithm@^1.1.3":
 -  version "1.1.3"
--  resolved "https://registry.yarnpkg.com/@phosphor/algorithm/-/algorithm-1.1.3.tgz#fb0e974f4e81aadc06f948770b3060c4ec8a1e27"
+-  resolved "https://registry.yarnpkg.com/@lumino/algorithm/-/algorithm-1.1.3.tgz#fb0e974f4e81aadc06f948770b3060c4ec8a1e27"
 -  integrity sha512-+dkdYTBglR+qGnLVQdCvYojNZMGxf+xSl1Jeksha3pm7niQktSFz2aR5gEPu/nI5LM8T8slTpqE4Pjvq8P+IVA==
-+"@phosphor/algorithm@^1.1.3", "@phosphor/algorithm@^1.2.0":
++"@lumino/algorithm@^1.1.3", "@lumino/algorithm@^1.2.0":
 +  version "1.2.0"
-+  resolved "https://registry.yarnpkg.com/@phosphor/algorithm/-/algorithm-1.2.0.tgz#4a19aa59261b7270be696672dc3f0663f7bef152"
++  resolved "https://registry.yarnpkg.com/@lumino/algorithm/-/algorithm-1.2.0.tgz#4a19aa59261b7270be696672dc3f0663f7bef152"
 +  integrity sha512-C9+dnjXyU2QAkWCW6QVDGExk4hhwxzAKf5/FIuYlHAI9X5vFv99PYm0EREDxX1PbMuvfFBZhPNu0PvuSDQ7sFA==
  
- "@phosphor/application@^1.6.3":
+ "@lumino/application@^1.6.3":
    version "1.6.3"
 @@ -1649,12 +1649,12 @@
-     "@phosphor/coreutils" "^1.3.1"
-     "@phosphor/widgets" "^1.8.0"
+     "@lumino/coreutils" "^1.3.1"
+     "@lumino/widgets" "^1.8.0"
  
--"@phosphor/collections@^1.1.3":
+-"@lumino/collections@^1.1.3":
 -  version "1.1.3"
--  resolved "https://registry.yarnpkg.com/@phosphor/collections/-/collections-1.1.3.tgz#c938ee4138d97377bba1f0970102071ca3ac1420"
+-  resolved "https://registry.yarnpkg.com/@lumino/collections/-/collections-1.1.3.tgz#c938ee4138d97377bba1f0970102071ca3ac1420"
 -  integrity sha512-J2U1xd2e5LtqoOJt4kynrjDNeHhVpJjuY2/zA0InS5kyOuWmvy79pt/KJ22n0LBNcU/fjkImqtQmbrC2Z4q2xQ==
-+"@phosphor/collections@^1.2.0":
++"@lumino/collections@^1.2.0":
 +  version "1.2.0"
-+  resolved "https://registry.yarnpkg.com/@phosphor/collections/-/collections-1.2.0.tgz#a8cdd0edc0257de7c33306a91caf47910036307f"
++  resolved "https://registry.yarnpkg.com/@lumino/collections/-/collections-1.2.0.tgz#a8cdd0edc0257de7c33306a91caf47910036307f"
 +  integrity sha512-T9/0EjSuY6+ga2LIFRZ0xupciOR3Qnyy8Q95lhGTC0FXZUFwC8fl9e8On6IcwasCszS+1n8dtZUWSIynfgdpzw==
    dependencies:
--    "@phosphor/algorithm" "^1.1.3"
-+    "@phosphor/algorithm" "^1.2.0"
+-    "@lumino/algorithm" "^1.1.3"
++    "@lumino/algorithm" "^1.2.0"
  
- "@phosphor/commands@^1.6.3":
+ "@lumino/commands@^1.6.3":
    version "1.6.3"
 @@ -1687,13 +1687,25 @@
-     "@phosphor/signaling" "^1.2.3"
-     "@phosphor/widgets" "^1.8.0"
+     "@lumino/signaling" "^1.2.3"
+     "@lumino/widgets" "^1.8.0"
  
--"@phosphor/disposable@^1.2.0":
+-"@lumino/disposable@^1.2.0":
 -  version "1.2.0"
--  resolved "https://registry.yarnpkg.com/@phosphor/disposable/-/disposable-1.2.0.tgz#878b9b5863f2026bbf2935eb600c7fdc97d0d026"
+-  resolved "https://registry.yarnpkg.com/@lumino/disposable/-/disposable-1.2.0.tgz#878b9b5863f2026bbf2935eb600c7fdc97d0d026"
 -  integrity sha512-4PoWoffdrLyWOW5Qv7I8//owvZmv57YhaxetAMWeJl13ThXc901RprL0Gxhtue2ZxL2PtUjM1207HndKo2FVjA==
-+"@phosphor/datastore@0.7.2":
++"@lumino/datastore@0.7.2":
 +  version "0.7.2"
-+  resolved "https://registry.yarnpkg.com/@phosphor/datastore/-/datastore-0.7.2.tgz#749fe4c5a85c0cf752fd869f32a7987b20c96ac9"
++  resolved "https://registry.yarnpkg.com/@lumino/datastore/-/datastore-0.7.2.tgz#749fe4c5a85c0cf752fd869f32a7987b20c96ac9"
 +  integrity sha512-jHQaktrwsoBjKXlMtc70sB9uQxD53A8ifVA/65Xwnze74NtEe8ni8FTWBdo7Xul6WbTJUFrCutLWLAn3H+tDTQ==
    dependencies:
--    "@phosphor/algorithm" "^1.1.3"
--    "@phosphor/signaling" "^1.2.3"
-+    "@phosphor/algorithm" "^1.2.0"
-+    "@phosphor/collections" "^1.2.0"
-+    "@phosphor/coreutils" "^1.3.1"
-+    "@phosphor/disposable" "^1.3.0"
-+    "@phosphor/messaging" "^1.3.0"
-+    "@phosphor/signaling" "^1.3.0"
+-    "@lumino/algorithm" "^1.1.3"
+-    "@lumino/signaling" "^1.2.3"
++    "@lumino/algorithm" "^1.2.0"
++    "@lumino/collections" "^1.2.0"
++    "@lumino/coreutils" "^1.3.1"
++    "@lumino/disposable" "^1.3.0"
++    "@lumino/messaging" "^1.3.0"
++    "@lumino/signaling" "^1.3.0"
 +
-+"@phosphor/disposable@^1.2.0", "@phosphor/disposable@^1.3.0":
++"@lumino/disposable@^1.2.0", "@lumino/disposable@^1.3.0":
 +  version "1.3.0"
-+  resolved "https://registry.yarnpkg.com/@phosphor/disposable/-/disposable-1.3.0.tgz#3321a420e14acf0761a559f202bf98d4c46b8163"
++  resolved "https://registry.yarnpkg.com/@lumino/disposable/-/disposable-1.3.0.tgz#3321a420e14acf0761a559f202bf98d4c46b8163"
 +  integrity sha512-wHQov7HoS20mU6yuEz5ZMPhfxHdcxGovjPoid0QwccUEOm33UBkWlxaJGm9ONycezIX8je7ZuPOf/gf7JI6Dlg==
 +  dependencies:
-+    "@phosphor/algorithm" "^1.2.0"
-+    "@phosphor/signaling" "^1.3.0"
++    "@lumino/algorithm" "^1.2.0"
++    "@lumino/signaling" "^1.3.0"
  
- "@phosphor/domutils@^1.1.3":
+ "@lumino/domutils@^1.1.3":
    version "1.1.3"
 @@ -1713,25 +1725,25 @@
-   resolved "https://registry.yarnpkg.com/@phosphor/keyboard/-/keyboard-1.1.3.tgz#e5fd13af0479034ef0b5fffcf43ef2d4a266b5b6"
+   resolved "https://registry.yarnpkg.com/@lumino/keyboard/-/keyboard-1.1.3.tgz#e5fd13af0479034ef0b5fffcf43ef2d4a266b5b6"
    integrity sha512-dzxC/PyHiD6mXaESRy6PZTd9JeK+diwG1pyngkyUf127IXOEzubTIbu52VSdpGBklszu33ws05BAGDa4oBE4mQ==
  
--"@phosphor/messaging@^1.2.3":
+-"@lumino/messaging@^1.2.3":
 -  version "1.2.3"
--  resolved "https://registry.yarnpkg.com/@phosphor/messaging/-/messaging-1.2.3.tgz#860423261df8ac6c30344cc036b10b0e83d3c0db"
+-  resolved "https://registry.yarnpkg.com/@lumino/messaging/-/messaging-1.2.3.tgz#860423261df8ac6c30344cc036b10b0e83d3c0db"
 -  integrity sha512-89Ps4uSRNOEQoepB/0SDoyPpNUWd6VZnmbMetmeXZJHsuJ1GLxtnq3WBdl7UCVNsw3W9NC610pWaDCy/BafRlg==
-+"@phosphor/messaging@^1.2.3", "@phosphor/messaging@^1.3.0":
++"@lumino/messaging@^1.2.3", "@lumino/messaging@^1.3.0":
 +  version "1.3.0"
-+  resolved "https://registry.yarnpkg.com/@phosphor/messaging/-/messaging-1.3.0.tgz#a140e6dd28a496260779acf74860f738c654c65e"
++  resolved "https://registry.yarnpkg.com/@lumino/messaging/-/messaging-1.3.0.tgz#a140e6dd28a496260779acf74860f738c654c65e"
 +  integrity sha512-k0JE+BTMKlkM335S2AmmJxoYYNRwOdW5jKBqLgjJdGRvUQkM0+2i60ahM45+J23atGJDv9esKUUBINiKHFhLew==
    dependencies:
--    "@phosphor/algorithm" "^1.1.3"
--    "@phosphor/collections" "^1.1.3"
-+    "@phosphor/algorithm" "^1.2.0"
-+    "@phosphor/collections" "^1.2.0"
+-    "@lumino/algorithm" "^1.1.3"
+-    "@lumino/collections" "^1.1.3"
++    "@lumino/algorithm" "^1.2.0"
++    "@lumino/collections" "^1.2.0"
  
- "@phosphor/properties@^1.1.3":
+ "@lumino/properties@^1.1.3":
    version "1.1.3"
-   resolved "https://registry.yarnpkg.com/@phosphor/properties/-/properties-1.1.3.tgz#63e4355be5e22a411c566fd1860207038f171598"
+   resolved "https://registry.yarnpkg.com/@lumino/properties/-/properties-1.1.3.tgz#63e4355be5e22a411c566fd1860207038f171598"
    integrity sha512-GiglqzU77s6+tFVt6zPq9uuyu/PLQPFcqZt914ZhJ4cN/7yNI/SLyMzpYZ56IRMXvzK9TUgbRna6URE3XAwFUg==
  
--"@phosphor/signaling@^1.2.3":
+-"@lumino/signaling@^1.2.3":
 -  version "1.2.3"
--  resolved "https://registry.yarnpkg.com/@phosphor/signaling/-/signaling-1.2.3.tgz#2fde0ee810b0fab5f3fc765f81ed08ae671e76f1"
+-  resolved "https://registry.yarnpkg.com/@lumino/signaling/-/signaling-1.2.3.tgz#2fde0ee810b0fab5f3fc765f81ed08ae671e76f1"
 -  integrity sha512-DMwS0m9OgfY5ljpTsklRQPUQpTyg4obz85FyImRDacUVxUVbas95djIDEbU4s1TMzdHBBO+gfki3V4giXUvXzw==
-+"@phosphor/signaling@^1.2.3", "@phosphor/signaling@^1.3.0":
++"@lumino/signaling@^1.2.3", "@lumino/signaling@^1.3.0":
 +  version "1.3.0"
-+  resolved "https://registry.yarnpkg.com/@phosphor/signaling/-/signaling-1.3.0.tgz#9de9904e07aaf6eb82074de29017c7c2bf1fd3df"
++  resolved "https://registry.yarnpkg.com/@lumino/signaling/-/signaling-1.3.0.tgz#9de9904e07aaf6eb82074de29017c7c2bf1fd3df"
 +  integrity sha512-ZbG2Mof4LGSkaEuDicqA2o2TKu3i5zanjr2GkevI/82aKBD7cI1NGLGT55HZwtE87/gOF4FIM3d3DeyrFDMjMQ==
    dependencies:
--    "@phosphor/algorithm" "^1.1.3"
-+    "@phosphor/algorithm" "^1.2.0"
+-    "@lumino/algorithm" "^1.1.3"
++    "@lumino/algorithm" "^1.2.0"
  
- "@phosphor/virtualdom@^1.1.3":
+ "@lumino/virtualdom@^1.1.3":
    version "1.1.3"
 @@ -7380,7 +7392,7 @@ karma-ie-launcher@^1.0.0:
    resolved "https://registry.yarnpkg.com/karma-ie-launcher/-/karma-ie-launcher-1.0.0.tgz#497986842c490190346cd89f5494ca9830c6d59c"

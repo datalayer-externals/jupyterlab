@@ -7,7 +7,7 @@ import { ICellData, CellData } from '@jupyterlab/cells';
 
 import { IOutputData, OutputData } from '@jupyterlab/rendermime';
 
-import { ReadonlyJSONValue } from '@phosphor/coreutils';
+import { ReadonlyJSONValue } from '@lumino/coreutils';
 
 import {
   Datastore,
@@ -15,7 +15,7 @@ import {
   ListField,
   MapField,
   RegisterField
-} from '@phosphor/datastore';
+} from '@lumino/datastore';
 
 /**
  * Interfaces for specifying how notebooks store data in datastores.

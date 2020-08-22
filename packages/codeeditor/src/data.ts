@@ -9,7 +9,7 @@ import {
   MapField,
   RegisterField,
   TextField
-} from '@phosphor/datastore';
+} from '@lumino/datastore';
 
 import { CodeEditor } from './editor';
 

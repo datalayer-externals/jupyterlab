@@ -15,13 +15,16 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../docregistry"
     },
     {
       "path": "../nbformat"
     },
     {
-      "path": "../observables"
+      "path": "../outputarea"
     },
     {
       "path": "../rendermime"
@@ -57,13 +60,16 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../docregistry"
     },
     {
       "path": "../nbformat"
     },
     {
-      "path": "../observables"
+      "path": "../outputarea"
     },
     {
       "path": "../rendermime"

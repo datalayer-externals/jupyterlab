@@ -10,10 +10,13 @@
       "path": "../apputils"
     },
     {
-      "path": "../nbformat"
+      "path": "../coreutils"
     },
     {
       "path": "../datastore"
+    },
+    {
+      "path": "../nbformat"
     },
     {
       "path": "../rendermime"

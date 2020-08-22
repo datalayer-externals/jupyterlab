@@ -15,10 +15,16 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../nbformat"
     },
     {
       "path": "../observables"
+    },
+    {
+      "path": "../outputarea"
     },
     {
       "path": "../rendermime"
@@ -51,10 +57,16 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../nbformat"
     },
     {
       "path": "../observables"
+    },
+    {
+      "path": "../outputarea"
     },
     {
       "path": "../rendermime"

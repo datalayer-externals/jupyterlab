@@ -16,10 +16,13 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../nbformat"
     },
     {
-      "path": "../datastore"
+      "path": "../observables"
     },
     {
       "path": "../statusbar"

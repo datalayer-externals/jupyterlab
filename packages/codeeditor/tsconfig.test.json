@@ -6,6 +6,9 @@
       "path": "../coreutils"
     },
     {
+      "path": "../datastore"
+    },
+    {
       "path": "../nbformat"
     },
     {
@@ -25,6 +28,9 @@
     },
     {
       "path": "../coreutils"
+    },
+    {
+      "path": "../datastore"
     },
     {
       "path": "../nbformat"

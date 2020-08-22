@@ -16,10 +16,10 @@
       "path": "../coreutils"
     },
     {
-      "path": "../nbformat"
+      "path": "../datastore"
     },
     {
-      "path": "../datastore"
+      "path": "../nbformat"
     },
     {
       "path": "../rendermime-interfaces"

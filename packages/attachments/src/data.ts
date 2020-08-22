@@ -14,9 +14,9 @@ import {
   JSONObject,
   JSONValue,
   ReadonlyJSONObject
-} from '@phosphor/coreutils';
+} from '@lumino/coreutils';
 
-import { MapField } from '@phosphor/datastore';
+import { MapField } from '@lumino/datastore';
 
 /**
  * The namespace for IAttachmentsData interfaces.

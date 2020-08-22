@@ -15,7 +15,7 @@
       "path": "../coreutils"
     },
     {
-      "path": "../observables"
+      "path": "../datastore"
     },
     {
       "path": "../rendermime"
@@ -51,7 +51,7 @@
       "path": "../coreutils"
     },
     {
-      "path": "../observables"
+      "path": "../datastore"
     },
     {
       "path": "../rendermime"

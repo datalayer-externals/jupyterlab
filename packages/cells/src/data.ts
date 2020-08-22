@@ -19,7 +19,7 @@ import { OutputAreaData } from '@jupyterlab/outputarea';
 
 import { IOutputData, OutputData } from '@jupyterlab/rendermime';
 
-import { JSONExt, JSONObject, ReadonlyJSONValue } from '@phosphor/coreutils';
+import { JSONExt, JSONObject, ReadonlyJSONValue } from '@lumino/coreutils';
 
 import {
   Datastore,
@@ -27,7 +27,7 @@ import {
   ListField,
   MapField,
   RegisterField
-} from '@phosphor/datastore';
+} from '@lumino/datastore';
 
 /**
  * The namespace for `ICellData` interfaces, describing
