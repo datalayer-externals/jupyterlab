@@ -1,6 +1,6 @@
 {
   "name": "@jupyterlab/datastore",
-  "version": "3.0.0-alpha.11",
+  "version": "3.0.0-alpha.12",
   "description": "JupyterLab - Datastore",
   "homepage": "https://github.com/jupyterlab/jupyterlab",
   "bugs": {

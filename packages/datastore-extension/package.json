@@ -1,6 +1,6 @@
 {
   "name": "@jupyterlab/datastore-extension",
-  "version": "3.0.0-alpha.11",
+  "version": "3.0.0-alpha.12",
   "description": "JupyterLab - Datastore Extension",
   "homepage": "https://github.com/jupyterlab/jupyterlab",
   "bugs": {
@@ -34,7 +34,7 @@
   "dependencies": {
     "@jupyterlab/application": "^2.2.3",
     "@jupyterlab/apputils": "^2.2.3",
-    "@jupyterlab/datastore": "^1.1.3",
+    "@jupyterlab/datastore": "^3.0.0-alpha.12",
     "@lumino/algorithm": "^1.3.3",
     "@lumino/coreutils": "^1.5.3",
     "@lumino/datastore": "^0.10.3",
