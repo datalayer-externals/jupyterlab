@@ -24,6 +24,9 @@
       "path": "../translation"
     },
     {
+      "path": "../nbformat"
+    },
+    {
       "path": "."
     },
     {
@@ -52,6 +55,9 @@
     },
     {
       "path": "../translation"
+    },
+    {
+      "path": "../nbformat"
     }
   ]
 }
