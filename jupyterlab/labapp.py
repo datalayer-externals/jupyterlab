@@ -652,9 +652,10 @@ class LabApp(NBClassicConfigShimMixin, LabServerApp):
 
         collaborations_url = ujoin(base_url, collaboration_path)
         collaborations_handler = (collaborations_url, CollaborationHandler, {})        
+        handlers.append(collaborations_handler)
         colab_manager_url = ujoin(base_url, datastore_rest_path)
         colab_manager_handler = (colab_manager_url, CollaborationsManagerHandler, {})
-        handlers.append(collaborations_handler, colab_manager_handler]
+        handlers.append(colab_manager_handler)
 
         errored = False
 
