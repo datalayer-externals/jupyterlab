@@ -1,6 +1,6 @@
 {
   "name": "@jupyterlab/docregistry",
-  "version": "3.0.0-alpha.12",
+  "version": "3.0.0-alpha.14",
   "description": "JupyterLab - Document Registry",
   "homepage": "https://github.com/jupyterlab/jupyterlab",
   "bugs": {
@@ -58,7 +58,7 @@
     "@lumino/widgets": "^1.11.1"
   },
   "devDependencies": {
-    "@jupyterlab/testutils": "^3.0.0-alpha.12",
+    "@jupyterlab/testutils": "^3.0.0-alpha.14",
     "@types/jest": "^24.0.23",
     "jest": "^25.2.3",
     "rimraf": "~3.0.0",
