@@ -97,13 +97,13 @@ export abstract class WSConnection<TSendMsg, TRecvMsg> implements IDisposable {
   protected deserializeWSMessage(data: unknown): TRecvMsg {
     if (typeof data !== 'string') {
       console.error(`Invalid websocket message data type: ${typeof data}`);
-      return;
+      return {} as TRecvMsg;
     }
     try {
       return JSON.parse(data);
     } catch (error) {
       console.error(`Invalid message: ${error.message}`);
-      return;
+      return {} as TRecvMsg;
     }
   }
 
@@ -203,7 +203,7 @@ export abstract class WSConnection<TSendMsg, TRecvMsg> implements IDisposable {
   protected _wsStopped = true;
 
   private _isDisposed = false;
-  private _readyDelegate: PromiseDelegate<void> | null = null;
+  private _readyDelegate: PromiseDelegate<void>;
 
   private readonly _noOp = () => {
     /* no-op */

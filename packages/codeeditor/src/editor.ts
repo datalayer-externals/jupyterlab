@@ -11,8 +11,6 @@ import { IDisposable } from '@lumino/disposable';
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import { IChangedArgs } from '@jupyterlab/coreutils';
-
 import { CodeEditorData, ICodeEditorData } from './data';
 
 import { ITranslator } from '@jupyterlab/translation';
@@ -221,8 +219,8 @@ export namespace CodeEditor {
         // Initialize the record if it hasn't been.
         DatastoreExt.withTransaction(datastore, () => {
           DatastoreExt.updateRecord(datastore, record, {
-            mimeType: options.mimeType || 'text/plain',
-            text: { index: 0, remove: 0, text: options.value || '' }
+            mimeType: options?.mimeType || 'text/plain',
+            text: { index: 0, remove: 0, text: options?.value || '' }
           });
         });
       } else {
@@ -239,7 +237,6 @@ export namespace CodeEditor {
           this.mimeType = 'text/plain';
         }
       }
-
     }
 
     /**
@@ -271,6 +268,8 @@ export namespace CodeEditor {
           }
         );
       });
+    }
+
     /**
      * Get the selections for the model.
      */
@@ -288,7 +287,8 @@ export namespace CodeEditor {
       return DatastoreExt.getField(this.data.datastore, {
         ...this.data.record,
         field: 'mimeType'
-      });    }
+      });
+    }
     set mimeType(newValue: string) {
       const { datastore, record } = this.data;
       DatastoreExt.withTransaction(datastore, () => {

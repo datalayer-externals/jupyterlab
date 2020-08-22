@@ -650,6 +650,7 @@ class LabApp(NBClassicConfigShimMixin, LabServerApp):
         build_handler = (build_path, BuildHandler, {'builder': builder})
         handlers.append(build_handler)
 
+        base_url = self.serverapp.web_app.settings.get('base_url', '/')
         collaborations_url = ujoin(base_url, collaboration_path)
         collaborations_handler = (collaborations_url, CollaborationHandler, {})        
         handlers.append(collaborations_handler)

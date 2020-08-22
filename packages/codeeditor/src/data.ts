@@ -100,14 +100,17 @@ export namespace CodeEditorData {
     const editorData = DatastoreExt.getRecord(datastore, record);
 
     const selections: { [x: string]: CodeEditor.ITextSelection[] | null } = {};
-    Object.keys(editorData.selections).forEach(key => (selections[key] = null));
-
-    DatastoreExt.withTransaction(datastore, () => {
-      DatastoreExt.updateRecord(datastore, record, {
-        selections,
-        text: { index: 0, remove: editorData.text.length, text: '' },
-        mimeType: 'text/plain'
+    if (editorData) {
+      Object.keys(editorData.selections).forEach(
+        key => (selections[key] = null)
+      );
+      DatastoreExt.withTransaction(datastore, () => {
+        DatastoreExt.updateRecord(datastore, record, {
+          selections,
+          text: { index: 0, remove: editorData?.text.length, text: '' },
+          mimeType: 'text/plain'
+        });
       });
-    });
+    }
   }
 }

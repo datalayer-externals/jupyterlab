@@ -13,11 +13,12 @@ export async function createDatastore(
   const client = new CollaborationClient({
     collaborationId: collaborationId
   });
+  // TODO(RTC) broadcastHandler: client
   const datastore = Datastore.create({
     id: PageConfig.getStoreID(),
-    schemas: schemas,
+    schemas: schemas
     // Pass in client as handler, so it can recieve local changes
-    broadcastHandler: client
+    // broadcastHandler: client
   });
   client.handler = datastore;
   // Wait for websocket connection to be ready

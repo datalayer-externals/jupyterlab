@@ -7,7 +7,9 @@ import { PromiseDelegate } from '@lumino/coreutils';
 
 import { Datastore } from '@lumino/datastore';
 
-import { IMessageHandler, Message, MessageLoop } from '@lumino/messaging';
+// TODO(RTC)
+// import { IMessageHandler, Message, MessageLoop } from '@lumino/messaging';
+import { IMessageHandler, Message } from '@lumino/messaging';
 
 import { ServerConnection, WSConnection } from '@jupyterlab/services';
 
@@ -56,9 +58,12 @@ export class CollaborationClient extends WSConnection<
 
   processMessage(msg: Message) {
     if (msg.type === 'datastore-transaction') {
+      // TODO(RTC)
+      /*
       this.broadcastTransactions([
         (msg as Datastore.TransactionMessage).transaction
       ]);
+      */
       return;
     }
     throw new Error(
@@ -225,10 +230,13 @@ export class CollaborationClient extends WSConnection<
         throw new Error('Critical! Out of order transactions in datastore.');
       }
       this._serverSerial = t.serial;
+      // TODO(RTC)
+      /*
       MessageLoop.sendMessage(
         this.handler,
         new Datastore.TransactionMessage(t)
       );
+      */
     }
     this._resetIdleTimer();
   }

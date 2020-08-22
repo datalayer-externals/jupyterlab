@@ -1,7 +1,8 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { DatastoreExt } from '@jupyterlab/observables';
+import { DatastoreExt } from '@jupyterlab/datastore';
+
 import {
   nullTranslator,
   ITranslator,
@@ -86,7 +87,8 @@ export class JSONEditor<
 
     const model = new CodeEditor.Model();
 
-    model.value = this._trans.__('No data!');
+    // TODO(RTC)
+    // model.value = this._trans.__('No data!');
     model.mimeType = 'application/json';
     DatastoreExt.listenField(
       model.data.datastore,
@@ -143,7 +145,7 @@ export class JSONEditor<
       this._listener.dispose();
       this._listener = null;
     }
-    this._source = value;
+    this._source = value!;
     this.editor.setOption('readOnly', value === null);
     if (value) {
       this._listener = DatastoreExt.listenField(
@@ -319,6 +321,7 @@ export class JSONEditor<
     DatastoreExt.withTransaction(datastore, () => {
       DatastoreExt.updateField(datastore, field, update);
     });
+  }
 
   /**
    * Set the value given the owner contents.
@@ -329,13 +332,8 @@ export class JSONEditor<
     this.revertButtonNode.hidden = true;
     this.commitButtonNode.hidden = true;
     this.removeClass(ERROR_CLASS);
-    const model = this.editor.model;
-    let content = this._source
-      ? (DatastoreExt.getField(
-          this._source.datastore,
-          this._source.field
-        ) as ReadonlyJSONObject)
-      : {};
+    // TODO(RTC)
+    // const model = this.editor.model;
     let content = this._source
       ? (DatastoreExt.getField(
           this._source.datastore,
@@ -344,11 +342,13 @@ export class JSONEditor<
       : {};
     this._changeGuard = true;
     if (content === void 0) {
-      model.value = this._trans.__('No data!');
+      // TODO(RTC)
+      // model.value = this._trans.__('No data!');
       this._originalValue = JSONExt.emptyObject;
     } else {
       const value = JSON.stringify(content, null, 4);
-      model.value = value;
+      // TODO(RTC)
+      // model.value = value;
       this._originalValue = content;
       // Move the cursor to within the brace.
       if (value.length > 1 && value[0] === '{') {
@@ -365,9 +365,10 @@ export class JSONEditor<
   private _trans: TranslationBundle;
   private _dataDirty = false;
   private _inputDirty = false;
-  private _source: JSONEditor.DataLocation<S, F> | null = null;
+  private _source: JSONEditor.DataLocation<S, F>;
   private _originalValue: ReadonlyJSONObject = JSONExt.emptyObject;
   private _changeGuard = false;
+  private _listener: IDisposable | null = null;
 }
 
 /**
@@ -407,5 +408,4 @@ export namespace JSONEditor {
   > = DatastoreExt.DataLocation & {
     field: DatastoreExt.FieldLocation<S, F>;
   };
-
 }

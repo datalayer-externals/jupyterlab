@@ -308,12 +308,12 @@ export namespace Collaboration {
     parentId?: ITypeMap[K]['parentId']
   ): ITypeMap[K] {
     const msgId = UUID.uuid4();
-    return {
+    return ({
       msgId,
       msgType,
       parentId,
       content
-    } as ITypeMap[K];
+    } as any) as ITypeMap[K];
   }
 
   /**
