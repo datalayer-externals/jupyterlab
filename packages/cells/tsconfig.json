@@ -19,6 +19,9 @@
       "path": "../codemirror"
     },
     {
+      "path": "../coreutils"
+    },
+    {
       "path": "../datastore"
     },
     {
@@ -38,9 +41,6 @@
     },
     {
       "path": "../ui-components"
-    },
-    {
-      "path": "../coreutils"
     }
   ]
 }
