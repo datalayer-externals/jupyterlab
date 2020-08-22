@@ -11,7 +11,7 @@ import {
   ICodeEditorData
 } from '@jupyterlab/codeeditor';
 
-import { nbformat } from '@jupyterlab/coreutils';
+import * as nbformat from '@jupyterlab/nbformat';
 
 import { DatastoreExt } from '@jupyterlab/datastore';
 

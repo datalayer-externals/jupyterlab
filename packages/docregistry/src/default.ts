@@ -17,6 +17,8 @@ import { createDatastore, DatastoreExt } from '@jupyterlab/datastore';
 
 import { Contents } from '@jupyterlab/services';
 
+import { JSONValue } from '@lumino/coreutils';
+
 import { PartialJSONValue } from '@lumino/coreutils';
 
 import { IDisposable } from '@lumino/disposable';
@@ -73,18 +75,15 @@ export class TextDocumentModel extends CodeEditor.Model
   /**
    * A signal emitted when the document content changes.
    */
-  get defaultKernelName(): string {
-    return '';
+  get contentChanged(): ISignal<this, void> {
+    return this._contentChanged;
   }
 
   /**
-   * The default kernel name of the document.
-   *
-   * #### Notes
-   * This is a read-only property.
+   * A signal emitted when the document content changes.
    */
-  get stateChanged(): ISignal<this, IChangedArgs<any>> {
-    return this._stateChanged;
+  get defaultKernelName(): string {
+    return '';
   }
 
   /**
@@ -211,13 +210,6 @@ export class StringDocumentModel implements DocumentRegistry.IModel {
   readonly defaultKernelLanguage = '';
 
   /**
-   * Serialize the model to a string.
-   */
-  toString(): string {
-    return this.value.text;
-  }
-
-  /**
    * Deserialize the model from a string.
    *
    * #### Notes
@@ -225,7 +217,6 @@ export class StringDocumentModel implements DocumentRegistry.IModel {
    */
   fromString(value: string): void {
     this._value = value;
-    this._contentChanged.emit();
   }
 
   /**

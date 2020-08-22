@@ -43,9 +43,8 @@ import { DocumentRegistry } from './registry';
  *
  * This class is typically instantiated by the document manager.
  */
-export class Context<
-  T extends DocumentRegistry.IModel = DocumentRegistry.IModel
-> implements DocumentRegistry.IContext<T> {
+export class Context<T extends DocumentRegistry.IModel>
+  implements DocumentRegistry.IContext<T> {
   /**
    * Construct a new document context.
    */
@@ -163,7 +162,7 @@ export class Context<
   /**
    * Get the model associated with the document.
    */
-  get model(): T | null {
+  get model(): T {
     return this._model;
   }
 
@@ -267,10 +266,9 @@ export class Context<
     ) {
       this._populate();
       return;
-     }
+    }
     // TODO(RTC) how to handle prepopulated collaborative sessions?
     return this._revert(true);
-    }
   }
 
   /**
@@ -538,9 +536,12 @@ export class Context<
   /**
    * Save the document contents to disk.
    */
-  private async _save(): Promise<void> {
+  /**
+   * Save the document contents to disk.
+   */
+  private _save(): Promise<void> {
     this._saveState.emit('started');
-    const model = this._model;
+    let model = this._model;
     let content: PartialJSONValue;
     if (this._factory.fileFormat === 'json') {
       content = model.toJSON();
@@ -551,54 +552,56 @@ export class Context<
       }
     }
 
-    const options = {
+    let options = {
       type: this._factory.contentType,
       format: this._factory.fileFormat,
       content
     };
-    try {
-      let value: Contents.IModel;
-      await this._manager.ready;
-      // TODO(RTC) think about how saving works in collaborative environments.
-      await this._maybeSave(options);
-//      if (!model.modelDB.isCollaborative) {
-//        value = await this._maybeSave(options);
-//      } else {
-//        value = await this._manager.contents.save(this._path, options);
-//      }
-      if (this.isDisposed) {
-        return;
-      }
 
-      this.dirty = false;
-      this._updateContentsModel(value);
+    return this._manager.ready
+      .then(() => {
+        // TODO think about how saving works in collaborative environments.
+        return this._maybeSave(options);
+      })
+      .then(value => {
+        if (this.isDisposed) {
+          return;
+        }
 
-      if (!this._isPopulated) {
-        await this._populate();
-      }
+        this.dirty = false;
+        this._updateContentsModel(value);
 
-      // Emit completion.
-      this._saveState.emit('completed');
-    } catch (err) {
-      // If the save has been canceled by the user,
-      // throw the error so that whoever called save()
-      // can decide what to do.
-      if (err.message === 'Cancel') {
+        if (!this._isPopulated) {
+          return this._populate();
+        }
+      })
+      .catch(err => {
+        // If the save has been canceled by the user,
+        // throw the error so that whoever called save()
+        // can decide what to do.
+        if (err.message === 'Cancel') {
+          throw err;
+        }
+
+        // Otherwise show an error message and throw the error.
+        const localPath = this._manager.contents.localPath(this._path);
+        const name = PathExt.basename(localPath);
+        void this._handleError(err, `File Save Error for ${name}`);
         throw err;
-      }
-
-      // Otherwise show an error message and throw the error.
-      const localPath = this._manager.contents.localPath(this._path);
-      const name = PathExt.basename(localPath);
-      void this._handleError(
-        err,
-        this._trans.__('File Save Error for %1', name)
-      );
-
-      // Emit failure.
-      this._saveState.emit('failed');
-      throw err;
-    }
+      })
+      .then(
+        value => {
+          // Capture all success paths and emit completion.
+          this._saveState.emit('completed');
+          return value;
+        },
+        err => {
+          // Capture all error paths and emit failure.
+          this._saveState.emit('failed');
+          throw err;
+        }
+      )
+      .catch();
   }
 
   /**
@@ -821,7 +824,7 @@ or load the version on disk (revert)?`,
     widget: Widget,
     options?: DocumentRegistry.IOpenOptions
   ) => void;
-  private _model: T | null;
+  private _model: T;
   private _modelPromise: Promise<T>;
   private _path = '';
   private _useCRLF = false;

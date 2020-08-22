@@ -21,6 +21,9 @@
       "path": "../services"
     },
     {
+      "path": "../nbformat"
+    },
+    {
       "path": "."
     },
     {
@@ -43,6 +46,9 @@
     },
     {
       "path": "../services"
+    },
+    {
+      "path": "../nbformat"
     }
   ]
 }

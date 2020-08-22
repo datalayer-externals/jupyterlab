@@ -12,6 +12,7 @@ import {
   JSONExt,
   JSONObject,
   JSONValue,
+  ReadonlyJSONObject,
   PartialJSONValue,
   ReadonlyPartialJSONObject,
   PartialJSONObject
@@ -267,10 +268,10 @@ export class OutputModel implements IOutputModel {
     let metadataUpdate: Record.Update<IOutputData.Schema> = {};
     let dataUpdate: Record.Update<IOutputData.Schema> = {};
     if (options.data) {
-      dataUpdate = { data: options.data };
+      dataUpdate = { data: options.data as ReadonlyJSONObject };
     }
     if (options.metadata) {
-      metadataUpdate = { metadata: options.metadata };
+      metadataUpdate = { metadata: options.metadata as ReadonlyJSONObject };
     }
     const { datastore, record } = this._data;
     DatastoreExt.withTransaction(datastore, () => {
@@ -370,7 +371,7 @@ export namespace OutputModel {
         case 'metadata':
           break;
         default:
-          raw[key] = Private.extract(value, key);
+          raw[key] = Private.extract(value, key) as string;
       }
     }
     const type = value.output_type;
@@ -380,9 +381,9 @@ export namespace OutputModel {
 
     DatastoreExt.withTransaction(datastore, () => {
       DatastoreExt.updateRecord(datastore, record, {
-        data,
+        data: data as ReadonlyJSONObject,
         executionCount,
-        metadata,
+        metadata: metadata as ReadonlyJSONObject,
         raw,
         trusted,
         type
@@ -457,8 +458,8 @@ namespace Private {
   export function getBundleOptions(
     options: IOutputModel.IOptions
   ): Required<Omit<MimeModel.IOptions, 'callback'>> {
-    const data = getData(options.value);
-    const metadata = getMetadata(options.value);
+    const data = getData(options.value as nbformat.IOutput);
+    const metadata = getMetadata(options.value as nbformat.IOutput);
     const trusted = !!options.trusted;
     return { data, metadata, trusted };
   }

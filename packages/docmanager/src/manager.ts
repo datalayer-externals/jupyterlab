@@ -497,8 +497,6 @@ export class DocumentManager implements IDocumentManager {
       factory,
       path,
       kernelPreference,
-      modelDBFactory,
-      modelDBFactory,
       setBusy: this._setBusy,
       sessionDialogs: this._dialogs
     });
