@@ -63,7 +63,7 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
     const cells = this._searchTarget.content.widgets;
 
     // TODO(RTC)
-    const { datastore, record } = this._searchTarget!.content.model.data;
+    const { datastore, record } = this._searchTarget.content.model!.data;
     this._cellListener = DatastoreExt.listenField(
       datastore,
       { ...record, field: 'cells' },
@@ -473,7 +473,7 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
 
   private async _restartQuery() {
     await this.endQuery();
-    await this.startQuery(this._query, this._searchTarget, undefined);
+    await this.startQuery(this._query, this._searchTarget!, undefined);
     this._changed.emit(undefined);
   }
 

@@ -513,7 +513,7 @@ function addCommands(
           buttons: [Dialog.okButton({ label: trans.__('Ok') })]
         });
       }
-      if (context.model.dirty) {
+      if (context.dirty) {
         return showDialog({
           title: trans.__('Reload %1 from Disk', type),
           body: trans.__(

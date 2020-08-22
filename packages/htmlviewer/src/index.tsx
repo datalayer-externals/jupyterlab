@@ -95,7 +95,7 @@ export class HTMLViewer extends DocumentWidget<IFrame>
       new ToolbarButton({
         icon: refreshIcon,
         onClick: async () => {
-          if (!this.context.model.dirty) {
+          if (!this.context.dirty) {
             await this.context.revert();
             this.update();
           }

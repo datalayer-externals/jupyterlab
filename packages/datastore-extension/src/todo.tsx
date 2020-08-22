@@ -86,7 +86,7 @@ class TODO extends React.Component<{}, TODOState> {
                 description: {
                   index: 0,
                   remove: 0,
-                  text: this.input.current.value
+                  text: this.input.current!.value
                 }
               }
             });

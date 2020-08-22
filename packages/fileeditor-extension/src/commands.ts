@@ -175,7 +175,7 @@ export namespace Commands {
     const editor = widget.editor;
     Object.keys(config).forEach((key: keyof CodeEditor.IConfig) => {
       if (!transientConfigs.includes(key)) {
-        editor.setOption(key, config[key]);
+        editor!.setOption(key, config[key]);
       }
     });
   }
@@ -416,7 +416,7 @@ export namespace Commands {
         if (!widget) {
           return;
         }
-        widget.content.editor.replaceSelection?.(text);
+        widget.content.editor!.replaceSelection?.(text);
       },
       isEnabled,
       label: trans.__('Replace Selection in Editor')
@@ -469,18 +469,18 @@ export namespace Commands {
         const editor = widget.editor;
         const path = widget.context.path;
         const extension = PathExt.extname(path);
-        const selection = editor.getSelection();
+        const selection = editor!.getSelection();
         const { start, end } = selection;
         let selected = start.column !== end.column || start.line !== end.line;
 
         if (selected) {
           // Get the selected code from the editor.
-          const start = editor.getOffsetAt(selection.start);
-          const end = editor.getOffsetAt(selection.end);
+          const start = editor!.getOffsetAt(selection.start);
+          const end = editor!.getOffsetAt(selection.end);
 
-          code = editor.model.value.text.substring(start, end);
+          code = editor!.model.value.substring(start, end);
         } else if (MarkdownCodeBlocks.isMarkdown(extension)) {
-          const { text } = editor.model.value;
+          const text = editor!.model.value;
           const blocks = MarkdownCodeBlocks.findMarkdownCodeBlocks(text);
 
           for (const block of blocks) {
@@ -494,13 +494,13 @@ export namespace Commands {
 
         if (!selected) {
           // no selection, submit whole line and advance
-          code = editor.getLine(selection.start.line);
-          const cursor = editor.getCursorPosition();
-          if (cursor.line + 1 === editor.lineCount) {
-            const text = editor.model.value.text;
-            editor.model.value.text = text + '\n';
+          code = editor!.getLine(selection.start.line);
+          const cursor = editor!.getCursorPosition();
+          if (cursor.line + 1 === editor!.lineCount) {
+            const text = editor!.model.value;
+            editor!.model.value = text + '\n';
           }
-          editor.setCursorPosition({
+          editor!.setCursorPosition({
             line: cursor.line + 1,
             column: cursor.column
           });
@@ -537,7 +537,7 @@ export namespace Commands {
 
         let code = '';
         const editor = widget.editor;
-        const text = editor.model.value.text;
+        const text = editor!.model.value;
         const path = widget.context.path;
         const extension = PathExt.extname(path);
 
@@ -612,7 +612,7 @@ export namespace Commands {
           return;
         }
 
-        widget.editor.undo();
+        widget.editor!.undo();
       },
       isEnabled: () => {
         if (!isEnabled()) {
@@ -650,7 +650,7 @@ export namespace Commands {
           return;
         }
 
-        widget.editor.redo();
+        widget.editor!.redo();
       },
       isEnabled: () => {
         if (!isEnabled()) {
@@ -771,7 +771,7 @@ export namespace Commands {
           return;
         }
 
-        const editor: CodeEditor.IEditor = widget.editor;
+        const editor: CodeEditor.IEditor = widget.editor as CodeEditor.IEditor;
 
         // Get data from clipboard
         const clipboard = window.navigator.clipboard;
@@ -831,7 +831,7 @@ export namespace Commands {
     const selectionObj = editor.getSelection();
     const start = editor.getOffsetAt(selectionObj.start);
     const end = editor.getOffsetAt(selectionObj.end);
-    const text = editor.model.value.text.substring(start, end);
+    const text = editor.model.value.substring(start, end);
 
     return text;
   }
@@ -1143,10 +1143,10 @@ export namespace Commands {
     menu.editMenu.undoers.add({
       tracker,
       undo: widget => {
-        widget.content.editor.undo();
+        widget.content.editor!.undo();
       },
       redo: widget => {
-        widget.content.editor.redo();
+        widget.content.editor!.redo();
       }
     } as IEditMenu.IUndoer<IDocumentWidget<FileEditor>>);
   }
@@ -1162,24 +1162,24 @@ export namespace Commands {
     menu.viewMenu.editorViewers.add({
       tracker,
       toggleLineNumbers: widget => {
-        const lineNumbers = !widget.content.editor.getOption('lineNumbers');
-        widget.content.editor.setOption('lineNumbers', lineNumbers);
+        const lineNumbers = !widget.content.editor!.getOption('lineNumbers');
+        widget.content.editor!.setOption('lineNumbers', lineNumbers);
       },
       toggleWordWrap: widget => {
-        const oldValue = widget.content.editor.getOption('lineWrap');
+        const oldValue = widget.content.editor!.getOption('lineWrap');
         const newValue = oldValue === 'off' ? 'on' : 'off';
-        widget.content.editor.setOption('lineWrap', newValue);
+        widget.content.editor!.setOption('lineWrap', newValue);
       },
       toggleMatchBrackets: widget => {
-        const matchBrackets = !widget.content.editor.getOption('matchBrackets');
-        widget.content.editor.setOption('matchBrackets', matchBrackets);
+        const matchBrackets = !widget.content.editor!.getOption('matchBrackets');
+        widget.content.editor!.setOption('matchBrackets', matchBrackets);
       },
       lineNumbersToggled: widget =>
-        widget.content.editor.getOption('lineNumbers'),
+        widget.content.editor!.getOption('lineNumbers'),
       wordWrapToggled: widget =>
-        widget.content.editor.getOption('lineWrap') !== 'off',
+        widget.content.editor!.getOption('lineWrap') !== 'off',
       matchBracketsToggled: widget =>
-        widget.content.editor.getOption('matchBrackets')
+        widget.content.editor!.getOption('matchBrackets')
     } as IViewMenu.IEditorViewer<IDocumentWidget<FileEditor>>);
   }
 
