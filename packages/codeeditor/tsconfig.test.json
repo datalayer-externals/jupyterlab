@@ -3,16 +3,10 @@
   "include": ["src/*", "test/*"],
   "references": [
     {
-      "path": "../coreutils"
-    },
-    {
       "path": "../datastore"
     },
     {
       "path": "../nbformat"
-    },
-    {
-      "path": "../observables"
     },
     {
       "path": "../translation"
@@ -27,16 +21,10 @@
       "path": "../../testutils"
     },
     {
-      "path": "../coreutils"
-    },
-    {
       "path": "../datastore"
     },
     {
       "path": "../nbformat"
-    },
-    {
-      "path": "../observables"
     },
     {
       "path": "../translation"

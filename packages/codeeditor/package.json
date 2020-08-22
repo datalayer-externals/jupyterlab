@@ -40,10 +40,8 @@
     "watch": "tsc -b --watch"
   },
   "dependencies": {
-    "@jupyterlab/coreutils": "^5.0.0-alpha.14",
     "@jupyterlab/datastore": "^3.0.0-alpha.14",
     "@jupyterlab/nbformat": "^3.0.0-alpha.14",
-    "@jupyterlab/observables": "^4.0.0-alpha.14",
     "@jupyterlab/translation": "^3.0.0-alpha.14",
     "@jupyterlab/ui-components": "^3.0.0-alpha.14",
     "@lumino/coreutils": "^1.4.3",
