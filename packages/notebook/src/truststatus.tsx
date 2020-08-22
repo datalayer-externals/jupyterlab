@@ -2,13 +2,16 @@ import React from 'react';
 
 import { VDomRenderer, VDomModel } from '@jupyterlab/apputils';
 
-import { INotebookModel, Notebook } from '.';
+import { DatastoreExt } from '@jupyterlab/datastore';
 
 import { Cell } from '@jupyterlab/cells';
 
 import { notTrustedIcon, trustedIcon } from '@jupyterlab/ui-components';
 
 import { toArray } from '@lumino/algorithm';
+
+import { Notebook } from '.';
+
 import { nullTranslator, ITranslator } from '@jupyterlab/translation';
 
 /**
@@ -196,15 +199,18 @@ export namespace NotebookTrustStatus {
         this._notebook.modelContentChanged.connect(this._onModelChanged, this);
 
         // Derive values
-        if (this._notebook.activeCell !== undefined) {
-          this._activeCellTrusted = this._notebook!.activeCell!.model.trusted;
+        if (this._notebook.activeCell) {
+          const { datastore, record } = this._notebook.activeCell.data;
+          let trusted = DatastoreExt.getField(datastore, {
+            ...record,
+            field: 'trusted'
+          });
+          this._activeCellTrusted = trusted;
         } else {
           this._activeCellTrusted = false;
         }
 
-        const { total, trusted } = this._deriveCellTrustState(
-          this._notebook.model
-        );
+        const { total, trusted } = this._deriveCellTrustState(this._notebook);
 
         this._totalCells = total;
         this._trustedCells = trusted;
@@ -218,7 +224,7 @@ export namespace NotebookTrustStatus {
      */
     private _onModelChanged(notebook: Notebook): void {
       const oldState = this._getAllState();
-      const { total, trusted } = this._deriveCellTrustState(notebook.model);
+      const { total, trusted } = this._deriveCellTrustState(notebook);
 
       this._totalCells = total;
       this._trustedCells = trusted;
@@ -231,7 +237,11 @@ export namespace NotebookTrustStatus {
     private _onActiveCellChanged(model: Notebook, cell: Cell | null): void {
       const oldState = this._getAllState();
       if (cell) {
-        this._activeCellTrusted = cell.model.trusted;
+        let trusted = DatastoreExt.getField(cell.data.datastore, {
+          ...cell.data.record,
+          field: 'trusted'
+        });
+        this._activeCellTrusted = trusted;
       } else {
         this._activeCellTrusted = false;
       }
@@ -242,15 +252,19 @@ export namespace NotebookTrustStatus {
      * Given a notebook model, figure out how many of the cells are trusted.
      */
     private _deriveCellTrustState(
-      model: INotebookModel | null
+      notebook: Notebook
     ): { total: number; trusted: number } {
       if (model === null) {
         return { total: 0, trusted: 0 };
       }
-      const cells = toArray(model.cells);
+      const cells = toArray(notebook.widgets);
 
       const trusted = cells.reduce((accum, current) => {
-        if (current.trusted) {
+        let trusted = DatastoreExt.getField(current.data.datastore, {
+          ...current.data.record,
+          field: 'trusted'
+        });
+        if (trusted) {
           return accum + 1;
         } else {
           return accum;

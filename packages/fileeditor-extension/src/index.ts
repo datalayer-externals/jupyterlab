@@ -182,6 +182,13 @@ function activate(
   const tracker = new WidgetTracker<IDocumentWidget<FileEditor>>({
     namespace
   });
+  /*
+  TODO(RTC)
+       const editor = widget.editor;
++    if (!editor) {
++      return;
++    }
+  */
   const isEnabled = () =>
     tracker.currentWidget !== null &&
     tracker.currentWidget === shell.currentWidget;
@@ -211,18 +218,20 @@ function activate(
       Commands.updateTracker(tracker);
     });
 
-  factory.widgetCreated.connect((sender, widget) => {
+  factory.widgetCreated.connect(async (sender, widget) => {
     // Notify the widget tracker if restore data needs to update.
     widget.context.pathChanged.connect(() => {
       void tracker.save(widget);
     });
     void tracker.add(widget);
+    await widget.context.ready;
     Commands.updateWidget(widget.content);
   });
   app.docRegistry.addWidgetFactory(factory);
 
   // Handle the settings of new widgets.
-  tracker.widgetAdded.connect((sender, widget) => {
+  tracker.widgetAdded.connect(async (sender, widget) => {
+    await widget.context.ready;
     Commands.updateWidget(widget.content);
   });
 

@@ -24,9 +24,7 @@ import {
   sessionContextDialogs
 } from '@jupyterlab/apputils';
 
-import { PathExt } from '@jupyterlab/coreutils';
-
-import { IModelDB, ModelDB } from '@jupyterlab/observables';
+import { IChangedArgs, PathExt } from '@jupyterlab/coreutils';
 
 import { RenderMimeRegistry } from '@jupyterlab/rendermime';
 
@@ -62,17 +60,17 @@ export class Context<
     const localPath = this._manager.contents.localPath(this._path);
     const lang = this._factory.preferredLanguage(PathExt.basename(localPath));
 
-    const dbFactory = options.modelDBFactory;
-    if (dbFactory) {
-      const localPath = manager.contents.localPath(this._path);
-      this._modelDB = dbFactory.createNew(localPath);
-      this._model = this._factory.createNew(lang, this._modelDB);
-    } else {
-      this._model = this._factory.createNew(lang);
-    }
+    this._modelPromise = this._factory.createNew({
+      path: this._path,
+      languagePreference: lang
+    });
+    this._modelPromise.then(model => {
+      this._model = model;
+      this._model.contentChanged.connect(this._onModelContentChanged, this);
+    });
 
-    this._readyPromise = manager.ready.then(() => {
-      return this._populatedPromise.promise;
+    this._readyPromise = manager.ready.then(async () => {
+      await Promise.all([this._modelPromise, this._populatedPromise.promise]);
     });
 
     const ext = PathExt.extname(this._path);
@@ -112,6 +110,43 @@ export class Context<
   }
 
   /**
+   * A signal emitted when the document state changes.
+   */
+  get stateChanged(): ISignal<this, IChangedArgs<any>> {
+    return this._stateChanged;
+  }
+
+  /**
+   * The dirty state of the document.
+   */
+  get dirty(): boolean {
+    return this._dirty;
+  }
+  set dirty(newValue: boolean) {
+    if (newValue === this._dirty) {
+      return;
+    }
+    let oldValue = this._dirty;
+    this._dirty = newValue;
+    this._stateChanged.emit({ name: 'dirty', oldValue, newValue });
+  }
+
+  /**
+   * The read only state of the document.
+   */
+  get readOnly(): boolean {
+    return this._readOnly;
+  }
+  set readOnly(newValue: boolean) {
+    if (newValue === this._readOnly) {
+      return;
+    }
+    let oldValue = this._readOnly;
+    this._readOnly = newValue;
+    this._stateChanged.emit({ name: 'readOnly', oldValue, newValue });
+  }
+
+  /**
    * A signal emitted on the start and end of a saving operation.
    */
   get saveState(): ISignal<this, DocumentRegistry.SaveState> {
@@ -128,7 +163,7 @@ export class Context<
   /**
    * Get the model associated with the document.
    */
-  get model(): T {
+  get model(): T | null {
     return this._model;
   }
 
@@ -190,9 +225,6 @@ export class Context<
     }
     this._isDisposed = true;
     this.sessionContext.dispose();
-    if (this._modelDB) {
-      this._modelDB.dispose();
-    }
     this._model.dispose();
     this._disposed.emit(void 0);
     Signal.clearData(this);
@@ -224,23 +256,20 @@ export class Context<
    *
    * @returns a promise that resolves upon initialization.
    */
-  initialize(isNew: boolean): Promise<void> {
+  async initialize(isNew: boolean): Promise<void> {
     if (isNew) {
-      this._model.initialize();
       return this._save();
     }
-    if (this._modelDB) {
-      return this._modelDB.connected.then(() => {
-        if (this._modelDB.isPrepopulated) {
-          this._model.initialize();
-          void this._save();
-          return void 0;
-        } else {
-          return this._revert(true);
-        }
-      });
-    } else {
-      return this._revert(true);
+    const model = await this._modelPromise;
+    if (
+      model.isCollaborative &&
+      ((model as any) as DocumentRegistry.ICollaborativeModel).isPrepopulated
+    ) {
+      this._populate();
+      return;
+     }
+    // TODO(RTC) how to handle prepopulated collaborative sessions?
+    return this._revert(true);
     }
   }
 
@@ -445,6 +474,13 @@ export class Context<
   }
 
   /**
+   * Handle a change in the model content.
+   */
+  private _onModelContentChanged(): void {
+    this.dirty = true;
+  }
+
+  /**
    * Update our contents model, without the content.
    */
   private _updateContentsModel(model: Contents.IModel): void {
@@ -523,16 +559,18 @@ export class Context<
     try {
       let value: Contents.IModel;
       await this._manager.ready;
-      if (!model.modelDB.isCollaborative) {
-        value = await this._maybeSave(options);
-      } else {
-        value = await this._manager.contents.save(this._path, options);
-      }
+      // TODO(RTC) think about how saving works in collaborative environments.
+      await this._maybeSave(options);
+//      if (!model.modelDB.isCollaborative) {
+//        value = await this._maybeSave(options);
+//      } else {
+//        value = await this._manager.contents.save(this._path, options);
+//      }
       if (this.isDisposed) {
         return;
       }
 
-      model.dirty = false;
+      this.dirty = false;
       this._updateContentsModel(value);
 
       if (!this._isPopulated) {
@@ -576,21 +614,18 @@ export class Context<
       content: true
     };
     const path = this._path;
-    const model = this._model;
     return this._manager.ready
       .then(() => {
         return this._manager.contents.get(path, opts);
       })
-      .then(contents => {
+      .then(async contents => {
         if (this.isDisposed) {
           return;
         }
+        let model = await this._modelPromise;
         const dirty = false;
         if (contents.format === 'json') {
           model.fromJSON(contents.content);
-          if (initializeModel) {
-            model.initialize();
-          }
         } else {
           let content = contents.content;
           // Convert line endings if necessary, marking the file
@@ -602,12 +637,9 @@ export class Context<
             this._useCRLF = false;
           }
           model.fromString(content);
-          if (initializeModel) {
-            model.initialize();
-          }
         }
         this._updateContentsModel(contents);
-        model.dirty = dirty;
+        this.dirty = dirty;
         if (!this._isPopulated) {
           return this._populate();
         }
@@ -789,8 +821,8 @@ or load the version on disk (revert)?`,
     widget: Widget,
     options?: DocumentRegistry.IOpenOptions
   ) => void;
-  private _model: T;
-  private _modelDB: IModelDB;
+  private _model: T | null;
+  private _modelPromise: Promise<T>;
   private _path = '';
   private _useCRLF = false;
   private _factory: DocumentRegistry.IModelFactory<T>;
@@ -802,9 +834,12 @@ or load the version on disk (revert)?`,
   private _isDisposed = false;
   private _pathChanged = new Signal<this, string>(this);
   private _fileChanged = new Signal<this, Contents.IModel>(this);
+  private _stateChanged = new Signal<this, IChangedArgs<any>>(this);
   private _saveState = new Signal<this, DocumentRegistry.SaveState>(this);
   private _disposed = new Signal<this, void>(this);
   private _dialogs: ISessionContext.IDialogs;
+  private _dirty = false;
+  private _readOnly = false;
 }
 
 /**
@@ -834,11 +869,6 @@ export namespace Context {
      * The kernel preference associated with the context.
      */
     kernelPreference?: ISessionContext.IKernelPreference;
-
-    /**
-     * An IModelDB factory method which may be used for the document.
-     */
-    modelDBFactory?: ModelDB.IFactory;
 
     /**
      * An optional callback for opening sibling widgets.

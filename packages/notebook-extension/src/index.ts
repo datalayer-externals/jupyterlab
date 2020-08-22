@@ -1027,10 +1027,13 @@ function addCommands(
       const { context, content } = current;
 
       const cell = content.activeCell;
-      const metadata = cell?.model.metadata.toJSON();
+      let metadata = DatastoreExt.getField(cell.data.datastore, {
+        ...cell.data.record,
+        field: 'metadata'
+      });
       const path = context.path;
       // ignore action in non-code cell
-      if (!cell || cell.model.type !== 'code') {
+      if (!cell || cell.type !== 'code') {
         return;
       }
 
@@ -1044,11 +1047,11 @@ function addCommands(
         // Get the selected code from the editor.
         const start = editor.getOffsetAt(selection.start);
         const end = editor.getOffsetAt(selection.end);
-        code = editor.model.value.text.substring(start, end);
+        code = editor.model.value.substring(start, end);
       } else {
         // no selection, find the complete statement around the current line
         const cursor = editor.getCursorPosition();
-        const srcLines = editor.model.value.text.split('\n');
+        const srcLines = editor.model.value.split('\n');
         let curLine = selection.start.line;
         while (
           curLine < editor.lineCount &&
@@ -1273,7 +1276,7 @@ function addCommands(
       if (child) {
         child.opener = null;
       }
-      if (context.model.dirty && !context.model.readOnly) {
+      if (context.dirty && !context.readOnly) {
         return context.save().then(() => {
           child?.location.assign(url);
         });
@@ -1761,12 +1764,19 @@ function addCommands(
         mode: 'split-bottom'
       });
 
+      // TODO: this needs some fixing as the model for how cells move
+      // has changed.
       const updateCloned = () => {
         void clonedOutputs.save(widget);
       };
 
       current.context.pathChanged.connect(updateCloned);
-      current.context.model?.cells.changed.connect(updateCloned);
+      const { datastore, record } = current.content.model.data;
+      const cloneListener = DatastoreExt.listenField(
+        datastore,
+        { ...record, field: 'cells' },
+        updateCloned
+      );
 
       // Add the cloned output to the output widget tracker.
       void clonedOutputs.add(widget);
@@ -1774,7 +1784,7 @@ function addCommands(
       // Remove the output view if the parent notebook is closed.
       current.content.disposed.connect(() => {
         current!.context.pathChanged.disconnect(updateCloned);
-        current!.context.model?.cells.changed.disconnect(updateCloned);
+        cloneListener.dispose();
         widget.dispose();
       });
     },
@@ -2429,7 +2439,7 @@ namespace Private {
         if (!this._cell) {
           this._cell = this._notebook.content.widgets[this._index] as CodeCell;
         }
-        if (!this._cell || this._cell.model.type !== 'code') {
+        if (!this._cell || this._cell.type !== 'code') {
           this.dispose();
           return;
         }

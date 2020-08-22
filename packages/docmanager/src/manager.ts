@@ -491,14 +491,13 @@ export class DocumentManager implements IDocumentManager {
       this._widgetManager.adoptWidget(context, widget);
       this._opener.open(widget, options);
     };
-    const modelDBFactory =
-      this.services.contents.getModelDBFactory(path) || undefined;
     const context = new Context({
       opener: adopter,
       manager: this.services,
       factory,
       path,
       kernelPreference,
+      modelDBFactory,
       modelDBFactory,
       setBusy: this._setBusy,
       sessionDialogs: this._dialogs

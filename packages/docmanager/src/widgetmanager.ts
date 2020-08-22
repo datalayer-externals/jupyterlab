@@ -280,7 +280,7 @@ export class DocumentWidgetManager implements IDisposable {
           model!.name,
           model!.path
         );
-        if (context!.model.readOnly) {
+        if (context!.readOnly) {
           caption += trans.__('Read-only');
         } else {
           caption +=
@@ -366,8 +366,7 @@ export class DocumentWidgetManager implements IDisposable {
     if (!factory) {
       return Promise.resolve([true, true]);
     }
-    const model = context.model;
-    if (!model.dirty || widgets.length > 1 || factory.readOnly) {
+    if (!context.dirty || widgets.length > 1 || factory.readOnly) {
       return Promise.resolve([true, true]);
     }
     const fileName = widget.title.label;

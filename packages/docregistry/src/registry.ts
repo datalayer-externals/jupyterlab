@@ -28,11 +28,9 @@ import {
   PathExt
 } from '@jupyterlab/coreutils';
 
-import { IModelDB } from '@jupyterlab/observables';
+import { Contents, Kernel } from '@jupyterlab/services';
 
 import { IRenderMime } from '@jupyterlab/rendermime-interfaces';
-
-import { Contents, Kernel } from '@jupyterlab/services';
 
 import { nullTranslator, ITranslator } from '@jupyterlab/translation';
 
@@ -756,23 +754,9 @@ export namespace DocumentRegistry {
     contentChanged: ISignal<this, void>;
 
     /**
-     * A signal emitted when the model state changes.
+     * Whether the model is collaborative.
      */
-    stateChanged: ISignal<this, IChangedArgsGeneric<any>>;
-
-    /**
-     * The dirty state of the model.
-     *
-     * #### Notes
-     * This should be cleared when the document is loaded from
-     * or saved to disk.
-     */
-    dirty: boolean;
-
-    /**
-     * The read-only state of the model.
-     */
-    readOnly: boolean;
+    readonly isCollaborative: boolean;
 
     /**
      * The default kernel name of the document.
@@ -783,16 +767,6 @@ export namespace DocumentRegistry {
      * The default kernel language of the document.
      */
     readonly defaultKernelLanguage: string;
-
-    /**
-     * The underlying `IModelDB` instance in which model
-     * data is stored.
-     *
-     * ### Notes
-     * Making direct edits to the values stored in the`IModelDB`
-     * is not recommended, and may produce unpredictable results.
-     */
-    readonly modelDB: IModelDB;
 
     /**
      * Serialize the model to a string.
@@ -819,21 +793,32 @@ export namespace DocumentRegistry {
      * Should emit a [contentChanged] signal.
      */
     fromJSON(value: ReadonlyPartialJSONValue): void;
+  }
+
+  export interface ICollaborativeModel extends IModel {
+    /**
+     * Whether the collaborative model is ready for use.
+     * This typically means it has made a connection with the server
+     * and received any history or context that it needs.
+     */
+    readonly ready: Promise<void>;
 
     /**
-     * Initialize model state after initial data load.
-     *
-     * #### Notes
-     * This function must be called after the initial data is loaded to set up
-     * initial model state, such as an initial undo stack, etc.
+     * Whether the model is collaborative.
      */
-    initialize(): void;
+    readonly isCollaborative: true;
+
+    /**
+     * Whether the datastore for the model is prepopulated upon
+     * model construction time.
+     */
+    readonly isPrepopulated: boolean;
   }
 
   /**
    * The interface for a document model that represents code.
    */
-  export interface ICodeModel extends IModel, CodeEditor.IModel {}
+  export interface ICodeModel extends ICollaborativeModel, CodeEditor.IModel {}
 
   /**
    * The document context object.
@@ -848,6 +833,25 @@ export namespace DocumentRegistry {
      * A signal emitted when the contentsModel changes.
      */
     fileChanged: ISignal<this, Contents.IModel>;
+
+    /**
+     * A signal emitted when the model state changes.
+     */
+    stateChanged: ISignal<this, IChangedArgsGeneric<any>>;
+
+    /**
+     * The dirty state of the model.
+     *
+     * #### Notes
+     * This should be cleared when the document is loaded from
+     * or saved to disk.
+     */
+    dirty: boolean;
+
+    /**
+     * The read-only state of the model.
+     */
+    readOnly: boolean;
 
     /**
      * A signal emitted on the start and end of a saving operation.
@@ -1157,12 +1161,32 @@ export namespace DocumentRegistry {
      *
      * @returns A new document model.
      */
-    createNew(languagePreference?: string, modelDB?: IModelDB): T;
+    createNew(options: IModelFactory.IOptions): Promise<T>;
 
     /**
      * Get the preferred kernel language given a file path.
      */
     preferredLanguage(path: string): string;
+  }
+
+  /**
+   * A namespace for IModelFactory statics.
+   */
+  export namespace IModelFactory {
+    /**
+     * Options for creating a new document model.
+     */
+    export interface IOptions {
+      /**
+       * An optional path which can be used to set up a collaboration context.
+       */
+      path?: string;
+
+      /**
+       * A kernel language preference.
+       */
+      languagePreference?: string;
+    }
   }
 
   /**

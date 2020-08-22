@@ -16,6 +16,8 @@ import {
   Dialog
 } from '@jupyterlab/apputils';
 
+import { DatastoreExt } from '@jupyterlab/datastore';
+
 import { DocumentWidget, DocumentRegistry } from '@jupyterlab/docregistry';
 
 import { INotebookModel } from './model';
@@ -59,7 +61,9 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
     this.content.addClass(NOTEBOOK_PANEL_NOTEBOOK_CLASS);
 
     // Set up things related to the context
-    this.content.model = this.context.model;
+    this.context.ready.then(() => {
+      this.content.model = this.context.model;
+    });
     this.context.sessionContext.kernelChanged.connect(
       this._onKernelChanged,
       this
@@ -77,8 +81,8 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
 
       // Set the document edit mode on initial open if it looks like a new document.
       if (this.content.widgets.length === 1) {
-        const cellModel = this.content.widgets[0].model;
-        if (cellModel.type === 'code' && cellModel.value.text === '') {
+        let cell = this.content.widgets[0];
+        if (cell.type === 'code' && cell.editor.model.value === '') {
           this.content.mode = 'edit';
         }
       }
@@ -159,7 +163,7 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
   [Printing.symbol]() {
     return async () => {
       // Save before generating HTML
-      if (this.context.model.dirty && !this.context.model.readOnly) {
+      if (this.context.dirty && !this.context.readOnly) {
         await this.context.save();
       }
 
@@ -227,7 +231,14 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
    * Update the kernel language.
    */
   private _updateLanguage(language: KernelMessage.ILanguageInfo): void {
-    this.model!.metadata.set('language_info', language);
+    const { datastore, record } = this.model.data;
+    DatastoreExt.withTransaction(datastore, () => {
+      DatastoreExt.updateField(
+        datastore,
+        { ...record, field: 'metadata' },
+        { language_info: language }
+      );
+    });
   }
 
   /**
@@ -238,10 +249,19 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
     if (this.isDisposed) {
       return;
     }
-    this.model!.metadata.set('kernelspec', {
-      name: kernel.name,
-      display_name: spec?.display_name,
-      language: spec?.language
+    const { datastore, record } = this.model.data;
+    DatastoreExt.withTransaction(datastore, () => {
+      DatastoreExt.updateField(
+        datastore,
+        { ...record, field: 'metadata' },
+        {
+          kernelspec: {
+            name: kernel.name,
+            display_name: spec.display_name,
+            language: spec.language
+          }
+        }
+      );
     });
   }
 

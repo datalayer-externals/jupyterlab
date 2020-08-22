@@ -6,8 +6,10 @@ import { GenericSearchProvider } from './genericsearchprovider';
 
 import { Cell, MarkdownCell, CodeCell } from '@jupyterlab/cells';
 import { CodeMirrorEditor } from '@jupyterlab/codemirror';
+import { DatastoreExt } from '@jupyterlab/datastore';
 import { NotebookPanel } from '@jupyterlab/notebook';
 
+import { IDisposable } from '@lumino/disposable';
 import { ArrayExt } from '@lumino/algorithm';
 import { Signal, ISignal } from '@lumino/signaling';
 import { Widget } from '@lumino/widgets';
@@ -58,7 +60,15 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
     filters: INotebookFilters | undefined
   ): Promise<ISearchMatch[]> {
     this._searchTarget = searchTarget;
-    const cells = this._searchTarget.content.widgets;
+
+    // TODO(RTC)
+    const { datastore, record } = this._searchTarget.content.model.data;
+    this._cellListener = DatastoreExt.listenField(
+      datastore,
+      { ...record, field: 'cells' },
+      this._restartQuery,
+      this
+    );
 
     this._filters =
       !filters || Object.entries(filters).length === 0
@@ -206,7 +216,10 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
       queriesEnded.push(provider.endQuery());
       provider.changed.disconnect(this._onSearchProviderChanged, this);
     });
-    Signal.disconnectBetween(this._searchTarget!.model!.cells, this);
+    if (this._cellListener) {
+      this._cellListener.dispose();
+      this._cellListener = null;
+    }
 
     this._searchProviders = [];
     this._currentProvider = null;
@@ -237,7 +250,10 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
    */
   async endSearch(): Promise<void> {
     this._searchTarget!.hide();
-    Signal.disconnectBetween(this._searchTarget!.model!.cells, this);
+    if (this._cellListener) {
+      this._cellListener.dispose();
+      this._cellListener = null;
+    }
 
     const index = this._searchTarget!.content.activeCellIndex;
     const searchEnded: Promise<void>[] = [];
@@ -499,4 +515,5 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
   private _unRenderedMarkdownCells: MarkdownCell[] = [];
   private _cellsWithMatches: Cell[] = [];
   private _changed = new Signal<this, void>(this);
+  private _cellListener: IDisposable;
 }

@@ -204,7 +204,7 @@ export class MimeContent extends Widget {
       data !== undefined &&
       !JSONExt.deepEqual(data, this._context.model.toJSON())
     ) {
-      this._context.model.fromJSON(data);
+      this._context.dirty = false;
     }
   };
 

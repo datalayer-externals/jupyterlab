@@ -1,13 +1,17 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { CodeCellModel } from '@jupyterlab/cells';
+import { CellData } from '@jupyterlab/cells';
+
+import { createDatastore } from '@jupyterlab/datastore';
 
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
-import { IModelDB } from '@jupyterlab/observables';
+import { OutputData } from '@jupyterlab/rendermime';
 
 import { Contents } from '@jupyterlab/services';
+
+import { NotebookData } from './data';
 
 import { INotebookModel, NotebookModel } from './model';
 
@@ -20,10 +24,8 @@ export class NotebookModelFactory
    * Construct a new notebook model factory.
    */
   constructor(options: NotebookModelFactory.IOptions) {
-    const codeCellContentFactory = options.codeCellContentFactory;
     this.contentFactory =
-      options.contentFactory ||
-      new NotebookModel.ContentFactory({ codeCellContentFactory });
+      options.contentFactory || new NotebookModel.ContentFactory({});
   }
 
   /**
@@ -73,9 +75,26 @@ export class NotebookModelFactory
    *
    * @returns A new document model.
    */
-  createNew(languagePreference?: string, modelDB?: IModelDB): INotebookModel {
+  async createNew(
+    options: DocumentRegistry.IModelFactory.IOptions = {}
+  ): Promise<INotebookModel> {
     const contentFactory = this.contentFactory;
-    return new NotebookModel({ languagePreference, contentFactory, modelDB });
+    const { languagePreference, path } = options;
+    if (path) {
+      const datastore = await createDatastore(path, [
+        NotebookData.SCHEMA,
+        OutputData.SCHEMA,
+        CellData.SCHEMA
+      ]);
+      const data = {
+        datastore,
+        record: { schema: NotebookData.SCHEMA, record: 'data' },
+        cells: { schema: CellData.SCHEMA },
+        outputs: { schema: OutputData.SCHEMA }
+      };
+      return new NotebookModel({ data, languagePreference, contentFactory });
+    }
+    return new NotebookModel({ languagePreference, contentFactory });
   }
 
   /**
@@ -96,11 +115,6 @@ export namespace NotebookModelFactory {
    * The options used to initialize a NotebookModelFactory.
    */
   export interface IOptions {
-    /**
-     * The factory for code cell content.
-     */
-    codeCellContentFactory?: CodeCellModel.IContentFactory;
-
     /**
      * The content factory used by the NotebookModelFactory.  If
      * given, it will supersede the `codeCellContentFactory`.

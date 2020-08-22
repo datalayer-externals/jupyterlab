@@ -110,6 +110,13 @@ export namespace PageConfig {
   }
 
   /**
+   * Get the unique store ID.
+   */
+  export function getStoreID(): number {
+    return Number(getOption('store_id'));
+  }
+
+  /**
    * Get the tree url for a JupyterLab application.
    */
   export function getTreeUrl(): string {

@@ -2,13 +2,6 @@
 // Distributed under the terms of the Modified BSD License.
 
 import {
-  CodeEditor,
-  CodeEditorWrapper,
-  IEditorServices,
-  IEditorMimeTypeService
-} from '@jupyterlab/codeeditor';
-
-import {
   ABCWidgetFactory,
   DocumentRegistry,
   DocumentWidget,
@@ -22,6 +15,15 @@ import { PromiseDelegate } from '@lumino/coreutils';
 import { Message } from '@lumino/messaging';
 
 import { StackedLayout, Widget } from '@lumino/widgets';
+
+import {
+  CodeEditor,
+  IEditorServices,
+  IEditorMimeTypeService,
+  CodeEditorWrapper
+} from '@jupyterlab/codeeditor';
+
+import { DatastoreExt } from '@jupyterlab/datastore';
 
 /**
  * The data attribute added to a widget that can run code.
@@ -47,39 +49,15 @@ export class FileEditorCodeWrapper extends CodeEditorWrapper {
     });
 
     const context = (this._context = options.context);
-    const editor = this.editor;
 
     this.addClass('jp-FileEditorCodeWrapper');
     this.node.dataset[CODE_RUNNER] = 'true';
     this.node.dataset[UNDOER] = 'true';
 
-    editor.model.value.text = context.model.toString();
     void context.ready.then(() => {
       this._onContextReady();
     });
-
-    if (context.model.modelDB.isCollaborative) {
-      const modelDB = context.model.modelDB;
-      void modelDB.connected.then(() => {
-        const collaborators = modelDB.collaborators;
-        if (!collaborators) {
-          return;
-        }
-
-        // Setup the selection style for collaborators
-        const localCollaborator = collaborators.localCollaborator;
-        this.editor.uuid = localCollaborator.sessionId;
-
-        this.editor.selectionStyle = {
-          ...CodeEditor.defaultSelectionStyle,
-          color: localCollaborator.color
-        };
-
-        collaborators.changed.connect(this._onCollaboratorsChanged, this);
-        // Trigger an initial onCollaboratorsChanged event.
-        this._onCollaboratorsChanged();
-      });
-    }
+    // TODO Let collaborators know who we are via a cursor.
   }
 
   /**
@@ -97,58 +75,44 @@ export class FileEditorCodeWrapper extends CodeEditorWrapper {
   }
 
   /**
+   * Dispose of the resources held by the widget.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._trimSelections();
+    super.dispose();
+  }
+
+  /**
+   * Remove selections from inactive cells to avoid
+   * spurious cursors.
+   */
+  private _trimSelections(): void {
+    const { datastore, record } = this.model.data;
+    DatastoreExt.withTransaction(datastore, () => {
+      DatastoreExt.updateField(
+        datastore,
+        { ...record, field: 'selections' },
+        { [this.editor.uuid]: null }
+      );
+    });
+  }
+
+  /**
    * Handle actions that should be taken when the context is ready.
    */
   private _onContextReady(): void {
     if (this.isDisposed) {
       return;
     }
-    const contextModel = this._context.model;
-    const editor = this.editor;
-    const editorModel = editor.model;
-
-    // Set the editor model value.
-    editorModel.value.text = contextModel.toString();
-
+    this.editor.model.value = this._context.model.toString();
     // Prevent the initial loading from disk from being in the editor history.
-    editor.clearHistory();
-
-    // Wire signal connections.
-    contextModel.contentChanged.connect(this._onContentChanged, this);
+    this.editor.clearHistory();
 
     // Resolve the ready promise.
     this._ready.resolve(undefined);
-  }
-
-  /**
-   * Handle a change in context model content.
-   */
-  private _onContentChanged(): void {
-    const editorModel = this.editor.model;
-    const oldValue = editorModel.value.text;
-    const newValue = this._context.model.toString();
-
-    if (oldValue !== newValue) {
-      editorModel.value.text = newValue;
-    }
-  }
-
-  /**
-   * Handle a change to the collaborators on the model
-   * by updating UI elements associated with them.
-   */
-  private _onCollaboratorsChanged(): void {
-    // If there are selections corresponding to non-collaborators,
-    // they are stale and should be removed.
-    const collaborators = this._context.model.modelDB.collaborators;
-    if (!collaborators) {
-      return;
-    }
-    for (const key of this.editor.model.selections.keys()) {
-      if (!collaborators.has(key)) {
-        this.editor.model.selections.delete(key);
-      }
-    }
   }
 
   protected _context: DocumentRegistry.Context;
@@ -169,32 +133,46 @@ export class FileEditor extends Widget {
     const context = (this._context = options.context);
     this._mimeTypeService = options.mimeTypeService;
 
-    const editorWidget = (this.editorWidget = new FileEditorCodeWrapper(
-      options
-    ));
-    this.editor = editorWidget.editor;
-    this.model = editorWidget.model;
+    let layout = (this.layout = new StackedLayout());
+
+    context.ready.then(() => {
+      let editorWidget = (this._editorWidget = new FileEditorCodeWrapper(
+        options
+      ));
+      layout.addWidget(editorWidget);
+      this._onPathChanged();
+    });
 
     // Listen for changes to the path.
     context.pathChanged.connect(this._onPathChanged, this);
-    this._onPathChanged();
-
-    const layout = (this.layout = new StackedLayout());
-    layout.addWidget(editorWidget);
   }
 
   /**
    * Get the context for the editor widget.
    */
   get context(): DocumentRegistry.Context {
-    return this.editorWidget.context;
+    return this._context;
+  }
+
+  /**
+   * The code editor model associated with the file.
+   */
+  get model(): CodeEditor.IModel | null {
+    return this._editorWidget ? this._editorWidget.model : null;
+  }
+
+  /**
+   * The code editor widget associated with the file.
+   */
+  get editor(): CodeEditor.IEditor | null {
+    return this._editorWidget ? this._editorWidget.editor : null;
   }
 
   /**
    * A promise that resolves when the file editor is ready.
    */
   get ready(): Promise<void> {
-    return this.editorWidget.ready;
+    return this._editorWidget.ready;
   }
 
   /**
@@ -248,8 +226,8 @@ export class FileEditor extends Widget {
    * Ensure that the widget has focus.
    */
   private _ensureFocus(): void {
-    if (!this.editor.hasFocus()) {
-      this.editor.focus();
+    if (!this._editorWidget.editor.hasFocus()) {
+      this._editorWidget.editor.focus();
     }
   }
 
@@ -257,18 +235,14 @@ export class FileEditor extends Widget {
    * Handle a change to the path.
    */
   private _onPathChanged(): void {
-    const editor = this.editor;
     const localPath = this._context.localPath;
-
-    editor.model.mimeType = this._mimeTypeService.getMimeTypeByFilePath(
+    this.model.mimeType = this._mimeTypeService.getMimeTypeByFilePath(
       localPath
     );
   }
 
-  private editorWidget: FileEditorCodeWrapper;
-  public model: CodeEditor.IModel;
-  public editor: CodeEditor.IEditor;
-  protected _context: DocumentRegistry.Context;
+  private _context: DocumentRegistry.Context;
+  private _editorWidget: FileEditorCodeWrapper | null = null;
   private _mimeTypeService: IEditorMimeTypeService;
 }
 
