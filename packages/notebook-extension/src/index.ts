@@ -85,6 +85,8 @@ import {
   UUID
 } from '@lumino/coreutils';
 
+import { DatastoreExt } from '@jupyterlab/datastore';
+
 import { DisposableSet } from '@lumino/disposable';
 
 import { Message, MessageLoop } from '@lumino/messaging';
@@ -1027,8 +1029,8 @@ function addCommands(
       const { context, content } = current;
 
       const cell = content.activeCell;
-      let metadata = DatastoreExt.getField(cell.data.datastore, {
-        ...cell.data.record,
+      let metadata = DatastoreExt.getField(cell!.data.datastore, {
+        ...cell!.data.record,
         field: 'metadata'
       });
       const path = context.path;
@@ -1771,7 +1773,7 @@ function addCommands(
       };
 
       current.context.pathChanged.connect(updateCloned);
-      const { datastore, record } = current.content.model.data;
+      const { datastore, record } = current.content.model!.data!;
       const cloneListener = DatastoreExt.listenField(
         datastore,
         { ...record, field: 'cells' },

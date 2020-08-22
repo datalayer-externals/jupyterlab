@@ -30,12 +30,6 @@
       "path": "./packages/cells"
     },
     {
-      "path": "./packages/celltags"
-    },
-    {
-      "path": "./packages/celltags-extension"
-    },
-    {
       "path": "./packages/codeeditor"
     },
     {
@@ -70,12 +64,6 @@
     },
     {
       "path": "./packages/datastore-extension"
-    },
-    {
-      "path": "./packages/debugger"
-    },
-    {
-      "path": "./packages/debugger-extension"
     },
     {
       "path": "./packages/docmanager"
@@ -145,12 +133,6 @@
     },
     {
       "path": "./packages/launcher-extension"
-    },
-    {
-      "path": "./packages/logconsole"
-    },
-    {
-      "path": "./packages/logconsole-extension"
     },
     {
       "path": "./packages/mainmenu"
@@ -250,12 +232,6 @@
     },
     {
       "path": "./packages/theme-light-extension"
-    },
-    {
-      "path": "./packages/toc"
-    },
-    {
-      "path": "./packages/toc-extension"
     },
     {
       "path": "./packages/tooltip"

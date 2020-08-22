@@ -5,7 +5,7 @@
 // https://nbformat.readthedocs.io/en/latest/format_description.html
 // https://github.com/jupyter/nbformat/blob/master/nbformat/v4/nbformat.v4.schema.json
 
-import { PartialJSONObject, JSONExt } from '@lumino/coreutils';
+import { PartialJSONObject, JSONObject, JSONExt } from '@lumino/coreutils';
 
 /**
  * The major version of the notebook format.
@@ -63,8 +63,8 @@ export type MultilineString = string | string[];
 /**
  * A mime-type keyed dictionary of data.
  */
-export interface IMimeBundle extends PartialJSONObject {
-  [key: string]: MultilineString | PartialJSONObject;
+export interface IMimeBundle extends JSONObject {
+  [key: string]: MultilineString | JSONObject;
 }
 
 /**

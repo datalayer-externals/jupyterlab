@@ -131,7 +131,7 @@ export class RawEditor extends SplitPanel {
    * Tests whether the settings have been modified and need saving.
    */
   get isDirty(): boolean {
-    return this._user.editor.model.value !== this._settings.raw ?? '';
+    return this._user.editor.model.value !== this._settings!.raw ?? '';
   }
 
   /**
@@ -220,7 +220,7 @@ export class RawEditor extends SplitPanel {
     }
 
     const settings = this._settings;
-    const source = this._user.editor.model;
+    const source = this._user.editor.model.value;
 
     return settings
       .save(source)
@@ -259,7 +259,7 @@ export class RawEditor extends SplitPanel {
    * Handle text changes in the underlying editor.
    */
   private _onTextChanged(): void {
-    const raw = this._user.editor.model.value.text;
+    const raw = this._user.editor.model.value;
     const settings = this._settings;
 
     this.removeClass(ERROR_CLASS);
@@ -289,8 +289,8 @@ export class RawEditor extends SplitPanel {
     const defaults = this._defaults;
     const user = this._user;
 
-    defaults.editor.model.value = settings?.annotatedDefaults();
-    user.editor.model.value = settings?.raw;
+    defaults.editor.model.value = settings?.annotatedDefaults()!;
+    user.editor.model.value = settings?.raw!;
   }
 
   private _updateToolbar(revert = this._canRevert, save = this._canSave): void {

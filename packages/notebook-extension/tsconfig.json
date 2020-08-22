@@ -62,6 +62,9 @@
     },
     {
       "path": "../ui-components"
+    },
+    {
+      "path": "../datastore"
     }
   ]
 }

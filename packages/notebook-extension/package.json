@@ -41,6 +41,7 @@
     "@jupyterlab/cells": "^3.0.0-alpha.14",
     "@jupyterlab/codeeditor": "^3.0.0-alpha.14",
     "@jupyterlab/coreutils": "^5.0.0-alpha.14",
+    "@jupyterlab/datastore": "^3.0.0-alpha.14",
     "@jupyterlab/docmanager": "^3.0.0-alpha.14",
     "@jupyterlab/filebrowser": "^3.0.0-alpha.14",
     "@jupyterlab/launcher": "^3.0.0-alpha.14",
