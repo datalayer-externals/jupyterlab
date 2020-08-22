@@ -12,9 +12,6 @@
       "path": "../datastore"
     },
     {
-      "path": "../nbformat"
-    },
-    {
       "path": "../rendermime"
     },
     {
@@ -37,9 +34,6 @@
     },
     {
       "path": "../datastore"
-    },
-    {
-      "path": "../nbformat"
     },
     {
       "path": "../rendermime"
