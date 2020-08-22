@@ -170,7 +170,7 @@ export namespace CodeEditor {
     /**
      * The text stored in the model.
      */
-    readonly value: string;
+    value: string;
 
     /**
      * A mime type of the model.

@@ -3,21 +3,15 @@
 
 import { ArrayExt, each } from '@lumino/algorithm';
 
-import { ReadonlyPartialJSONValue } from '@lumino/coreutils';
-
 import { Datastore, ListField, MapField } from '@lumino/datastore';
-
-import { IDisposable } from '@lumino/disposable';
-
-import { Datastore, ListField, MapField } from '@lumino/datastore';
-
-import { IDisposable } from '@lumino/disposable';
 
 import { JSONValue, MimeData } from '@lumino/coreutils';
 
 import { IDragEvent, Drag } from '@lumino/dragdrop';
 
-import { Message } from '@lumino/messaging'; 
+import { Message } from '@lumino/messaging';
+
+import { IDisposable } from '@lumino/disposable';
 
 import { AttachedProperty } from '@lumino/properties';
 
@@ -101,7 +95,7 @@ const OTHER_SELECTED_CLASS = 'jp-mod-multiSelected';
 /**
  * The class name added to unconfined images.
  */
-const UNCONFINED_CLASS = 'jp-mod-unconfined';
+// const UNCONFINED_CLASS = 'jp-mod-unconfined';
 
 /**
  * The class name added to a drop target.
@@ -315,6 +309,7 @@ export class StaticNotebook extends Widget {
   ): void {
     if (args.current['language_info']) {
       this._updateMimetype();
+    }
     if (args.current['language_info']) {
       this._updateMimetype();
     }
@@ -448,7 +443,7 @@ export class StaticNotebook extends Widget {
    * Handle a change cells event.
    */
   private _onCellsChanged(sender: Datastore, args: ListField.Change<string>) {
-    const { datastore, record, cells, outputs } = this.model.data;
+    const { datastore, record, cells, outputs } = this.model!.data;
     args.forEach(change => {
       for (let i = 0; i < change.removed.length; i) {
         this._removeCell(change.index);
@@ -462,7 +457,7 @@ export class StaticNotebook extends Widget {
           },
           outputs
         };
-        this._insertCell(change.index  i, loc);
+        this._insertCell(change.index + i, loc);
       }
       const cellIds = DatastoreExt.getField(datastore, {
         ...record,
@@ -473,7 +468,7 @@ export class StaticNotebook extends Widget {
           // Add a new cell in a new frame so we don't trigger the
           // same change listener in this one.
           DatastoreExt.withTransaction(datastore, () => {
-            const cellId = this.model.contentFactory.createCell(
+            const cellId = this.model!.contentFactory.createCell(
               this.notebookConfig.defaultCell
             );
             DatastoreExt.updateField(
@@ -492,9 +487,9 @@ export class StaticNotebook extends Widget {
    */
   private _insertCell(index: number, cell: ICellData.DataLocation): void {
     let widget: Cell;
-    switch (cell.type) {
     const cellData = DatastoreExt.getRecord(cell.datastore, cell.record);
-    switch (cellData.type) {
+    switch (cellData?.type) {
+      case 'code':
         widget = this._createCodeCell(cell);
         widget.editor.model.mimeType = this._mimetype;
         break;
@@ -557,7 +552,7 @@ export class StaticNotebook extends Widget {
   /**
    * Create a raw cell widget from a raw cell model.
    */
-  private _createRawCell(model: IRawCellModel): RawCell {
+  private _createRawCell(data: ICellData.DataLocation): RawCell {
     const contentFactory = this.contentFactory;
     const editorConfig = this.editorConfig.raw;
     const options = {
@@ -587,12 +582,12 @@ export class StaticNotebook extends Widget {
    * Update the mimetype of the notebook.
    */
   private _updateMimetype(): void {
-    const info = this._model.metadata[
+    const info = this._model?.metadata[
       'language_info'
-     ] as nbformat.ILanguageInfoMetadata;
+    ] as nbformat.ILanguageInfoMetadata;
     if (!info) {
       return;
-  
+    }
     this._mimetype = this._mimetypeService.getMimeTypeByLanguage(info);
     each(this.widgets, widget => {
       const { datastore, record } = widget.data;
@@ -1916,7 +1911,7 @@ export class Notebook extends StaticNotebook {
       }
 
       // Move the cells one by one
-      const { datastore, record } = this.model.data;
+      const { datastore, record } = this.model!.data;
       DatastoreExt.withTransaction(datastore, () => {
         if (fromIndex < toIndex) {
           each(toMove, cellWidget => {
@@ -1968,7 +1963,7 @@ export class Notebook extends StaticNotebook {
       const factory = model.contentFactory;
 
       // Insert the copies of the original cells.
-      const { datastore, record } = this.model.data;
+      const { datastore, record } = this.model!.data;
       DatastoreExt.withTransaction(datastore, () => {
         each(values, (cell: nbformat.ICell) => {
           let value: string;
@@ -2009,19 +2004,14 @@ export class Notebook extends StaticNotebook {
     each(this.widgets, (widget, i) => {
       if (this.isSelectedOrActive(widget)) {
         widget.addClass(DROP_SOURCE_CLASS);
-         selected.push(CellData.toJSON(widget.data));
+        selected.push(CellData.toJSON(widget.data));
         toMove.push(widget);
       }
     });
     const activeCell = this.activeCell;
     let dragImage: HTMLElement | null = null;
     let countString: string;
-    if (activeCell.type === 'code') {
-      let executionCount = DatastoreExt.getField(activeCell.data.datastore, {
-        ...activeCell.data.record,
-        field: 'executionCount'
-      });
-    if (activeCell.type === 'code') {
+    if (activeCell?.type === 'code') {
       let executionCount = DatastoreExt.getField(activeCell.data.datastore, {
         ...activeCell.data.record,
         field: 'executionCount'
@@ -2038,7 +2028,7 @@ export class Notebook extends StaticNotebook {
     dragImage = Private.createDragImage(
       selected.length,
       countString,
-      activeCell.editor.model.value.split('\n')[0].slice(0, 26) ?? ''
+      activeCell?.editor.model.value.split('\n')[0].slice(0, 26) ?? ''
     );
 
     // Set up the drag event.
@@ -2153,12 +2143,16 @@ export class Notebook extends StaticNotebook {
       return;
     }
     this.activeCellIndex = index;
+    // TODO(RTC)
+    console.log(target);
+    /*
     if (model.cells.get(index).type === 'markdown') {
       const widget = this.widgets[index] as MarkdownCell;
       widget.rendered = false;
     } else if (target.localName === 'img') {
       target.classList.toggle(UNCONFINED_CLASS);
     }
+    */
   }
 
   /**

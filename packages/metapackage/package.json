@@ -37,8 +37,6 @@
     "@jupyterlab/apputils-extension": "^3.0.0-alpha.14",
     "@jupyterlab/attachments": "^3.0.0-alpha.14",
     "@jupyterlab/cells": "^3.0.0-alpha.14",
-    "@jupyterlab/celltags": "^3.0.0-alpha.14",
-    "@jupyterlab/celltags-extension": "^3.0.0-alpha.14",
     "@jupyterlab/codeeditor": "^3.0.0-alpha.14",
     "@jupyterlab/codemirror": "^3.0.0-alpha.14",
     "@jupyterlab/codemirror-extension": "^3.0.0-alpha.14",

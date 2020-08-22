@@ -254,9 +254,6 @@ export namespace NotebookTrustStatus {
     private _deriveCellTrustState(
       notebook: Notebook
     ): { total: number; trusted: number } {
-      if (model === null) {
-        return { total: 0, trusted: 0 };
-      }
       const cells = toArray(notebook.widgets);
 
       const trusted = cells.reduce((accum, current) => {

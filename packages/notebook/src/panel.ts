@@ -1,13 +1,9 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { isMarkdownCellModel } from '@jupyterlab/cells';
-
 import { Kernel, KernelMessage, Session } from '@jupyterlab/services';
 
-import { each } from '@lumino/algorithm';
-
-import { Token } from '@lumino/coreutils';
+import { Token, ReadonlyJSONObject } from '@lumino/coreutils';
 
 import {
   ISessionContext,
@@ -18,7 +14,7 @@ import {
 
 import { DatastoreExt } from '@jupyterlab/datastore';
 
-import { DocumentWidget, DocumentRegistry } from '@jupyterlab/docregistry';
+import { DocumentWidget } from '@jupyterlab/docregistry';
 
 import { INotebookModel } from './model';
 
@@ -72,7 +68,8 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
       this._onSessionStatusChanged,
       this
     );
-    this.context.saveState.connect(this._onSave, this);
+    // TODO(RTC)
+    // this.context.saveState.connect(this._onSave, this);
     void this.revealed.then(() => {
       if (this.isDisposed) {
         // this widget has already been disposed, bail
@@ -89,6 +86,8 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
     });
   }
 
+  // TODO(RTC)
+  /*
   _onSave(sender: DocumentRegistry.Context, state: DocumentRegistry.SaveState) {
     if (state === 'started' && this.model) {
       // Find markdown cells
@@ -104,7 +103,7 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
       });
     }
   }
-
+  */
   /**
    * The session context used by the panel.
    */
@@ -231,12 +230,12 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
    * Update the kernel language.
    */
   private _updateLanguage(language: KernelMessage.ILanguageInfo): void {
-    const { datastore, record } = this.model.data;
+    const { datastore, record } = this.model!.data;
     DatastoreExt.withTransaction(datastore, () => {
       DatastoreExt.updateField(
         datastore,
         { ...record, field: 'metadata' },
-        { language_info: language }
+        { language_info: language as ReadonlyJSONObject }
       );
     });
   }
@@ -249,7 +248,7 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
     if (this.isDisposed) {
       return;
     }
-    const { datastore, record } = this.model.data;
+    const { datastore, record } = this.model!.data;
     DatastoreExt.withTransaction(datastore, () => {
       DatastoreExt.updateField(
         datastore,
@@ -257,8 +256,8 @@ export class NotebookPanel extends DocumentWidget<Notebook, INotebookModel> {
         {
           kernelspec: {
             name: kernel.name,
-            display_name: spec.display_name,
-            language: spec.language
+            display_name: spec!.display_name,
+            language: spec!.language
           }
         }
       );

@@ -6,7 +6,7 @@ import { showDialog, Dialog } from '@jupyterlab/apputils';
 import { DatastoreExt } from '@jupyterlab/datastore';
 
 import { DocumentRegistry } from '@jupyterlab/docregistry';
- 
+
 import {
   CellData,
   CodeCellData,
@@ -21,12 +21,15 @@ import { IOutputData, OutputData } from '@jupyterlab/rendermime';
 
 import { ReadonlyJSONObject, UUID } from '@lumino/coreutils';
 
-import { CellList } from './celllist';
-import { showDialog, Dialog } from '@jupyterlab/apputils';
+import { Datastore } from '@lumino/datastore';
+
+import { ISignal, Signal } from '@lumino/signaling';
+
+import { INotebookData, NotebookData } from './data';
+
 import {
-  nullTranslator,
-  ITranslator,
-  TranslationBundle
+  ITranslator
+  //  TranslationBundle
 } from '@jupyterlab/translation';
 
 /**
@@ -91,6 +94,7 @@ export class NotebookModel implements INotebookModel {
       };
     } else {
       this.data = options.data;
+    }
     if (!options.data) {
       const datastore = (this._store = NotebookData.createStore());
       this.data = {
@@ -208,13 +212,15 @@ export class NotebookModel implements INotebookModel {
    * #### Notes
    * This is a read-only property.
    */
-   // TODO(RTC)
+  // TODO(RTC)
 
   /**
    * The default kernel language of the document.
    */
   get defaultKernelLanguage(): string {
-    const info = this.metadata['language_info'] as nbformat.ILanguageInfoMetadata;
+    const info = this.metadata[
+      'language_info'
+    ] as nbformat.ILanguageInfoMetadata;
     return info ? info.name : '';
   }
 
@@ -263,10 +269,10 @@ export class NotebookModel implements INotebookModel {
     let cellsJSON: nbformat.ICell[] = [];
     let { datastore, record, cells, outputs } = this.data;
     let data = DatastoreExt.getRecord(datastore, record);
-    for (let i = 0; i < data.cells.length; i++) {
+    for (let i = 0; i < data!.cells.length; i++) {
       let cell = CellData.toJSON({
         datastore,
-        record: { ...cells, record: data.cells[i] },
+        record: { ...cells, record: data!.cells[i] },
         outputs
       });
       cellsJSON.push(cell);
@@ -278,8 +284,8 @@ export class NotebookModel implements INotebookModel {
     }
     return {
       metadata,
-      nbformat_minor: data.nbformatMinor,
-      nbformat: data.nbformat,
+      nbformat_minor: data!.nbformatMinor,
+      nbformat: data!.nbformat,
       cells: cellsJSON
     };
   }
@@ -315,31 +321,8 @@ export class NotebookModel implements INotebookModel {
           default:
             continue;
         }
-    let { datastore, record, cells, outputs } = this.data;
-    DatastoreExt.withTransaction(datastore, () => {
-      const cellIds: string[] = [];
-      for (let cell of value.cells) {
-        const id = UUID.uuid4();
-        cellIds.push(id);
-        const loc = {
-          datastore,
-          record: { ...cells, record: id },
-          outputs
-        };
-        switch (cell.cell_type) {
-          case 'code':
-            CodeCellData.fromJSON(loc, cell as nbformat.ICodeCell);
-            break;
-          case 'markdown':
-            MarkdownCellData.fromJSON(loc, cell as nbformat.IMarkdownCell);
-            break;
-          case 'raw':
-            RawCellData.fromJSON(loc, cell as nbformat.IRawCell);
-            break;
-          default:
-            continue;
-        }
       }
+
       const cellLoc: DatastoreExt.FieldLocation<
         INotebookData.Schema,
         'cells'
@@ -394,7 +377,6 @@ export class NotebookModel implements INotebookModel {
           buttons: [Dialog.okButton()]
         });
       }
-      
 
       // Update the metadata.
       let metadata = { ...value.metadata };
@@ -408,7 +390,7 @@ export class NotebookModel implements INotebookModel {
       DatastoreExt.updateField(
         datastore,
         { ...record, field: 'metadata' },
-        update
+        update as ReadonlyJSONObject
       );
       this._ensureMetadata();
     });
@@ -491,7 +473,7 @@ export class NotebookModel implements INotebookModel {
     }
   }
 
-  private _trans: TranslationBundle;
+  //  private _trans: TranslationBundle;
   private _deletedCells: string[];
   private _store: Datastore | null = null;
   private _isDisposed = false;
@@ -545,7 +527,7 @@ export namespace NotebookModel {
      * call the other cell creation methods in the factory.
      */
     createCell(type: nbformat.CellType, cell?: nbformat.IBaseCell): string;
- 
+
     /**
      * Create a new code cell.
      *
@@ -590,7 +572,7 @@ export namespace NotebookModel {
      * Create a new cell model factory.
      */
     constructor(options: ContentFactory.IOptions) {
-      this._data = options.data;
+      this._data = options.data!;
     }
 
     /**
@@ -715,7 +697,6 @@ export namespace NotebookModel {
        */
       outputs: DatastoreExt.TableLocation<IOutputData.Schema>;
     };
-
   }
 
   /**

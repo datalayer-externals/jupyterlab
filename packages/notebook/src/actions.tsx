@@ -17,14 +17,9 @@ import {
   MarkdownCell,
   MarkdownCellData,
   RawCellData
-  isMarkdownCellModel,
-  isRawCellModel,
-  isCodeCellModel
 } from '@jupyterlab/cells';
 
 import * as nbformat from '@jupyterlab/nbformat';
-
-import { KernelMessage } from '@jupyterlab/services';
 
 import { DatastoreExt } from '@jupyterlab/datastore';
 
@@ -34,7 +29,7 @@ import { KernelMessage } from '@jupyterlab/services';
 
 import { ArrayExt, each } from '@lumino/algorithm';
 
-import { JSONObject, JSONExt } from '@lumino/coreutils';
+import { JSONObject } from '@lumino/coreutils';
 
 import { ElementExt } from '@lumino/domutils';
 
@@ -109,206 +104,61 @@ export namespace NotebookActions {
 
     const state = Private.getState(notebook);
 
+    // TODO(RTC)
+
     notebook.deselectAll();
 
     const nbModel = notebook.model;
     const index = notebook.activeCellIndex;
     const child = notebook.widgets[index];
     const editor = child.editor;
-    const selections = editor.getSelections();
+    const position = editor.getCursorPosition();
+    const offset = editor.getOffsetAt(position);
     const orig = child.editor.model.value;
 
-    const offsets = [0];
+    // Create new models to preserve history.
+    const clone0 = Private.cloneCell(nbModel, child);
+    const clone1 = Private.cloneCell(nbModel, child);
 
-
-    /*
-
-    TODO(RTC)
-
-
-         // Create new models to preserve history.
--    const clone0 = Private.cloneCell(nbModel, child.model);
--    const clone1 = Private.cloneCell(nbModel, child.model);
-+    const clone0 = Private.cloneCell(nbModel, child);
-+    const clone1 = Private.cloneCell(nbModel, child);
-+
-+    if (child.type === 'code') {
-+      OutputAreaData.clear(clone0);
-+    }
-+    const datastore = nbModel.data.datastore;
-+    DatastoreExt.withTransaction(datastore, () => {
-+      const text0 = orig
-+        .slice(0, offset)
-+        .replace(/^\n+/, '')
-+        .replace(/\n+$/, '');
-+      const text1 = orig
-+        .slice(offset)
-+        .replace(/^\n+/, '')
-+        .replace(/\n+$/, '');
-+      DatastoreExt.updateField(
-+        datastore,
-+        { ...clone0.record, field: 'text' },
-+        { index: 0, remove: orig.length, text: text0 }
-+      );
-+      DatastoreExt.updateField(
-+        datastore,
-+        { ...clone1.record, field: 'text' },
-+        { index: 0, remove: orig.length, text: text1 }
-+      );
-+      DatastoreExt.updateField(
-+        datastore,
-+        { ...nbModel.data.record, field: 'cells' },
-+        {
-+          index,
-+          remove: 1,
-+          values: [clone0.record.record, clone1.record.record]
-+        }
-+      );
-+    });
- 
--    if (clone0.type === 'code') {
--      (clone0 as ICodeCellModel).outputs.clear();
-+    if (child.type === 'markdown') {
-+      (notebook.widgets[index] as MarkdownCell).rendered = false;
-+      (notebook.widgets[index + 1] as MarkdownCell).rendered = false;
-     }
--    clone0.value.text = orig
--      .slice(0, offset)
--      .replace(/^\n+/, '')
--      .replace(/\n+$/, '');
--    clone1.value.text = orig
--      .slice(offset)
--      .replace(/^\n+/, '')
--      .replace(/\n+$/, '');
--
--    // Make the changes while preserving history.
--    const cells = nbModel.cells;
--
--    cells.beginCompoundOperation();
--    cells.set(index, clone0);
--    cells.insert(index + 1, clone1);
--    cells.endCompoundOperation();
--
--    notebook.activeCellIndex++;
-+    notebook.activeCellIndex = index + 1;
-     Private.handleState(notebook, state);
-     // Create new models to preserve history.
--    const clone0 = Private.cloneCell(nbModel, child.model);
--    const clone1 = Private.cloneCell(nbModel, child.model);
-+    const clone0 = Private.cloneCell(nbModel, child);
-+    const clone1 = Private.cloneCell(nbModel, child);
-+
-+    if (child.type === 'code') {
-+      OutputAreaData.clear(clone0);
-+    }
-+    const datastore = nbModel.data.datastore;
-+    DatastoreExt.withTransaction(datastore, () => {
-+      const text0 = orig
-+        .slice(0, offset)
-+        .replace(/^\n+/, '')
-+        .replace(/\n+$/, '');
-+      const text1 = orig
-+        .slice(offset)
-+        .replace(/^\n+/, '')
-+        .replace(/\n+$/, '');
-+      DatastoreExt.updateField(
-+        datastore,
-+        { ...clone0.record, field: 'text' },
-+        { index: 0, remove: orig.length, text: text0 }
-+      );
-+      DatastoreExt.updateField(
-+        datastore,
-+        { ...clone1.record, field: 'text' },
-+        { index: 0, remove: orig.length, text: text1 }
-+      );
-+      DatastoreExt.updateField(
-+        datastore,
-+        { ...nbModel.data.record, field: 'cells' },
-+        {
-+          index,
-+          remove: 1,
-+          values: [clone0.record.record, clone1.record.record]
-+        }
-+      );
-+    });
- 
--    if (clone0.type === 'code') {
--      (clone0 as ICodeCellModel).outputs.clear();
-+    if (child.type === 'markdown') {
-+      (notebook.widgets[index] as MarkdownCell).rendered = false;
-+      (notebook.widgets[index + 1] as MarkdownCell).rendered = false;
-     }
--    clone0.value.text = orig
--      .slice(0, offset)
--      .replace(/^\n+/, '')
--      .replace(/\n+$/, '');
--    clone1.value.text = orig
--      .slice(offset)
--      .replace(/^\n+/, '')
--      .replace(/\n+$/, '');
--
--    // Make the changes while preserving history.
--    const cells = nbModel.cells;
--
--    cells.beginCompoundOperation();
--    cells.set(index, clone0);
--    cells.insert(index + 1, clone1);
--    cells.endCompoundOperation();
--
--    notebook.activeCellIndex++;
-+    notebook.activeCellIndex = index + 1;
-     Private.handleState(notebook, state);
-
-
-    */
-
-    for (let i = 0; i < selections.length; i++) {
-      // append start and end to handle selections
-      // cursors will have same start and end
-      const start = editor.getOffsetAt(selections[i].start);
-      const end = editor.getOffsetAt(selections[i].end);
-      if (start < end) {
-        offsets.push(start);
-        offsets.push(end);
-      } else if (end < start) {
-        offsets.push(end);
-        offsets.push(start);
-      } else {
-        offsets.push(start);
-      }
+    if (child.type === 'code') {
+      OutputAreaData.clear(clone0);
     }
-
-    offsets.push(orig.length);
-
-    const clones: ICellModel[] = [];
-    for (let i = 0; i + 1 < offsets.length; i++) {
-      const clone = Private.cloneCell(nbModel, child.model);
-      clones.push(clone);
-    }
-
-    for (let i = 0; i < clones.length; i++) {
-      if (i !== clones.length - 1 && clones[i].type === 'code') {
-        (clones[i] as ICodeCellModel).outputs.clear();
-      }
-      clones[i].value.text = orig
-        .slice(offsets[i], offsets[i + 1])
+    const datastore = nbModel.data.datastore;
+    DatastoreExt.withTransaction(datastore, () => {
+      const text0 = orig
+        .slice(0, offset)
         .replace(/^\n+/, '')
         .replace(/\n+$/, '');
+      const text1 = orig
+        .slice(offset)
+        .replace(/^\n+/, '')
+        .replace(/\n+$/, '');
+      DatastoreExt.updateField(
+        datastore,
+        { ...clone0.record, field: 'text' },
+        { index: 0, remove: orig.length, text: text0 }
+      );
+      DatastoreExt.updateField(
+        datastore,
+        { ...clone1.record, field: 'text' },
+        { index: 0, remove: orig.length, text: text1 }
+      );
+      DatastoreExt.updateField(
+        datastore,
+        { ...nbModel.data.record, field: 'cells' },
+        {
+          index,
+          remove: 1,
+          values: [clone0.record.record, clone1.record.record]
+        }
+      );
+    });
+
+    if (child.type === 'markdown') {
+      (notebook.widgets[index] as MarkdownCell).rendered = false;
+      (notebook.widgets[index + 1] as MarkdownCell).rendered = false;
     }
-
-    const cells = nbModel.cells;
-
-    cells.beginCompoundOperation();
-    for (let i = 0; i < clones.length; i++) {
-      if (i === 0) {
-        cells.set(index, clones[i]);
-      } else {
-        cells.insert(index + i, clones[i]);
-      }
-    }
-    cells.endCompoundOperation();
-
-    notebook.activeCellIndex = index + clones.length - 1;
+    notebook.activeCellIndex = index + 1;
     Private.handleState(notebook, state);
   }
 
@@ -330,6 +180,8 @@ export namespace NotebookActions {
       return;
     }
 
+    // TODO(RTC)
+
     const state = Private.getState(notebook);
     const toMerge: string[] = [];
     const toDelete: string[] = [];
@@ -340,20 +192,12 @@ export namespace NotebookActions {
     const first = ArrayExt.findFirstIndex(notebook.widgets, w =>
       notebook.isSelectedOrActive(w)
     );
-    const attachments: nbformat.IAttachments = {};
 
     // Get the cells to merge.
     notebook.widgets.forEach((child, index) => {
       if (notebook.isSelectedOrActive(child)) {
         toMerge.push(child.editor.model.value);
         toDelete.push(child.data.record.record);
-        // Collect attachments if the cell is a markdown cell or a raw cell
-        const model = child.model;
-        if (isRawCellModel(model) || isMarkdownCellModel(model)) {
-          for (const key of model.attachments.keys) {
-            attachments[key] = model.attachments.get(key)!.toJSON();
-          }
-        }
       }
     });
 
@@ -365,7 +209,7 @@ export namespace NotebookActions {
       }
 
       // Otherwise merge with the next cell.
-      const cellModel = notebook.widgets[active + 1];
+      const next = notebook.widgets[active + 1];
 
       toMerge.push(next.editor.model.value);
       toDelete.push(next.data.record.record);
@@ -1170,8 +1014,9 @@ export namespace NotebookActions {
               ...child.data.record,
               field: 'metadata'
             });
- 
-           if (notebook.isSelectedOrActive(child) && deletable) {
+
+            const deletable = metadata['deletable'] !== false;
+            if (notebook.isSelectedOrActive(child) && deletable) {
               toDelete.push(index);
             }
           });
@@ -1486,7 +1331,7 @@ export namespace NotebookActions {
     const state = Private.getState(notebook);
 
     notebook.widgets.forEach(cell => {
-      if (cell.model.type === 'code') {
+      if (cell.type === 'code') {
         (cell as CodeCell).outputHidden = false;
       }
     });
@@ -1542,11 +1387,13 @@ export namespace NotebookActions {
    * @param notebook - The target notebook widget.
    */
   export function selectLastRunCell(notebook: Notebook): void {
-    let latestTime: Date | null = null;
+    //    let latestTime: Date | null = null;
     let latestCellIdx: number | null = null;
     notebook.widgets.forEach((cell, cellIndx) => {
-      if (cell.model.type === 'code') {
-        const execution = (cell as CodeCell).model.metadata.get('execution');
+      if (cell.type === 'code') {
+        // TODO(RTC)
+        /*
+        const execution = (cell as CodeCell).metadata.get('execution');
         if (
           execution &&
           JSONExt.isObject(execution) &&
@@ -1563,6 +1410,7 @@ export namespace NotebookActions {
             }
           }
         }
+        */
       }
     });
     if (latestCellIdx !== null) {
@@ -1946,24 +1794,24 @@ namespace Private {
     const replace = setNextInput.replace;
 
     if (replace) {
-      cell.model.value = text;
+      cell.editor.model.value = text;
       return;
     }
 
     // Create a new code cell and add as the next cell.
-    const newCell = notebook.model.contentFactory.createCodeCell();
+    const newCell = notebook.model?.contentFactory.createCodeCell();
     let index = ArrayExt.firstIndexOf(notebook.widgets, cell);
     index = index === -1 ? notebook.widgets.length : index;
-    const { datastore, record, cells } = notebook.model.data;
+    const { datastore, record, cells } = notebook.model!.data;
     DatastoreExt.withTransaction(datastore, () => {
       DatastoreExt.updateField(
         datastore,
         { ...record, field: 'cells' },
-        { index, remove: 0, values: [newCell] }
+        { index, remove: 0, values: [newCell!] }
       );
       DatastoreExt.updateField(
         datastore,
-        { ...cells, record: newCell, field: 'text' },
+        { ...cells, record: newCell!, field: 'text' },
         { index: 0, remove: 0, text }
       );
     });
@@ -2032,8 +1880,6 @@ namespace Private {
         if (!notebook.isSelectedOrActive(child)) {
           return;
         }
-        cells.set(index, newCell);
-      }
         if (child.type !== value) {
           let cellId = '';
           let cell = CellData.toJSON(child.data);
@@ -2099,7 +1945,7 @@ namespace Private {
 
       if (notebook.isSelectedOrActive(child) && deletable) {
         toDelete.push(index);
-        notebook.model.deletedCells.push(child.data.record.record);
+        notebook.model?.deletedCells.push(child.data.record.record);
       }
     });
 
@@ -2148,7 +1994,7 @@ namespace Private {
    * Set the markdown header level of a cell.
    */
   export function setMarkdownHeader(cell: Cell, level: number) {
-   // Remove existing header or leading white space.
+    // Remove existing header or leading white space.
     let source = cell.editor.model.value;
     const regex = /^(#+\s*)|^(\s*)/;
     const newHeader = Array(level + 1).join('#') + ' ';

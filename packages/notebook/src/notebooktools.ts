@@ -17,7 +17,13 @@ import { DatastoreExt } from '@jupyterlab/datastore';
 
 import { ArrayExt, each, chain } from '@lumino/algorithm';
 
-import { JSONObject, JSONValue, ReadonlyJSONValue } from '@lumino/coreutils';
+import {
+  JSONValue,
+  JSONObject,
+  ReadonlyPartialJSONValue,
+  ReadonlyJSONValue,
+  ReadonlyJSONObject
+} from '@lumino/coreutils';
 
 import { Datastore, MapField } from '@lumino/datastore';
 
@@ -31,13 +37,14 @@ import { PanelLayout, Widget } from '@lumino/widgets';
 
 import { INotebookData } from './data';
 
+import { NotebookPanel } from './panel';
+
 import {
   nullTranslator,
   ITranslator,
   TranslationBundle
 } from '@jupyterlab/translation';
 
-import { INotebookModel } from './model';
 import { INotebookTools, INotebookTracker } from './tokens';
 
 class RankedPanel<T extends Widget = Widget> extends Widget {
@@ -189,12 +196,11 @@ export class NotebookTools extends Widget implements INotebookTools {
   private _onActiveCellChanged(): void {
     if (this._cellListener) {
       this._cellListener.dispose();
-      this._cellListener = null;
     }
     const activeCell = this.activeCell ? this.activeCell.data : null;
     this._prevActiveCell = activeCell;
     if (activeCell) {
-      const { datastore, record } = this._prevActiveCell;
+      const { datastore, record } = this._prevActiveCell!;
       DatastoreExt.listenField(
         datastore,
         { ...record, field: 'metadata' },
@@ -239,10 +245,10 @@ export class NotebookTools extends Widget implements INotebookTools {
     sender: Datastore,
     args: MapField.Change<JSONValue>
   ): void {
-    const message = new new NotebookTools.MetadataChangeMessage(
+    const message = new NotebookTools.MetadataChangeMessage(
       'activecell-metadata-changed',
       args
-    )();
+    );
     each(this._toolChildren(), widget => {
       MessageLoop.sendMessage(widget, message);
     });
@@ -537,7 +543,7 @@ export namespace NotebookTools {
      * Handle a change to the current editor value.
      */
     private _onValueChanged(): void {
-      tthis._model.value = this._cellModel.value.split('\n')[0];
+      this._model.value = this._cellModel?.value.split('\n')[0] as string;
     }
 
     /**
@@ -710,7 +716,7 @@ export namespace NotebookTools {
       this.key = options.key;
       this._default = options.default;
       this._validCellTypes = options.validCellTypes || [];
-      this._getter = options.getter || this._getValue;
+      this._getter = options.getter as (cell: Cell) => ReadonlyJSONValue || this._getValue;
       this._setter = options.setter || this._setValue;
     }
 
@@ -834,7 +840,7 @@ export namespace NotebookTools {
       });
       let value = metadata[this.key];
       if (value === undefined) {
-        value = this._default;
+        value = this._default as ReadonlyJSONValue;
       }
       return value;
     };
@@ -858,7 +864,7 @@ export namespace NotebookTools {
           DatastoreExt.updateField(
             datastore,
             { ...record, field: 'metadata' },
-            { [this.key]: value }
+            { [this.key]: value } as ReadonlyJSONObject
           );
         }
       });
@@ -967,7 +973,7 @@ export namespace NotebookTools {
           field: 'metadata'
         });
         let value = metadata['slideshow'];
-        return value && value['slide_type'];
+        return value && (value as JSONObject)['slide_type'];
       },
       setter: (cell, value) => {
         let { datastore, record } = cell.data;
