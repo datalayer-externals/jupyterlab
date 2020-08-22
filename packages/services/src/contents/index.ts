@@ -3,8 +3,6 @@
 
 import { URLExt, PathExt } from '@jupyterlab/coreutils';
 
-import { ModelDB } from '@jupyterlab/observables';
-
 import { PartialJSONObject } from '@lumino/coreutils';
 
 import { each } from '@lumino/algorithm';
@@ -277,13 +275,6 @@ export namespace Contents {
     driveName(path: string): string;
 
     /**
-     * Given a path, get a ModelDB.IFactory from the
-     * relevant backend. Returns `null` if the backend
-     * does not provide one.
-     */
-    getModelDBFactory(path: string): ModelDB.IFactory | null;
-
-    /**
      * Get a file or directory.
      *
      * @param path: The path to the file.
@@ -418,12 +409,6 @@ export namespace Contents {
      * The server settings of the manager.
      */
     readonly serverSettings: ServerConnection.ISettings;
-
-    /**
-     * An optional ModelDB.IFactory instance for the
-     * drive.
-     */
-    readonly modelDBFactory?: ModelDB.IFactory;
 
     /**
      * A signal emitted when a file operation takes place.
@@ -608,16 +593,6 @@ export class ContentsManager implements Contents.IManager {
   addDrive(drive: Contents.IDrive): void {
     this._additionalDrives.set(drive.name, drive);
     drive.fileChanged.connect(this._onFileChanged, this);
-  }
-
-  /**
-   * Given a path, get a ModelDB.IFactory from the
-   * relevant backend. Returns `undefined` if the backend
-   * does not provide one.
-   */
-  getModelDBFactory(path: string): ModelDB.IFactory | null {
-    const [drive] = this._driveForPath(path);
-    return drive?.modelDBFactory ?? null;
   }
 
   /**
