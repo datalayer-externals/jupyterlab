@@ -15,9 +15,6 @@
       "path": "../codemirror"
     },
     {
-      "path": "../coreutils"
-    },
-    {
       "path": "../datastore"
     },
     {
@@ -55,9 +52,6 @@
     },
     {
       "path": "../codemirror"
-    },
-    {
-      "path": "../coreutils"
     },
     {
       "path": "../datastore"

@@ -98,6 +98,8 @@ export namespace AttachmentsData {
     value: nbformat.IAttachments
   ): void {
     // Construct an update, removing any old data from the bundle.
+    // TODO(RTC)
+    /*
     const old = toJSON(loc);
     Object.keys(old).forEach(key => {
       old[key] = null;
@@ -110,6 +112,7 @@ export namespace AttachmentsData {
         update
       );
     });
+    */
   }
 }
 
@@ -170,9 +173,12 @@ export class AttachmentsResolver implements IRenderMime.IResolver {
    * or not.
    */
   isLocal(url: string): boolean {
+    // TODO(RTC)
+    /*
     if (this._parent && !url.startsWith('attachment:')) {
       return this._parent.isLocal(url);
     }
+    */
     return true;
   }
 

@@ -302,10 +302,16 @@ namespace Private {
   function fixCarriageReturn(txt: string): string {
     txt = txt.replace(/\r+\n/gm, '\n'); // \r followed by \n --> newline
     while (txt.search(/\r[^$]/g) > -1) {
-      const base = txt.match(/^(.*)\r+/m)[1];
-      let insert = txt.match(/\r+(.*)$/m)[1];
-      insert = insert + base.slice(insert.length, base.length);
-      txt = txt.replace(/\r+.*$/m, '\r').replace(/^.*\r/m, insert);
+      const m1 = txt.match(/^(.*)\r+/m);
+      if (m1 && m1.length > 0) {
+        const base = m1[1];
+        const m2 = txt.match(/\r+(.*)$/m);
+        if (m2 && m2.length > 0) {
+          let insert = m2[1];
+          insert = insert + base.slice(insert.length, base.length);
+          txt = txt.replace(/\r+.*$/m, '\r').replace(/^.*\r/m, insert);
+        }
+      }
     }
     return txt;
   }
