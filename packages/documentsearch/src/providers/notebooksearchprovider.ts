@@ -60,9 +60,10 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
     filters: INotebookFilters | undefined
   ): Promise<ISearchMatch[]> {
     this._searchTarget = searchTarget;
+    const cells = this._searchTarget.content.widgets;
 
     // TODO(RTC)
-    const { datastore, record } = this._searchTarget.content.model.data;
+    const { datastore, record } = this._searchTarget!.content.model.data;
     this._cellListener = DatastoreExt.listenField(
       datastore,
       { ...record, field: 'cells' },
@@ -218,7 +219,6 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
     });
     if (this._cellListener) {
       this._cellListener.dispose();
-      this._cellListener = null;
     }
 
     this._searchProviders = [];
@@ -252,7 +252,6 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
     this._searchTarget!.hide();
     if (this._cellListener) {
       this._cellListener.dispose();
-      this._cellListener = null;
     }
 
     const index = this._searchTarget!.content.activeCellIndex;
@@ -472,6 +471,12 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
     return match;
   }
 
+  private async _restartQuery() {
+    await this.endQuery();
+    await this.startQuery(this._query, this._searchTarget, undefined);
+    this._changed.emit(undefined);
+  }
+
   private _getMatchesFromCells(): ISearchMatch[][] {
     let indexTotal = 0;
     const result: ISearchMatch[][] = [];
@@ -508,6 +513,7 @@ export class NotebookSearchProvider implements ISearchProvider<NotebookPanel> {
   }
 
   private _searchTarget: NotebookPanel | undefined | null;
+  private _query: RegExp;
   private _filters: INotebookFilters;
   private _searchProviders: ICellSearchPair[] = [];
   private _currentProvider: ICellSearchPair | null | undefined;
