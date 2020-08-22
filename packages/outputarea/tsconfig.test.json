@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfigbase.test",
-  "include": ["src/*", "test/*"],
+  "include": [
+    "src/*",
+    "test/*"
+  ],
   "references": [
     {
       "path": "../apputils"
@@ -12,6 +15,9 @@
       "path": "../datastore"
     },
     {
+      "path": "../nbformat"
+    },
+    {
       "path": "../rendermime"
     },
     {
@@ -19,9 +25,6 @@
     },
     {
       "path": "../services"
-    },
-    {
-      "path": "../nbformat"
     },
     {
       "path": "."
@@ -39,6 +42,9 @@
       "path": "../datastore"
     },
     {
+      "path": "../nbformat"
+    },
+    {
       "path": "../rendermime"
     },
     {
@@ -46,9 +52,6 @@
     },
     {
       "path": "../services"
-    },
-    {
-      "path": "../nbformat"
     }
   ]
 }

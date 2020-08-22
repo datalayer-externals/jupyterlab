@@ -4,7 +4,9 @@
     "outDir": "lib",
     "rootDir": "src"
   },
-  "include": ["src/*"],
+  "include": [
+    "src/*"
+  ],
   "references": [
     {
       "path": "../apputils"
@@ -16,6 +18,9 @@
       "path": "../datastore"
     },
     {
+      "path": "../nbformat"
+    },
+    {
       "path": "../rendermime"
     },
     {
@@ -23,9 +28,6 @@
     },
     {
       "path": "../services"
-    },
-    {
-      "path": "../nbformat"
     }
   ]
 }
