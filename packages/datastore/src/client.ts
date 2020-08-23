@@ -451,7 +451,7 @@ export namespace CollaborationClient {
      * @param transaction - The transaction object
      */
     constructor(transaction: Datastore.Transaction) {
-      super('remote-transactions');
+      super('remote-transaction');
       this.transaction = transaction;
     }
 

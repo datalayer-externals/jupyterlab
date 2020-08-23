@@ -32,7 +32,6 @@ export namespace DatastoreExt {
     try {
       update(id);
     } finally {
-      console.log('--- endTransaction');
       if (id) {
         datastore.endTransaction();
       }
