@@ -7,9 +7,7 @@ import { PromiseDelegate } from '@lumino/coreutils';
 
 import { Datastore, IServerAdapter } from '@lumino/datastore';
 
-// TODO(RTC)
-// import { IMessageHandler, Message, MessageLoop } from '@lumino/messaging';
-import { IMessageHandler, Message } from '@lumino/messaging';
+import { IMessageHandler, Message, MessageLoop } from '@lumino/messaging';
 
 import { ServerConnection, WSConnection } from '@jupyterlab/services';
 
@@ -30,10 +28,9 @@ const DEFAULT_IDLE_TIME = 3;
 /**
  * A class that manages exchange of transactions with the collaboration server.
  */
-export class CollaborationClient extends WSConnection<
-  Collaboration.Message,
-  Collaboration.Message
-> implements IServerAdapter {
+export class CollaborationClient
+  extends WSConnection<Collaboration.Message, Collaboration.Message>
+  implements IServerAdapter {
   /**
    * Create a new collaboration client connection.
    */
@@ -64,14 +61,14 @@ export class CollaborationClient extends WSConnection<
 
   // Set by datastore when it's created.
   set onRemoteTransaction(onRemoteTransaction: TransactionHandler) {
-    this._ws!.onmessage = (evt) => {
+    this._ws!.onmessage = evt => {
       const msg = JSON.parse(evt.data);
       console.log('--- onRemoteTransaction', msg);
       if (msg.content && msg.content.transactions) {
         const transactions = msg.content.transactions;
         console.log('--- onRemoteTransaction', transactions);
         transactions.map((t: any) => {
-          onRemoteTransaction(t)
+          onRemoteTransaction(t);
         });
       }
     };
@@ -87,15 +84,72 @@ export class CollaborationClient extends WSConnection<
   }
 
   processMessage(msg: Message) {
-    console.log('---', msg);
+    console.log('--- processMessage', msg);
     if (msg.type === 'datastore-transaction') {
       // TODO(RTC)
-      // (msg as any as Datastore.TransactionMessage).transaction
       this.broadcastTransactions([
-        (msg as any as Datastore.Transaction)        
+        ((msg as any) as CollaborationClient.RemoteTransactionMessage)
+          .transaction
       ]);
       return;
     }
+
+    /*
+
+    else if (msg.type === 'datastore-transaction') {
+      if (this._client) {
+        this._client.broadcastTransactions([
+          (msg as TransactionMessage).transaction
+        ]);
+      }
+    } else if (msg.type === 'initial-state') {
+      const state = (msg as CollaborationClient.InitialStateMessage).state;
+
+      // Scenarios:
+      // 1. Immediate (has localDS), and state is null: Clone local.
+      // 2. Non-immediate, and state is null: Simple create of remote.
+      // 3. Non-immediate, and state is non-null: Recreate remote from state.
+      // 4. Immediate, and non-null state: Error!
+      // 5. Has remote already: Treat as non-immediate (recovery)
+
+      const immediate = this._localDS !== null && this._remoteDS === null;
+      if (!immediate) {
+        // 2. / 3.  ( 5.)
+        // TODO(@echarles) broadcastHandler: this,
+        this._remoteDS = Datastore.create({
+          id: this._storeId!,
+          schemas: this._schemas,
+          adapter: (this._client as IServerAdapter) || null,
+          restoreState: state || undefined
+        });
+        if (state !== null) {
+          this._prepopulated = true;
+        }
+      } else if (state === null) {
+        // 1.
+        // TODO(@echarles) broadcastHandler: this,
+        this._remoteDS = cloneDS(this._storeId!, this._localDS!, {
+          adapter: (this._client as IServerAdapter) || null
+        });
+      } else {
+        // 4.
+        throw new Error(
+          'Cannot replace the state of an immediate collaboration session!'
+        );
+      }
+
+      this._datastoreChanged.emit({ datastore: this._remoteDS });
+
+      if (this._localDS) {
+        this._localDS.dispose();
+        this._localDS = null;
+      }
+    } else if (msg.type === 'datastore-gc-chance') {
+      MessageLoop.sendMessage(this._remoteDS || this._localDS!, msg);
+    }
+
+    */
+
     throw new Error(
       `CollaborationClient cannot process message type ${msg.type}`
     );
@@ -107,6 +161,7 @@ export class CollaborationClient extends WSConnection<
    * @returns An array of acknowledged transactionIds from the server.
    */
   broadcastTransactions(transactions: Datastore.Transaction[]): void {
+    console.log('--- broadcastTransactions', transactions);
     // Brand outgoing transactions with our serial
     const branded = [];
     for (let t of transactions) {
@@ -262,12 +317,10 @@ export class CollaborationClient extends WSConnection<
       }
       this._serverSerial = t.serial;
       // TODO(RTC)
-      /*
       MessageLoop.sendMessage(
         this.handler,
-        new Datastore.TransactionMessage(t)
+        new CollaborationClient.RemoteTransactionMessage(t)
       );
-      */
     }
     this._resetIdleTimer();
   }
