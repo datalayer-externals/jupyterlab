@@ -60,18 +60,33 @@ export class CollaborationClient
   }
 
   // Set by datastore when it's created.
+  /*  
   set onRemoteTransaction(onRemoteTransaction: TransactionHandler) {
     this._ws!.onmessage = evt => {
       const msg = JSON.parse(evt.data);
       console.log('--- onRemoteTransaction', msg);
+      this.processMessage(msg);
       if (msg.content && msg.content.transactions) {
         const transactions = msg.content.transactions;
         console.log('--- onRemoteTransaction', transactions);
         transactions.map((t: any) => {
+          console.log('--- onRemoteTransaction(t);', t);
           onRemoteTransaction(t);
         });
       }
     };
+  }
+*/
+
+  private _onRemoteTransaction: TransactionHandler | null = null;
+  /**
+   * A callback for when a remote transaction is received by the server adapter.
+   */
+  get onRemoteTransaction(): TransactionHandler | null {
+    return this._onRemoteTransaction;
+  }
+  set onRemoteTransaction(value: TransactionHandler | null) {
+    this._onRemoteTransaction = value;
   }
 
   onUndo!: ((transaction: Datastore.Transaction) => void) | null;
@@ -85,6 +100,17 @@ export class CollaborationClient
 
   processMessage(msg: Message) {
     console.log('--- processMessage', msg);
+    //    MessageLoop.sendMessage(this.handler!, msg);
+    /*
+    if (msg.content && msg.content.transactions) {
+      const transactions = msg.content.transactions;
+      console.log('--- onRemoteTransaction', transactions);
+      transactions.map((t: any) => {
+        console.log('--- onRemoteTransaction(t);', t);
+        onRemoteTransaction(t);
+      });
+    }
+    */
     if (msg.type === 'datastore-transaction') {
       // TODO(RTC)
       this.broadcastTransactions([
@@ -150,10 +176,13 @@ export class CollaborationClient
 
     */
 
+    /*
     throw new Error(
       `CollaborationClient cannot process message type ${msg.type}`
     );
+    */
   }
+
   /**
    * Broadcast transactions to all datastores.
    *

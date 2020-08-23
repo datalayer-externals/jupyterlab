@@ -75,6 +75,7 @@ export class NotebookModel implements INotebookModel {
    * Construct a new notebook model.
    */
   constructor(options: NotebookModel.IOptions = {}) {
+    console.log('----', options);
     const factory =
       options.contentFactory || NotebookModel.defaultContentFactory;
     if (!options.data) {
@@ -113,6 +114,7 @@ export class NotebookModel implements INotebookModel {
     } else {
       this.data = options.data;
     }
+    console.log('----', this.data);
     const { datastore, record } = this.data;
     if (!DatastoreExt.getRecord(datastore, record)) {
       this.isPrepopulated = false;

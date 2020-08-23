@@ -17,8 +17,7 @@ export async function createDatastore(
   const datastore = Datastore.create({
     id: PageConfig.getStoreID(),
     schemas: schemas,
-    // Pass in client as handler, so it can recieve local changes
-    adapter: this
+    adapter: client
   });
   client.handler = datastore;
   // Wait for websocket connection to be ready
