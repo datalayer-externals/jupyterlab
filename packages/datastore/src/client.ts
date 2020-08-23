@@ -5,7 +5,7 @@ import { URLExt } from '@jupyterlab/coreutils';
 
 import { PromiseDelegate } from '@lumino/coreutils';
 
-import { Datastore } from '@lumino/datastore';
+import { Datastore, IServerAdapter } from '@lumino/datastore';
 
 // TODO(RTC)
 // import { IMessageHandler, Message, MessageLoop } from '@lumino/messaging';
@@ -14,6 +14,8 @@ import { IMessageHandler, Message } from '@lumino/messaging';
 import { ServerConnection, WSConnection } from '@jupyterlab/services';
 
 import { Collaboration } from './wsmessages';
+
+type TransactionHandler = (transaction: Datastore.Transaction) => void;
 
 /**
  * The url for the datastore service.
@@ -31,7 +33,7 @@ const DEFAULT_IDLE_TIME = 3;
 export class CollaborationClient extends WSConnection<
   Collaboration.Message,
   Collaboration.Message
-> {
+> implements IServerAdapter {
   /**
    * Create a new collaboration client connection.
    */
@@ -56,14 +58,42 @@ export class CollaborationClient extends WSConnection<
     });
   }
 
+  broadcast(transaction: Datastore.Transaction): void {
+    this.broadcastTransactions([transaction]);
+  }
+
+  // Set by datastore when it's created.
+  set onRemoteTransaction(onRemoteTransaction: TransactionHandler) {
+    this._ws!.onmessage = (evt) => {
+      const msg = JSON.parse(evt.data);
+      console.log('--- onRemoteTransaction', msg);
+      if (msg.content && msg.content.transactions) {
+        const transactions = msg.content.transactions;
+        console.log('--- onRemoteTransaction', transactions);
+        transactions.map((t: any) => {
+          onRemoteTransaction(t)
+        });
+      }
+    };
+  }
+
+  onUndo!: ((transaction: Datastore.Transaction) => void) | null;
+  onRedo!: ((transaction: Datastore.Transaction) => void) | null;
+  undo(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  redo(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
   processMessage(msg: Message) {
+    console.log('---', msg);
     if (msg.type === 'datastore-transaction') {
       // TODO(RTC)
-      /*
+      // (msg as any as Datastore.TransactionMessage).transaction
       this.broadcastTransactions([
-        (msg as Datastore.TransactionMessage).transaction
+        (msg as any as Datastore.Transaction)        
       ]);
-      */
       return;
     }
     throw new Error(
@@ -123,6 +153,7 @@ export class CollaborationClient extends WSConnection<
       checkpointId: checkpointId === undefined ? null : checkpointId
     });
     const response = await this._requestMessageReply(msg);
+    console.log('--- history-reply', response);
     if (!response.content.transactions.length) {
       return false;
     }
