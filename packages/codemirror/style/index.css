@@ -8,3 +8,20 @@
 @import url('~@jupyterlab/apputils/style/index.css');
 @import url('~@jupyterlab/codeeditor/style/index.css');
 @import url('~@jupyterlab/statusbar/style/index.css');
+
+/* TODO(RTC) Show DOM? */
+
+.jp-CollaboratorCursor-hover {
+    position: absolute;
+    z-index: 1;
+    transform: translateX(-50%);
+    color: white;
+    border-radius: 3px;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    text-align: center;
+    font-size: var(--jp-ui-font-size1);
+    white-space: nowrap;
+}
