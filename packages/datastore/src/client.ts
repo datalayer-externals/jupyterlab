@@ -319,6 +319,8 @@ export class CollaborationClient
       }
     }
     if (msg.msgType === 'transaction-broadcast') {
+      // TODO(RTC)
+      console.log('--- transaction-broadcast', msg);
       this._handleTransactions(msg.content.transactions);
     } else if (msg.msgType === 'state-stable') {
       // TODO: Possibly signal a chance for garbage collection.
@@ -348,7 +350,7 @@ export class CollaborationClient
       // TODO(RTC)
       MessageLoop.sendMessage(
         this.handler,
-        new CollaborationClient.RemoteTransactionMessage(t)
+        new CollaborationClient.TransactionMessage(t)
       );
     }
     this._resetIdleTimer();
@@ -439,6 +441,22 @@ export namespace CollaborationClient {
      * How long to wait before the session is considered idle, in seconds.
      */
     idleTreshold?: number;
+  }
+
+  /**
+   * A message of a datastore transaction.
+   */
+  export class TransactionMessage extends Message {
+    constructor(transaction: Datastore.Transaction) {
+      super('datastore-transaction');
+      this.transaction = transaction;
+    }
+    /**
+     * The transaction associated with the change.
+     */
+    readonly transaction: Datastore.Transaction;
+
+    readonly type: 'datastore-transaction';
   }
 
   /**

@@ -310,9 +310,6 @@ export class StaticNotebook extends Widget {
     if (args.current['language_info']) {
       this._updateMimetype();
     }
-    if (args.current['language_info']) {
-      this._updateMimetype();
-    }
   }
 
   /**
@@ -992,6 +989,7 @@ export class Notebook extends StaticNotebook {
     if (this.isDisposed) {
       return;
     }
+    this._activeCell = null;
     this._activeCellIndex = -1;
     this._trimSelections();
     super.dispose();
@@ -2131,28 +2129,47 @@ export class Notebook extends StaticNotebook {
    * Handle `dblclick` events for the widget.
    */
   private _evtDblClick(event: MouseEvent): void {
-    const model = this.model;
+    let model = this.model;
     if (!model) {
       return;
     }
     this.deselectAll();
 
-    const [target, index] = this._findEventTargetAndCell(event);
+    // `event.target` sometimes gives an orphaned node in Firefox 57, which
+    // can have `null` anywhere in its parent tree. If we fail to find a
+    // cell using `event.target`, try again using a target reconstructed from
+    // the position of the click event.
+    let target = event.target as HTMLElement;
+    let i = this._findCell(target);
+    if (i === -1) {
+      target = document.elementFromPoint(
+        event.clientX,
+        event.clientY
+      ) as HTMLElement;
+      i = this._findCell(target);
+    }
 
-    if (index === -1) {
+    if (i === -1) {
       return;
     }
-    this.activeCellIndex = index;
-    // TODO(RTC)
-    console.log(target);
-    /*
-    if (model.cells.get(index).type === 'markdown') {
-      const widget = this.widgets[index] as MarkdownCell;
+    this.activeCellIndex = i;
+    const { datastore, record, cells } = model.data;
+    const cellIds = DatastoreExt.getField(datastore, {
+      ...record,
+      field: 'cells'
+    });
+    const cellType = DatastoreExt.getField(datastore, {
+      ...cells,
+      record: cellIds[i],
+      field: 'type'
+    });
+    if (cellType === 'markdown') {
+      let widget = this.widgets[i] as MarkdownCell;
       widget.rendered = false;
     } else if (target.localName === 'img') {
-      target.classList.toggle(UNCONFINED_CLASS);
+      // TODO(RTC)
+      // target.classList.toggle(UNCONFINED_CLASS);
     }
-    */
   }
 
   /**
