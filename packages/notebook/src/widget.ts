@@ -357,7 +357,7 @@ export class StaticNotebook extends Widget {
         this._metadataListener = null;
       }
       oldValue.contentChanged.disconnect(this.onModelContentChanged, this);
-      // TODO: reuse existing cell widgets if possible. Remember to initially
+      // TODO: reuse existing cell widgets if possible. Rememb  er to initially
       // clear the history of each cell if we do this.
       while (layout.widgets.length) {
         this._removeCell(0);
@@ -407,33 +407,6 @@ export class StaticNotebook extends Widget {
         );
       });
     }
-    this._cellListener = DatastoreExt.listenField(
-      datastore,
-      {
-        ...record,
-        field: 'cells'
-      },
-      this._onCellsChanged,
-      this
-    );
-    this._metadataListener = DatastoreExt.listenField(
-      datastore,
-      { ...record, field: 'metadata' },
-      this.onMetadataChanged,
-      this
-    );
-    if (!cellIds.length) {
-      DatastoreExt.withTransaction(datastore, () => {
-        const cellId = newValue.contentFactory.createCell(
-          this.notebookConfig.defaultCell
-        );
-        DatastoreExt.updateField(
-          datastore,
-          { ...record, field: 'cells' },
-          { index: 0, remove: 0, values: [cellId] }
-        );
-      });
-    }
   }
 
   /**
@@ -442,10 +415,10 @@ export class StaticNotebook extends Widget {
   private _onCellsChanged(sender: Datastore, args: ListField.Change<string>) {
     const { datastore, record, cells, outputs } = this.model!.data;
     args.forEach(change => {
-      for (let i = 0; i < change.removed.length; i) {
+      for (let i = 0; i < change.removed.length; i++) {
         this._removeCell(change.index);
       }
-      for (let i = 0; i < change.inserted.length; i) {
+      for (let i = 0; i < change.inserted.length; i++) {
         const loc = {
           datastore,
           record: {
@@ -483,6 +456,7 @@ export class StaticNotebook extends Widget {
    * Create a cell widget and insert into the notebook.
    */
   private _insertCell(index: number, cell: ICellData.DataLocation): void {
+    console.log('--- insertCell', index, cell);
     let widget: Cell;
     const cellData = DatastoreExt.getRecord(cell.datastore, cell.record);
     switch (cellData?.type) {
@@ -1455,6 +1429,22 @@ export class Notebook extends StaticNotebook {
    */
   protected onCellInserted(index: number, cell: Cell): void {
     // TODO(RTC): let collaborators know who you are based on cursor!
+    /*
+    if (this.model && this.model.modelDB.isCollaborative) {
+      const modelDB = this.model.modelDB;
+      void modelDB.connected.then(() => {
+        if (!cell.isDisposed) {
+          // Setup the selection style for collaborators.
+          const localCollaborator = modelDB.collaborators!.localCollaborator;
+          cell.editor.uuid = localCollaborator.sessionId;
+          cell.editor.selectionStyle = {
+            ...CodeEditor.defaultSelectionStyle,
+            color: localCollaborator.color
+          };
+        }
+      });
+    }
+    */
     cell.editor.edgeRequested.connect(this._onEdgeRequest, this);
     // If the insertion happened above, increment the active cell
     // index, otherwise it stays the same.

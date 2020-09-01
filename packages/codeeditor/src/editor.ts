@@ -290,6 +290,10 @@ export namespace CodeEditor {
       });
     }
     set mimeType(newValue: string) {
+      const oldValue = this.mimeType;
+      if (oldValue === newValue) {
+        return;
+      }
       const { datastore, record } = this.data;
       DatastoreExt.withTransaction(datastore, () => {
         DatastoreExt.updateField(

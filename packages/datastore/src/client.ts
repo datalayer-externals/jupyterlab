@@ -64,13 +64,13 @@ export class CollaborationClient
   set onRemoteTransaction(onRemoteTransaction: TransactionHandler) {
     this._ws!.onmessage = evt => {
       const msg = JSON.parse(evt.data);
-      console.log('--- onRemoteTransaction', msg);
+      console.log('--- client onRemoteTransaction', msg);
       this.processMessage(msg);
       if (msg.content && msg.content.transactions) {
         const transactions = msg.content.transactions;
-        console.log('--- onRemoteTransaction', transactions);
+        console.log('--- client onRemoteTransaction', transactions);
         transactions.map((t: any) => {
-          console.log('--- onRemoteTransaction(t);', t);
+          console.log('--- client onRemoteTransaction(t);', t);
           onRemoteTransaction(t);
         });
       }
@@ -99,14 +99,13 @@ export class CollaborationClient
   }
 
   processMessage(msg: Message) {
-    console.log('--- processMessage', msg);
-    //    MessageLoop.sendMessage(this.handler!, msg);
+    // MessageLoop.sendMessage(this.handler!, msg);
     /*
     if (msg.content && msg.content.transactions) {
       const transactions = msg.content.transactions;
-      console.log('--- onRemoteTransaction', transactions);
+      console.log('--- client onRemoteTransaction', transactions);
       transactions.map((t: any) => {
-        console.log('--- onRemoteTransaction(t);', t);
+        console.log('--- client onRemoteTransaction(t);', t);
         onRemoteTransaction(t);
       });
     }
@@ -114,14 +113,11 @@ export class CollaborationClient
     if (msg.type === 'datastore-transaction') {
       // TODO(RTC)
       this.broadcastTransactions([
-        ((msg as any) as CollaborationClient.RemoteTransactionMessage)
-          .transaction
+        ((msg as any) as CollaborationClient.TransactionMessage).transaction
       ]);
       return;
     }
-
     /*
-
     else if (msg.type === 'datastore-transaction') {
       if (this._client) {
         this._client.broadcastTransactions([
@@ -173,9 +169,7 @@ export class CollaborationClient
     } else if (msg.type === 'datastore-gc-chance') {
       MessageLoop.sendMessage(this._remoteDS || this._localDS!, msg);
     }
-
     */
-
     /*
     throw new Error(
       `CollaborationClient cannot process message type ${msg.type}`
@@ -190,7 +184,6 @@ export class CollaborationClient
    * @returns An array of acknowledged transactionIds from the server.
    */
   broadcastTransactions(transactions: Datastore.Transaction[]): void {
-    console.log('--- broadcastTransactions', transactions);
     // Brand outgoing transactions with our serial
     const branded = [];
     for (let t of transactions) {
@@ -222,6 +215,7 @@ export class CollaborationClient
         this._resetIdleTimer();
       },
       () => {
+        console.log('--- client TODO resend transaction');
         // TODO: Resend transactions
       }
     );
@@ -237,7 +231,6 @@ export class CollaborationClient
       checkpointId: checkpointId === undefined ? null : checkpointId
     });
     const response = await this._requestMessageReply(msg);
-    console.log('--- history-reply', response);
     if (!response.content.transactions.length) {
       return false;
     }
@@ -320,7 +313,7 @@ export class CollaborationClient
     }
     if (msg.msgType === 'transaction-broadcast') {
       // TODO(RTC)
-      console.log('--- transaction-broadcast', msg);
+      console.log('--- client transaction-broadcast', msg.content.transactions);
       this._handleTransactions(msg.content.transactions);
     } else if (msg.msgType === 'state-stable') {
       // TODO: Possibly signal a chance for garbage collection.
