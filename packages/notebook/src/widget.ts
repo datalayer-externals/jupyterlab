@@ -199,8 +199,7 @@ export class StaticNotebook extends Widget {
         {
           root: this.node,
           threshold: 1,
-          rootMargin:
-            '0px 0px ' + this.notebookConfig.nonObservedBottomMargin + ' 0px'
+          rootMargin: `${this.notebookConfig.observedTopMargin}  0px ${this.notebookConfig.observedBottomMargin} 0px`
         }
       );
     }
@@ -642,6 +641,7 @@ export class StaticNotebook extends Widget {
     cell.node.innerHTML = `
       <div class="jp-Cell-Placeholder">
         <div class="jp-Cell-Placeholder-wrapper">
+<!--
           <div class="jp-Cell-Placeholder-wrapper-inner">
             <div class="jp-Cell-Placeholder-wrapper-body">
               <div class="jp-Cell-Placeholder-h1"></div>
@@ -651,6 +651,7 @@ export class StaticNotebook extends Widget {
               <div class="jp-Cell-Placeholder-content-3"></div>
             </div>
           </div>
+-->
         </div>
       </div>`;
     cell.inputHidden = true;
@@ -934,11 +935,18 @@ export namespace StaticNotebook {
     renderCellOnIdle: boolean;
 
     /**
-     * Defines the non-observed bottom margin for the
+     * Defines the observed top margin for the
      * virtual notebook, set a positive number of pixels
      * to render cells below the visible view.
      */
-    nonObservedBottomMargin: string;
+    observedTopMargin: string;
+
+    /**
+     * Defines the observed bottom margin for the
+     * virtual notebook, set a positive number of pixels
+     * to render cells below the visible view.
+     */
+    observedBottomMargin: string;
   }
 
   /**
@@ -950,7 +958,8 @@ export namespace StaticNotebook {
     recordTiming: false,
     numberCellsToRenderDirectly: 10,
     renderCellOnIdle: true,
-    nonObservedBottomMargin: '0px'
+    observedTopMargin: '200px',
+    observedBottomMargin: '200px'
   };
 
   /**
