@@ -341,6 +341,7 @@ export class DocumentManager implements IDocumentManager {
     kernel?: Partial<Kernel.IModel>,
     options?: DocumentRegistry.IOpenOptions
   ): IDocumentWidget | undefined {
+    console.debug('--- DocumentManager open -->', performance.now());
     return this._createOrOpenDocument(
       'open',
       path,
@@ -372,6 +373,7 @@ export class DocumentManager implements IDocumentManager {
     kernel?: Partial<Kernel.IModel>,
     options?: DocumentRegistry.IOpenOptions
   ): IDocumentWidget | undefined {
+    console.debug('--- DocumentManager openOrReveal -->', performance.now());
     const widget = this.findWidget(path, widgetName);
     if (widget) {
       this._opener.open(widget, options || {});

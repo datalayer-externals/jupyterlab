@@ -74,6 +74,7 @@ export namespace MemoryUsage {
      */
     constructor(options: Model.IOptions) {
       super();
+      console.debug('--- MemoryUsage Model Constructor -->', performance.now());
       this._poll = new Poll<Private.IMetricRequestResult | null>({
         factory: () => Private.factory(),
         frequency: {

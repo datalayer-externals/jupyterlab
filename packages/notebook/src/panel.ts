@@ -283,6 +283,10 @@ export namespace NotebookPanel {
      * Create a new content area for the panel.
      */
     createNotebook(options: Notebook.IOptions): Notebook {
+      console.debug(
+        '--- NotebookPanel.ContentFactory createNotebook -->',
+        performance.now()
+      );
       return new Notebook(options);
     }
   }

@@ -110,6 +110,10 @@ export class WorkspaceManager extends DataConnector<Workspace.IWorkspace> {
    * @returns A promise that resolves if successful.
    */
   async save(id: string, workspace: Workspace.IWorkspace): Promise<void> {
+    console.debug(
+      '--- WorkspaceManager save workspace (before) -->',
+      performance.now()
+    );
     const { serverSettings } = this;
     const { baseUrl, appUrl } = serverSettings;
     const { makeRequest, ResponseError } = ServerConnection;
@@ -117,6 +121,10 @@ export class WorkspaceManager extends DataConnector<Workspace.IWorkspace> {
     const url = Private.url(base, id);
     const init = { body: JSON.stringify(workspace), method: 'PUT' };
     const response = await makeRequest(url, init, serverSettings);
+    console.debug(
+      '--- WorkspaceManager save workspace (after) -->',
+      performance.now()
+    );
 
     if (response.status !== 204) {
       const err = await ResponseError.create(response);

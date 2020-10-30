@@ -50,6 +50,10 @@ function activate(
     app.commands.addCommand(CommandIDs.handleLink, {
       label: 'Handle Local Link',
       execute: args => {
+        console.debug(
+          '--- Handle Local Link execute (before) -->',
+          performance.now()
+        );
         const path = args['path'] as string | undefined | null;
         const id = args['id'] as string | undefined | null;
         if (!path) {
@@ -59,6 +63,10 @@ function activate(
         return docManager.services.contents
           .get(path, { content: false })
           .then(() => {
+            console.debug(
+              '--- Handle Local Link execute docManager (after) -->',
+              performance.now()
+            );
             // Open the link with the default rendered widget factory,
             // if applicable.
             const factory = docManager.registry.defaultRenderedWidgetFactory(

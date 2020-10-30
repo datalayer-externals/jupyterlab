@@ -375,8 +375,16 @@ function activateBrowser(
         if (context) {
           const { path } = context;
           try {
+            console.debug(
+              '--- File Browser navigateToPath (before) -->',
+              performance.now()
+            );
             await Private.navigateToPath(path, factory);
             labShell.currentWidget?.activate();
+            console.debug(
+              '--- File Browser navigateToPath (after) -->',
+              performance.now()
+            );
           } catch (reason) {
             console.warn(
               `${CommandIDs.goToPath} failed to open: ${path}`,
