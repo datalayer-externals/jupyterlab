@@ -1209,7 +1209,7 @@ export class KernelConnection implements Kernel.IKernelConnection {
 
     // Strip any authentication from the display string.
     const display = partialUrl.replace(/^((?:\w+:)?\/\/)(?:[^@\/]+@)/, '$1');
-    console.debug(`Starting WebSocket: ${display}`);
+    console.debug(`--> Starting WebSocket: ${display} -->`, performance.now());
 
     let url = URLExt.join(
       partialUrl,

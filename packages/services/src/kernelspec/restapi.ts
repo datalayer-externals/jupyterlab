@@ -26,10 +26,10 @@ const KERNELSPEC_SERVICE_URL = 'api/kernelspecs';
 export async function getSpecs(
   settings: ServerConnection.ISettings = ServerConnection.makeSettings()
 ): Promise<ISpecModels> {
-  console.debug('--- KernelSpec getSpecs (before) -->', performance.now());
+  console.debug('--> KernelSpec getSpecs (before) -->', performance.now());
   const url = URLExt.join(settings.baseUrl, KERNELSPEC_SERVICE_URL);
   const response = await ServerConnection.makeRequest(url, {}, settings);
-  console.debug('--- KernelSpec getSpecs (after) -->', performance.now());
+  console.debug('--> KernelSpec getSpecs (after) -->', performance.now());
   if (response.status !== 200) {
     const err = await ServerConnection.ResponseError.create(response);
     throw err;

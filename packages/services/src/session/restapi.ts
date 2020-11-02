@@ -21,7 +21,7 @@ export const SESSION_SERVICE_URL = 'api/sessions';
 export async function listRunning(
   settings: ServerConnection.ISettings = ServerConnection.makeSettings()
 ): Promise<Session.IModel[]> {
-  console.debug('--- Session listRunning (before) -->', performance.now());
+  console.debug('--> Session listRunning (before) -->', performance.now());
   const url = URLExt.join(settings.baseUrl, SESSION_SERVICE_URL);
   const response = await ServerConnection.makeRequest(url, {}, settings);
   if (response.status !== 200) {
@@ -29,7 +29,7 @@ export async function listRunning(
     throw err;
   }
   const data = await response.json();
-  console.debug('--- Session listRunning (after) -->', performance.now());
+  console.debug('--> Session listRunning (after) -->', performance.now());
   if (!Array.isArray(data)) {
     throw new Error('Invalid Session list');
   }

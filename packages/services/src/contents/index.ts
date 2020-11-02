@@ -702,26 +702,26 @@ export class ContentsManager implements Contents.IManager {
     options?: Contents.IFetchOptions
   ): Promise<Contents.IModel> {
     const [drive, localPath] = this._driveForPath(path);
-    console.debug('--- Service Content Manager get (1) -->', performance.now());
+    console.debug('--> Service Content Manager get (1) -->', performance.now());
     return drive.get(localPath, options).then(contentsModel => {
       const listing: Contents.IModel[] = [];
       if (contentsModel.type === 'directory' && contentsModel.content) {
         console.debug(
-          '--- Service Content Manager get (2) -->',
+          '--> Service Content Manager get (2) -->',
           performance.now()
         );
         each(contentsModel.content, (item: Contents.IModel) => {
-          console.debug(
-            '--- Service Content Manager get (each) -->',
-            performance.now()
-          );
+          //          console.debug(
+          //            '--- Service Content Manager contentsModel get (each) -->',
+          //            performance.now()
+          //         );
           listing.push({
             ...item,
             path: this._toGlobalPath(drive, item.path)
           } as Contents.IModel);
         });
         console.debug(
-          '--- Service Content Manager get (3) -->',
+          '--> Service Content Manager get (3) -->',
           performance.now()
         );
         return {
@@ -1066,9 +1066,15 @@ export class Drive implements Contents.IDrive {
     localPath: string,
     options?: Contents.IFetchOptions
   ): Promise<Contents.IModel> {
-    console.debug(`--- Contents get ${localPath} (before)`, performance.now());
+    console.debug(
+      `--> Contents get localPath: ${localPath} (before) -->`,
+      performance.now()
+    );
     let url = this._getUrl(localPath);
-    console.debug(`--- Contents get ${localPath} (after)`, performance.now());
+    console.debug(
+      `--> Contents get localPath: ${localPath} (after) -->`,
+      performance.now()
+    );
     if (options) {
       // The notebook type cannot take an format option.
       if (options.type === 'notebook') {
@@ -1343,7 +1349,7 @@ export class Drive implements Contents.IDrive {
   async listCheckpoints(
     localPath: string
   ): Promise<Contents.ICheckpointModel[]> {
-    console.debug('--- Contents listCheckpoints -->', performance.now());
+    console.debug('--> Contents listCheckpoints -->', performance.now());
     const url = this._getUrl(localPath, 'checkpoints');
     const response = await ServerConnection.makeRequest(
       url,

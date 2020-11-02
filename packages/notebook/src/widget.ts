@@ -162,7 +162,7 @@ export class StaticNotebook extends Widget {
    */
   constructor(options: StaticNotebook.IOptions) {
     super();
-    console.debug('--- StaticNotebook Constructor -->', performance.now());
+    console.debug('--> StaticNotebook constructor -->', performance.now());
     this.addClass(NB_CLASS);
     this.node.dataset[KERNEL_USER] = 'true';
     this.node.dataset[UNDOER] = 'true';
@@ -459,7 +459,7 @@ export class StaticNotebook extends Widget {
    */
   private _insertCell(index: number, cell: ICellModel): void {
     console.debug(
-      '--- Static Notebook _insertCell (before) -->',
+      '--> Static Notebook _insertCell (before) -->',
       performance.now()
     );
     let widget: Cell;
@@ -864,7 +864,7 @@ export class Notebook extends StaticNotebook {
    */
   constructor(options: Notebook.IOptions) {
     super(Private.processNotebookOptions(options));
-    console.debug('--- Notebook constructor -->', performance.now());
+    console.debug('--> Notebook constructor -->', performance.now());
     this.node.tabIndex = -1; // Allow the widget to take focus.
     // Allow the node to scroll while dragging items.
     this.node.setAttribute('data-lm-dragscroll', 'true');
