@@ -32,6 +32,7 @@ export class MainAreaWidget<T extends Widget = Widget> extends Widget
   constructor(options: MainAreaWidget.IOptions<T>) {
     super(options);
     this.addClass('jp-MainAreaWidget');
+    this.addClass('jp-MainAreaWidget-ContainStrict');
     this.id = DOMUtils.createDomID();
 
     const content = (this._content = options.content);
@@ -67,6 +68,7 @@ export class MainAreaWidget<T extends Widget = Widget> extends Widget
           const active = document.activeElement === spinner.node;
           this.node.removeChild(spinner.node);
           spinner.dispose();
+          this.removeClass('jp-MainAreaWidget-ContainStrict');
           this._isRevealed = true;
           if (active) {
             this._focusContent();
@@ -82,6 +84,7 @@ export class MainAreaWidget<T extends Widget = Widget> extends Widget
           BoxLayout.setStretch(error, 1);
           this.node.removeChild(spinner.node);
           spinner.dispose();
+          this.removeClass('jp-MainAreaWidget-ContainStrict');
           content.dispose();
           this._content = null!;
           toolbar.dispose();

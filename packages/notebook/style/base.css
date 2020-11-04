@@ -41,6 +41,14 @@
   background: var(--jp-layout-color0);
 }
 
+.jp-MainAreaWidget-ContainStrict .jp-Notebook * {
+  contain: strict;
+}
+
+.jp-Notebook-render * {
+  contain: none !important;
+}
+
 .jp-Notebook.jp-mod-scrollPastEnd::after {
   display: block;
   content: '';
