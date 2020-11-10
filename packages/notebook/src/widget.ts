@@ -584,37 +584,8 @@ export class StaticNotebook extends Widget {
       this._incrementRenderedCount();
       this.onCellInserted(index, widget);
     }
-    /*
-    if (this._observer && this.notebookConfig.renderCellOnIdle) {
-      const renderPlaceholderCells = this._renderPlaceholderCells.bind(this);
-      (window as any).requestIdleCallback(renderPlaceholderCells, {
-        timeout: 1000
-      });
-    }
-*/
-  }
-  /*
-  private _renderPlaceholderCells(deadline: any) {
-    if (
-      this._renderedCellsCount < this._cellsArray.length &&
-      this._renderedCellsCount >=
-        this.notebookConfig.numberCellsToRenderDirectly
-    ) {
-      const index = this._renderedCellsCount;
-      const cell = this._cellsArray[index];
-      this._renderPlaceholderCell(cell, index - 1);
-    }
   }
 
-  private _renderPlaceholderCell(cell: Cell, index: number) {
-    const pl = this.layout as PanelLayout;
-    pl.removeWidgetAt(index);
-    pl.insertWidget(index, cell);
-    this._toRenderMap.delete(cell.model.id);
-    this._incrementRenderedCount();
-    this._placeholderCellRendered.emit(cell);
-  }
-*/
   /**
    * Create a code cell widget from a code cell model.
    */
@@ -672,22 +643,25 @@ export class StaticNotebook extends Widget {
       placeholder: true
     };
     const cell = this.contentFactory.createRawCell(options, this);
+    cell.node.innerHTML = `<div class="jp-Cell-Placeholder">
+        <pre>${cell.model.value.text}</pre>
+    </div>`
+    /*
     cell.node.innerHTML = `
-      <div class="jp-Cell-Placeholder">
-        <div class="jp-Cell-Placeholder-wrapper">
-<!--
-          <div class="jp-Cell-Placeholder-wrapper-inner">
-            <div class="jp-Cell-Placeholder-wrapper-body">
-              <div class="jp-Cell-Placeholder-h1"></div>
-              <div class="jp-Cell-Placeholder-h2"></div>
-              <div class="jp-Cell-Placeholder-content-1"></div>
-              <div class="jp-Cell-Placeholder-content-2"></div>
-              <div class="jp-Cell-Placeholder-content-3"></div>
-            </div>
+    <div class="jp-Cell-Placeholder">
+      <div class="jp-Cell-Placeholder-wrapper">
+        <div class="jp-Cell-Placeholder-wrapper-inner">
+          <div class="jp-Cell-Placeholder-wrapper-body">
+            <div class="jp-Cell-Placeholder-h1"></div>
+            <div class="jp-Cell-Placeholder-h2"></div>
+            <div class="jp-Cell-Placeholder-content-1"></div>
+            <div class="jp-Cell-Placeholder-content-2"></div>
+            <div class="jp-Cell-Placeholder-content-3"></div>
           </div>
--->
         </div>
-      </div>`;
+      </div>
+    </div>`;
+    */
     cell.inputHidden = true;
     cell.syncCollapse = true;
     cell.syncEditable = true;
@@ -966,12 +940,6 @@ export namespace StaticNotebook {
     numberCellsToRenderDirectly: number;
 
     /**
-     * Defines if the placeholder cells should be rendered
-     * when the browser is idle.
-     */
-    renderCellOnIdle: boolean;
-
-    /**
      * Defines the observed top margin for the
      * virtual notebook, set a positive number of pixels
      * to render cells below the visible view.
@@ -994,7 +962,6 @@ export namespace StaticNotebook {
     defaultCell: 'code',
     recordTiming: false,
     numberCellsToRenderDirectly: 10,
-    renderCellOnIdle: true,
     observedTopMargin: '5000px',
     observedBottomMargin: '5000px'
   };
