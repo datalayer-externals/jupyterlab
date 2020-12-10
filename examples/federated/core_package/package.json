@@ -30,7 +30,7 @@
     "@jupyterlab/javascript-extension": "^3.0.0-alpha.14",
     "@jupyterlab/json-extension": "^3.0.0-alpha.14",
     "@jupyterlab/launcher-extension": "^3.0.0-alpha.14",
-    "@jupyterlab/logconsole-extension": "^3.0.0-alpha.14",
+    "@jupyterlab/logconsole-extension": "^3.0.0-alpha.12",
     "@jupyterlab/mainmenu-extension": "^3.0.0-alpha.14",
     "@jupyterlab/mathjax2-extension": "^3.0.0-alpha.14",
     "@jupyterlab/notebook-extension": "^3.0.0-alpha.14",
