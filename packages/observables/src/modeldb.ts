@@ -18,6 +18,8 @@ import { IObservableJSON, ObservableJSON } from './observablejson';
 
 import { IObservableString, ObservableString } from './observablestring';
 
+import { AutomergeString } from './automergestring';
+
 import {
   IObservableUndoableList,
   ObservableUndoableList
@@ -180,7 +182,7 @@ export interface IModelDB extends IDisposable {
    *
    * @returns the string that was created.
    */
-  createString(path: string): IObservableString;
+  createString(path: string, automerge?: boolean): IObservableString;
 
   /**
    * Create an undoable list and insert it in the database.
@@ -282,6 +284,7 @@ export class ObservableValue implements IObservableValue {
    * The changed signal.
    */
   get changed(): ISignal<this, ObservableValue.IChangedArgs> {
+    console.log('---------- modeldb')
     return this._changed;
   }
 
@@ -353,6 +356,7 @@ export class ModelDB implements IModelDB {
    */
   constructor(options: ModelDB.ICreateOptions = {}) {
     this._basePath = options.basePath || '';
+
     if (options.baseDB) {
       this._db = options.baseDB;
     } else {
@@ -424,12 +428,16 @@ export class ModelDB implements IModelDB {
    *
    * @returns the string that was created.
    */
-  createString(path: string): IObservableString {
-    const str = new ObservableString();
+  createString(path: string, automerge = false): IObservableString {
+    let str: IObservableString = new ObservableString();
+    if (automerge) {
+      console.log('--- automerge')
+      str = new AutomergeString();
+    }
     this._disposables.add(str);
     this.set(path, str);
     return str;
-  }
+  } 
 
   /**
    * Create an undoable list and insert it in the database.
@@ -589,6 +597,7 @@ export namespace ModelDB {
      * ModelDB. If none is given, it uses its own store.
      */
     baseDB?: ModelDB;
+
   }
 
   /**

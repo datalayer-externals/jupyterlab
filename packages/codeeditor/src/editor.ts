@@ -217,8 +217,12 @@ export namespace CodeEditor {
         this.modelDB = new ModelDB();
       }
 
-      const value = this.modelDB.createString('value');
+      const value = this.modelDB.createString('value', options.automerge);
+      console.log('-------///', this.modelDB.get('value'))
       value.text = value.text || options.value || '';
+      value.changed.connect((s, arg) => {
+        console.log('------>>>', s, arg)
+      });
 
       const mimeType = this.modelDB.createValue('mimeType');
       mimeType.set(options.mimeType || 'text/plain');
@@ -729,6 +733,8 @@ export namespace CodeEditor {
        * An optional modelDB for storing model state.
        */
       modelDB?: IModelDB;
+
+      automerge?: boolean;
     }
   }
 }
