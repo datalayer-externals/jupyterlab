@@ -7,7 +7,7 @@ import { IObservableString } from './observablestring';
 
 import Automerge, { Text } from 'automerge';
 
-type String = {
+type AMString = {
   value: Text;
 };
 
@@ -20,7 +20,7 @@ export class AutomergeString implements IObservableString {
    */
   constructor(ws: WebSocket, initialText: string = '') {
     this._ws = ws;
-    this._text = Automerge.init<string>();
+    this._text = Automerge.init<AMString>();
     this._ws.onmessage = (message: MessageEvent) => {
       if (message.data) {
         const change = new Uint8Array(message.data);
@@ -141,7 +141,7 @@ export class AutomergeString implements IObservableString {
    * Set the ObservableString to an empty string.
    */
   clear(): void {
-    this._text = Automerge.init<string>();
+    this._text = Automerge.init<AMString>();
     this.text = '';
   }
 
@@ -165,7 +165,7 @@ export class AutomergeString implements IObservableString {
   }
 
   private _ws: WebSocket;
-  private _text: string;
+  private _text: AMString;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, IObservableString.IChangedArgs>(this);
 }
