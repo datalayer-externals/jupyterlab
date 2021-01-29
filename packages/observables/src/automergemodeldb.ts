@@ -180,11 +180,6 @@ const CSS_COLOR_NAMES = [
 ];
 
 export class Collaborator implements ICollaborator {
-  private _userId: string;
-  private _sessionId: string;
-  private _displayName: string;
-  private _color: string;
-  private _shortName: string;
   constructor(
     userId: string,
     sessionId: string,
@@ -213,6 +208,11 @@ export class Collaborator implements ICollaborator {
   get shortName(): string {
     return this._shortName;
   }
+  private _userId: string;
+  private _sessionId: string;
+  private _displayName: string;
+  private _color: string;
+  private _shortName: string;
 }
 
 export class CollaboratorMap extends ObservableMap<ICollaborator> {

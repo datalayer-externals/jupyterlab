@@ -26,24 +26,24 @@ export class AutomergeString implements IObservableString {
   constructor(ws: WebSocket, actorId: string, initialText: string = '') {
     this._ws = ws;
     this._actorId = actorId;
-    // TODO replaceAll is not available.
+    // TODO use replaceAll - replaceAll is not available with current TS config.
     this._text = Automerge.init<AMString>({ actorId: this._actorId });
     this._ws.onmessage = (message: MessageEvent) => {
       if (message.data) {
         const change = new Uint8Array(message.data);
         this._text = Automerge.applyChanges(this._text, [change]);
-        const text = this._text.text.toString();
-        const cursors = this._text.cursors;
-        console.log('---', text);
-        console.log('---', this._actorId, cursors);
+        console.log('--- actorId', this._actorId);
+        /*
         console.log(
-          '---',
+          '--- Get Cursor Index',
           Automerge.getCursorIndex(
             this._text,
             this._text.cursors[this._actorId],
             true
           )
         );
+        */
+        const text = this._text.text.toString();
         this._changed.emit({
           type: 'set',
           start: 0,
@@ -84,7 +84,7 @@ export class AutomergeString implements IObservableString {
     }
     let newText = Automerge.change(this._text, text => {
       text.text = new Text(value);
-      text.cursors[this._actorId] = text.text.getCursorAt(1);
+      //      text.cursors[this._actorId] = text.text.getCursorAt(value.length - 1);
     });
     const changes = Automerge.getChanges(this._text, newText);
     this._ws.send(changes[0] as any);
@@ -121,15 +121,16 @@ export class AutomergeString implements IObservableString {
     const changes = Automerge.getChanges(this._text, newText);
     this._ws.send(changes[0] as any);
     this._text = newText;
+    /*
     console.log(
-      '---',
-      this._text.text.toString(),
+      '--- Cursor Index',
       Automerge.getCursorIndex(
         this._text,
         this._text.cursors[this._actorId],
         true
       )
     );
+    */
     this._changed.emit({
       type: 'insert',
       start: index,

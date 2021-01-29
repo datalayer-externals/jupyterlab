@@ -70,8 +70,6 @@ export class Context<
     } else {
       const localPath = manager.contents.localPath(this._path);
       this._modelDB = new AutomergeModelDB({ localPath: localPath });
-      const userId = this._modelDB.collaborators?.localCollaborator.userId;
-      console.log('--- userId', userId);
       this._model = this._factory.createNew(lang, this._modelDB);
     }
 
