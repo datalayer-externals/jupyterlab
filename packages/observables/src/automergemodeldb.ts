@@ -3,7 +3,7 @@
 
 import { DisposableSet } from '@lumino/disposable';
 
-import { JSONValue } from '@lumino/coreutils';
+import { JSONValue, UUID } from '@lumino/coreutils';
 
 import { ObservableMap } from './observablemap';
 
@@ -19,12 +19,215 @@ import {
 } from './undoablelist';
 
 import {
+  ICollaboratorMap,
   IModelDB,
+  ICollaborator,
   ModelDB,
   IObservable,
   IObservableValue,
   ObservableValue
 } from './modeldb';
+
+const CSS_COLOR_NAMES = [
+  'AliceBlue',
+  'AntiqueWhite',
+  'Aqua',
+  'Aquamarine',
+  'Azure',
+  'Beige',
+  'Bisque',
+  'Black',
+  'BlanchedAlmond',
+  'Blue',
+  'BlueViolet',
+  'Brown',
+  'BurlyWood',
+  'CadetBlue',
+  'Chartreuse',
+  'Chocolate',
+  'Coral',
+  'CornflowerBlue',
+  'Cornsilk',
+  'Crimson',
+  'Cyan',
+  'DarkBlue',
+  'DarkCyan',
+  'DarkGoldenRod',
+  'DarkGray',
+  'DarkGrey',
+  'DarkGreen',
+  'DarkKhaki',
+  'DarkMagenta',
+  'DarkOliveGreen',
+  'DarkOrange',
+  'DarkOrchid',
+  'DarkRed',
+  'DarkSalmon',
+  'DarkSeaGreen',
+  'DarkSlateBlue',
+  'DarkSlateGray',
+  'DarkSlateGrey',
+  'DarkTurquoise',
+  'DarkViolet',
+  'DeepPink',
+  'DeepSkyBlue',
+  'DimGray',
+  'DimGrey',
+  'DodgerBlue',
+  'FireBrick',
+  'FloralWhite',
+  'ForestGreen',
+  'Fuchsia',
+  'Gainsboro',
+  'GhostWhite',
+  'Gold',
+  'GoldenRod',
+  'Gray',
+  'Grey',
+  'Green',
+  'GreenYellow',
+  'HoneyDew',
+  'HotPink',
+  'IndianRed',
+  'Indigo',
+  'Ivory',
+  'Khaki',
+  'Lavender',
+  'LavenderBlush',
+  'LawnGreen',
+  'LemonChiffon',
+  'LightBlue',
+  'LightCoral',
+  'LightCyan',
+  'LightGoldenRodYellow',
+  'LightGray',
+  'LightGrey',
+  'LightGreen',
+  'LightPink',
+  'LightSalmon',
+  'LightSeaGreen',
+  'LightSkyBlue',
+  'LightSlateGray',
+  'LightSlateGrey',
+  'LightSteelBlue',
+  'LightYellow',
+  'Lime',
+  'LimeGreen',
+  'Linen',
+  'Magenta',
+  'Maroon',
+  'MediumAquaMarine',
+  'MediumBlue',
+  'MediumOrchid',
+  'MediumPurple',
+  'MediumSeaGreen',
+  'MediumSlateBlue',
+  'MediumSpringGreen',
+  'MediumTurquoise',
+  'MediumVioletRed',
+  'MidnightBlue',
+  'MintCream',
+  'MistyRose',
+  'Moccasin',
+  'NavajoWhite',
+  'Navy',
+  'OldLace',
+  'Olive',
+  'OliveDrab',
+  'Orange',
+  'OrangeRed',
+  'Orchid',
+  'PaleGoldenRod',
+  'PaleGreen',
+  'PaleTurquoise',
+  'PaleVioletRed',
+  'PapayaWhip',
+  'PeachPuff',
+  'Peru',
+  'Pink',
+  'Plum',
+  'PowderBlue',
+  'Purple',
+  'RebeccaPurple',
+  'Red',
+  'RosyBrown',
+  'RoyalBlue',
+  'SaddleBrown',
+  'Salmon',
+  'SandyBrown',
+  'SeaGreen',
+  'SeaShell',
+  'Sienna',
+  'Silver',
+  'SkyBlue',
+  'SlateBlue',
+  'SlateGray',
+  'SlateGrey',
+  'Snow',
+  'SpringGreen',
+  'SteelBlue',
+  'Tan',
+  'Teal',
+  'Thistle',
+  'Tomato',
+  'Turquoise',
+  'Violet',
+  'Wheat',
+  'White',
+  'WhiteSmoke',
+  'Yellow',
+  'YellowGreen'
+];
+
+export class Collaborator implements ICollaborator {
+  private _userId: string;
+  private _sessionId: string;
+  private _displayName: string;
+  private _color: string;
+  private _shortName: string;
+  constructor(
+    userId: string,
+    sessionId: string,
+    displayName: string,
+    color: string,
+    shortName: string
+  ) {
+    this._userId = userId;
+    this._sessionId = sessionId;
+    this._displayName = displayName;
+    this._color = color;
+    this._shortName = shortName;
+  }
+  get userId(): string {
+    return this._userId;
+  }
+  get sessionId(): string {
+    return this._sessionId;
+  }
+  get displayName(): string {
+    return this._displayName;
+  }
+  get color(): string {
+    return this._color;
+  }
+  get shortName(): string {
+    return this._shortName;
+  }
+}
+
+export class CollaboratorMap extends ObservableMap<ICollaborator> {
+  constructor(localCollaborator: ICollaborator) {
+    super();
+    this._localCollaborator = localCollaborator;
+    this.set(this.localCollaborator.userId, this.localCollaborator);
+  }
+
+  get localCollaborator(): ICollaborator {
+    return this._localCollaborator;
+  }
+
+  private _localCollaborator: ICollaborator;
+}
 
 /**
  * A automerge implementation of an `IModelDB`.
@@ -36,9 +239,21 @@ export class AutomergeModelDB implements IModelDB {
   constructor(options: ModelDB.ICreateOptions = {}) {
     this._basePath = options.basePath || '';
 
-    console.log('--- new AutomergeModelDB', options);
+    const splits = UUID.uuid4().split('-');
+    this._actorId = splits.join('');
 
-    const uri = encodeURI(`ws://localhost:4321/${options.localPath}`);
+    const localCollaborator = new Collaborator(
+      this._actorId,
+      this._actorId,
+      this._actorId,
+      CSS_COLOR_NAMES[Math.floor(Math.random() * CSS_COLOR_NAMES.length)],
+      this._actorId
+    );
+    this._collaborators = new CollaboratorMap(localCollaborator);
+
+    const uri = encodeURI(
+      `ws://localhost:4321/${this._actorId}/${options.localPath}`
+    );
     this._ws = new WebSocket(uri);
     this._ws.binaryType = 'arraybuffer';
 
@@ -75,7 +290,11 @@ export class AutomergeModelDB implements IModelDB {
   /**
    * Whether the model is collaborative.
    */
-  readonly isCollaborative: boolean = false;
+  readonly isCollaborative: boolean = true;
+
+  get collaborators(): ICollaboratorMap {
+    return this._collaborators;
+  }
 
   /**
    * A promise resolved when the model is connected
@@ -114,7 +333,7 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the string that was created.
    */
   createString(path: string): IObservableString {
-    let str: IObservableString = new AutomergeString(this._ws);
+    let str: IObservableString = new AutomergeString(this._ws, this._actorId);
     this._disposables.add(str);
     this.set(path, str);
     return str;
@@ -254,6 +473,8 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   private _ws: WebSocket;
+  private _actorId: string;
+  private _collaborators: ICollaboratorMap;
   private _basePath: string;
   private _db: IModelDB | ObservableMap<IObservable>;
   private _toDispose = false;
@@ -279,15 +500,5 @@ export namespace AutomergeModelDB {
      * ModelDB. If none is given, it uses its own store.
      */
     baseDB?: ModelDB;
-  }
-
-  /**
-   * A factory interface for creating `IModelDB` objects.
-   */
-  export interface IFactory {
-    /**
-     * Create a new `IModelDB` instance.
-     */
-    createNew(path: string): IModelDB;
   }
 }

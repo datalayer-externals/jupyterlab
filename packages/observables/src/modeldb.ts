@@ -5,12 +5,7 @@ import { IDisposable, DisposableSet } from '@lumino/disposable';
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import {
-  JSONExt,
-  JSONValue,
-  PartialJSONValue,
-  JSONObject
-} from '@lumino/coreutils';
+import { JSONExt, JSONValue, PartialJSONValue } from '@lumino/coreutils';
 
 import { ObservableMap } from './observablemap';
 
@@ -71,7 +66,7 @@ export interface IObservableValue extends IObservable {
  * Interface for an object representing a single collaborator
  * on a realtime model.
  */
-export interface ICollaborator extends JSONObject {
+export interface ICollaborator {
   /**
    * A user id for the collaborator.
    * This might not be unique, if the user has more than

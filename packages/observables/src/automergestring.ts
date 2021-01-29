@@ -7,8 +7,13 @@ import { IObservableString } from './observablestring';
 
 import Automerge, { Text } from 'automerge';
 
+type CursorPerUser = {
+  [userName: string]: Automerge.Cursor;
+};
+
 type AMString = {
-  value: Text;
+  text: Text;
+  cursors: CursorPerUser;
 };
 
 /**
@@ -18,15 +23,27 @@ export class AutomergeString implements IObservableString {
   /**
    * Construct a new observable string.
    */
-  constructor(ws: WebSocket, initialText: string = '') {
+  constructor(ws: WebSocket, actorId: string, initialText: string = '') {
     this._ws = ws;
-    this._text = Automerge.init<AMString>();
+    this._actorId = actorId;
+    // TODO replaceAll is not available.
+    this._text = Automerge.init<AMString>({ actorId: this._actorId });
     this._ws.onmessage = (message: MessageEvent) => {
       if (message.data) {
         const change = new Uint8Array(message.data);
         this._text = Automerge.applyChanges(this._text, [change]);
-        const text = this._text.value.toString();
-        console.log('--- AMS onmessage text', text);
+        const text = this._text.text.toString();
+        const cursors = this._text.cursors;
+        console.log('---', text);
+        console.log('---', this._actorId, cursors);
+        console.log(
+          '---',
+          Automerge.getCursorIndex(
+            this._text,
+            this._text.cursors[this._actorId],
+            true
+          )
+        );
         this._changed.emit({
           type: 'set',
           start: 0,
@@ -55,19 +72,19 @@ export class AutomergeString implements IObservableString {
    * Set the value of the string.
    */
   set text(value: string) {
-    console.log('--- AMS set text', value);
     if (this._ws.readyState !== this._ws.OPEN) {
       return;
     }
     if (
-      this._text.value &&
-      value.length === this._text.value.toString().length &&
-      value === this._text.value.toString()
+      this._text.text &&
+      value.length === this._text.text.toString().length &&
+      value === this._text.text.toString()
     ) {
       return;
     }
-    const newText = Automerge.change(this._text, text => {
-      text.value = new Text(value);
+    let newText = Automerge.change(this._text, text => {
+      text.text = new Text(value);
+      text.cursors[this._actorId] = text.text.getCursorAt(1);
     });
     const changes = Automerge.getChanges(this._text, newText);
     this._ws.send(changes[0] as any);
@@ -84,8 +101,8 @@ export class AutomergeString implements IObservableString {
    * Get the value of the string.
    */
   get text(): string {
-    if (this._text.value) {
-      return this._text.value.toString();
+    if (this._text.text) {
+      return this._text.text.toString();
     }
     return '';
   }
@@ -98,13 +115,21 @@ export class AutomergeString implements IObservableString {
    * @param text - The substring to insert.
    */
   insert(index: number, text: string): void {
-    console.log('--- AMS insert', this._text.value.toString());
     const newText = Automerge.change(this._text, doc => {
-      doc.value.insertAt!(index, ...text);
+      doc.text.insertAt!(index, ...text);
     });
     const changes = Automerge.getChanges(this._text, newText);
     this._ws.send(changes[0] as any);
     this._text = newText;
+    console.log(
+      '---',
+      this._text.text.toString(),
+      Automerge.getCursorIndex(
+        this._text,
+        this._text.cursors[this._actorId],
+        true
+      )
+    );
     this._changed.emit({
       type: 'insert',
       start: index,
@@ -121,10 +146,9 @@ export class AutomergeString implements IObservableString {
    * @param end - The ending index.
    */
   remove(start: number, end: number): void {
-    console.log('--- AMS remove', this._text.value.toString());
-    const oldValue: string = this._text.value.toString().slice(start, end);
+    const oldValue: string = this._text.text.toString().slice(start, end);
     const newText = Automerge.change(this._text, doc => {
-      doc.value.deleteAt!(start, end - start);
+      doc.text.deleteAt!(start, end - start);
     });
     const changes = Automerge.getChanges(this._text, newText);
     this._ws.send(changes[0] as any);
@@ -165,6 +189,7 @@ export class AutomergeString implements IObservableString {
   }
 
   private _ws: WebSocket;
+  private _actorId: string;
   private _text: AMString;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, IObservableString.IChangedArgs>(this);

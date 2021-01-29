@@ -725,6 +725,10 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     args: IObservableMap.IChangedArgs<CodeEditor.ITextSelection[]>
   ): void {
     const uuid = args.key;
+    if (args.type !== 'remove' && args.newValue) {
+      this._cleanSelections(uuid);
+      this._markSelections(uuid, args.newValue);
+    }
     if (uuid !== this.uuid) {
       this._cleanSelections(uuid);
       if (args.type !== 'remove' && args.newValue) {
@@ -889,7 +893,6 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
-    console.log('---- CM', args);
     if (this._changeGuard) {
       return;
     }
