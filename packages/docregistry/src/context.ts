@@ -26,7 +26,7 @@ import {
 
 import { PathExt } from '@jupyterlab/coreutils';
 
-import { IModelDB, ModelDB } from '@jupyterlab/observables';
+import { IModelDB, ModelDB, AutomergeModelDB } from '@jupyterlab/observables';
 
 import { RenderMimeRegistry } from '@jupyterlab/rendermime';
 
@@ -68,7 +68,8 @@ export class Context<
       this._modelDB = dbFactory.createNew(localPath);
       this._model = this._factory.createNew(lang, this._modelDB);
     } else {
-      this._model = this._factory.createNew(lang);
+      this._modelDB = new AutomergeModelDB()
+      this._model = this._factory.createNew(lang, this._modelDB);
     }
 
     this._readyPromise = manager.ready.then(() => {

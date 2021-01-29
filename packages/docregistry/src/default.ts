@@ -33,7 +33,7 @@ export class DocumentModel
    * Construct a new document model.
    */
   constructor(languagePreference?: string, modelDB?: IModelDB) {
-    super({ modelDB, automerge: true });
+    super({ modelDB });
     this._defaultLang = languagePreference || '';
     this.value.changed.connect(this.triggerContentChange, this);
   }

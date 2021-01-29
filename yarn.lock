@@ -4187,14 +4187,11 @@ atob@^2.1.2:
   resolved "https://registry.yarnpkg.com/atob/-/atob-2.1.2.tgz#6d9517eb9e030d2436666651e86bd9f6f13533c9"
   integrity sha512-Wm6ukoaOGJi/73p/cl2GvLjTI5JM1k/O14isD73YML8StrH/7/lRFgmg8nICZgD3bZZvjwCGxtMOD3wWNAu8cg==
 
-automerge@0.14.2:
-  version "0.14.2"
-  resolved "https://registry.yarnpkg.com/automerge/-/automerge-0.14.2.tgz#47503df1772fe3d917b80226e074589d9fb5f549"
-  integrity sha512-shiwuJHCbNRI23WZyIECLV4Ovf3WiAFJ7P9BH4l5gON1In/UUbjcSJKRygtIirObw2UQumeYxp3F2XBdSvQHnA==
+"automerge@file:../../../repos/automerge-performance":
+  version "0.14.0"
   dependencies:
+    fast-sha256 "^1.3.0"
     immutable "^3.8.2"
-    transit-immutable-js "^0.7.0"
-    transit-js "^0.8.861"
     uuid "^3.4.0"
 
 autoprefixer@^9.7.2:
@@ -7570,6 +7567,11 @@ fast-levenshtein@^2.0.6, fast-levenshtein@~2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=
+
+fast-sha256@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/fast-sha256/-/fast-sha256-1.3.0.tgz#7916ba2054eeb255982608cccd0f6660c79b7ae6"
+  integrity sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==
 
 fastparse@^1.1.1:
   version "1.1.2"
@@ -15131,16 +15133,6 @@ tr46@^2.0.2:
   integrity sha512-3n1qG+/5kg+jrbTzwAykB5yRYtQCTqOGKq5U5PE3b0a1/mzo6snDhjGS0zJVJunO0NrT3Dg1MLy5TjWP/UJppg==
   dependencies:
     punycode "^2.1.1"
-
-transit-immutable-js@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/transit-immutable-js/-/transit-immutable-js-0.7.0.tgz#993e25089b6311ff402140f556276d6d253005d9"
-  integrity sha1-mT4lCJtjEf9AIUD1VidtbSUwBdk=
-
-transit-js@^0.8.861:
-  version "0.8.867"
-  resolved "https://registry.yarnpkg.com/transit-js/-/transit-js-0.8.867.tgz#86ad3f1c33bfd1ebafaadd87911e4361cced2b4f"
-  integrity sha512-rOwB4K0z/WZ+E2bV42iN9UV3mvGzmwSv/IpMOKdnFpawPAZT0d1L7f91Y+tZQF7lXSDGk+oln4XyIQXo+pyTGA==
 
 trim-newlines@^1.0.0:
   version "1.0.0"

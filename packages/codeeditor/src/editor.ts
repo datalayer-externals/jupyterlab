@@ -10,8 +10,8 @@ import { ISignal, Signal } from '@lumino/signaling';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 
 import {
-  IModelDB,
   ModelDB,
+  IModelDB,
   IObservableValue,
   ObservableValue,
   IObservableMap,
@@ -211,18 +211,15 @@ export namespace CodeEditor {
     constructor(options?: Model.IOptions) {
       options = options || {};
 
+      console.log('--- new CodeEditor.Model', options)
       if (options.modelDB) {
         this.modelDB = options.modelDB;
       } else {
         this.modelDB = new ModelDB();
       }
 
-      const value = this.modelDB.createString('value', options.automerge);
-      console.log('-------///', this.modelDB.get('value'))
+      const value = this.modelDB.createString('value');
       value.text = value.text || options.value || '';
-      value.changed.connect((s, arg) => {
-        console.log('------>>>', s, arg)
-      });
 
       const mimeType = this.modelDB.createValue('mimeType');
       mimeType.set(options.mimeType || 'text/plain');
@@ -734,7 +731,6 @@ export namespace CodeEditor {
        */
       modelDB?: IModelDB;
 
-      automerge?: boolean;
     }
   }
 }

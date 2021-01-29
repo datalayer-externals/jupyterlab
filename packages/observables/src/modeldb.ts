@@ -18,8 +18,6 @@ import { IObservableJSON, ObservableJSON } from './observablejson';
 
 import { IObservableString, ObservableString } from './observablestring';
 
-import { AutomergeString } from './automergestring';
-
 import {
   IObservableUndoableList,
   ObservableUndoableList
@@ -166,6 +164,8 @@ export interface IModelDB extends IDisposable {
    */
   get(path: string): IObservable | undefined;
 
+  set(path: string, value: IObservable): void;
+
   /**
    * Whether the `IModelDB` has an object at this path.
    *
@@ -182,7 +182,7 @@ export interface IModelDB extends IDisposable {
    *
    * @returns the string that was created.
    */
-  createString(path: string, automerge?: boolean): IObservableString;
+  createString(path: string): IObservableString;
 
   /**
    * Create an undoable list and insert it in the database.
@@ -284,7 +284,6 @@ export class ObservableValue implements IObservableValue {
    * The changed signal.
    */
   get changed(): ISignal<this, ObservableValue.IChangedArgs> {
-    console.log('---------- modeldb')
     return this._changed;
   }
 
@@ -357,6 +356,8 @@ export class ModelDB implements IModelDB {
   constructor(options: ModelDB.ICreateOptions = {}) {
     this._basePath = options.basePath || '';
 
+    console.log('--- new ModelDB', options)
+
     if (options.baseDB) {
       this._db = options.baseDB;
     } else {
@@ -428,12 +429,8 @@ export class ModelDB implements IModelDB {
    *
    * @returns the string that was created.
    */
-  createString(path: string, automerge = false): IObservableString {
+  createString(path: string): IObservableString {
     let str: IObservableString = new ObservableString();
-    if (automerge) {
-      console.log('--- automerge')
-      str = new AutomergeString();
-    }
     this._disposables.add(str);
     this.set(path, str);
     return str;
@@ -573,7 +570,7 @@ export class ModelDB implements IModelDB {
   }
 
   private _basePath: string;
-  private _db: ModelDB | ObservableMap<IObservable>;
+  private _db: IModelDB | ObservableMap<IObservable>;
   private _toDispose = false;
   private _isDisposed = false;
   private _disposables = new DisposableSet();
@@ -596,7 +593,7 @@ export namespace ModelDB {
      * A ModelDB to use as the store for this
      * ModelDB. If none is given, it uses its own store.
      */
-    baseDB?: ModelDB;
+    baseDB?: IModelDB;
 
   }
 
