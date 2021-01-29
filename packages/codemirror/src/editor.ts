@@ -889,6 +889,7 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
+    console.log('---- CM', args);
     if (this._changeGuard) {
       return;
     }

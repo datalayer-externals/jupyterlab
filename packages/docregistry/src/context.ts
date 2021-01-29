@@ -68,7 +68,8 @@ export class Context<
       this._modelDB = dbFactory.createNew(localPath);
       this._model = this._factory.createNew(lang, this._modelDB);
     } else {
-      this._modelDB = new AutomergeModelDB()
+      const localPath = manager.contents.localPath(this._path);
+      this._modelDB = new AutomergeModelDB({ localPath: localPath });
       this._model = this._factory.createNew(lang, this._modelDB);
     }
 

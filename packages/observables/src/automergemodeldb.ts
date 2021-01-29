@@ -3,9 +3,7 @@
 
 import { DisposableSet } from '@lumino/disposable';
 
-import {
-  JSONValue,
-} from '@lumino/coreutils';
+import { JSONValue } from '@lumino/coreutils';
 
 import { ObservableMap } from './observablemap';
 
@@ -20,13 +18,13 @@ import {
   ObservableUndoableList
 } from './undoablelist';
 
-import { 
-  IModelDB, 
-  ModelDB, 
-  IObservable, 
+import {
+  IModelDB,
+  ModelDB,
+  IObservable,
   IObservableValue,
   ObservableValue
-} from './modeldb'
+} from './modeldb';
 
 /**
  * A automerge implementation of an `IModelDB`.
@@ -38,9 +36,9 @@ export class AutomergeModelDB implements IModelDB {
   constructor(options: ModelDB.ICreateOptions = {}) {
     this._basePath = options.basePath || '';
 
-    console.log('--- new AutomergeModelDB', options)
+    console.log('--- new AutomergeModelDB', options);
 
-    const uri = encodeURI(`ws://localhost:4321/jlab`);
+    const uri = encodeURI(`ws://localhost:4321/${options.localPath}`);
     this._ws = new WebSocket(uri);
     this._ws.binaryType = 'arraybuffer';
 
@@ -50,7 +48,6 @@ export class AutomergeModelDB implements IModelDB {
       this._db = new ObservableMap<IObservable>();
       this._toDispose = true;
     }
-
   }
 
   /**
@@ -121,7 +118,7 @@ export class AutomergeModelDB implements IModelDB {
     this._disposables.add(str);
     this.set(path, str);
     return str;
-  } 
+  }
 
   /**
    * Create an undoable list and insert it in the database.
@@ -282,7 +279,6 @@ export namespace AutomergeModelDB {
      * ModelDB. If none is given, it uses its own store.
      */
     baseDB?: ModelDB;
-
   }
 
   /**

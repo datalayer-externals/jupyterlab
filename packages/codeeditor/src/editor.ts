@@ -211,7 +211,6 @@ export namespace CodeEditor {
     constructor(options?: Model.IOptions) {
       options = options || {};
 
-      console.log('--- new CodeEditor.Model', options)
       if (options.modelDB) {
         this.modelDB = options.modelDB;
       } else {
@@ -730,7 +729,6 @@ export namespace CodeEditor {
        * An optional modelDB for storing model state.
        */
       modelDB?: IModelDB;
-
     }
   }
 }

@@ -356,8 +356,6 @@ export class ModelDB implements IModelDB {
   constructor(options: ModelDB.ICreateOptions = {}) {
     this._basePath = options.basePath || '';
 
-    console.log('--- new ModelDB', options)
-
     if (options.baseDB) {
       this._db = options.baseDB;
     } else {
@@ -434,7 +432,7 @@ export class ModelDB implements IModelDB {
     this._disposables.add(str);
     this.set(path, str);
     return str;
-  } 
+  }
 
   /**
    * Create an undoable list and insert it in the database.
@@ -595,6 +593,7 @@ export namespace ModelDB {
      */
     baseDB?: IModelDB;
 
+    localPath?: string;
   }
 
   /**
