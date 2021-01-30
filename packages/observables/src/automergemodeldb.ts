@@ -5,13 +5,17 @@ import { DisposableSet } from '@lumino/disposable';
 
 import { JSONValue, UUID } from '@lumino/coreutils';
 
+import Automerge, { Observable, Text } from 'automerge';
+
 import { ObservableMap } from './observablemap';
 
-import { IObservableJSON, ObservableJSON } from './observablejson';
+import { IObservableJSON } from './observablejson';
 
 import { IObservableString } from './observablestring';
 
 import { AutomergeString } from './automergestring';
+
+import { AutomergeJSON } from './automergejson';
 
 import {
   IObservableUndoableList,
@@ -229,6 +233,15 @@ export class CollaboratorMap extends ObservableMap<ICollaborator> {
   private _localCollaborator: ICollaborator;
 }
 
+export type CursorPerUser = {
+  [userName: string]: Automerge.Cursor;
+};
+
+export type AMString = {
+  text: Text;
+  cursors: CursorPerUser;
+};
+
 /**
  * A automerge implementation of an `IModelDB`.
  */
@@ -263,6 +276,13 @@ export class AutomergeModelDB implements IModelDB {
       this._db = new ObservableMap<IObservable>();
       this._toDispose = true;
     }
+
+    this._observable = new Automerge.Observable();
+
+    this._text = Automerge.init<AMString>({
+      actorId: this._actorId,
+      observable: this._observable
+    });
   }
 
   /**
@@ -333,7 +353,12 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the string that was created.
    */
   createString(path: string): IObservableString {
-    let str: IObservableString = new AutomergeString(this._ws, this._actorId);
+    let str: IObservableString = new AutomergeString(
+      this._ws,
+      this._actorId,
+      this._text,
+      this._observable
+    );
     this._disposables.add(str);
     this.set(path, str);
     return str;
@@ -371,7 +396,7 @@ export class AutomergeModelDB implements IModelDB {
    * JSON Objects and primitives.
    */
   createMap(path: string): IObservableJSON {
-    const map = new ObservableJSON();
+    const map = new AutomergeJSON();
     this._disposables.add(map);
     this.set(path, map);
     return map;
@@ -474,6 +499,8 @@ export class AutomergeModelDB implements IModelDB {
 
   private _ws: WebSocket;
   private _actorId: string;
+  private _text: AMString;
+  private _observable: Observable;
   private _collaborators: ICollaboratorMap;
   private _basePath: string;
   private _db: IModelDB | ObservableMap<IObservable>;

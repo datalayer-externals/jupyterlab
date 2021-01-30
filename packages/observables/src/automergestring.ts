@@ -5,16 +5,9 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { IObservableString } from './observablestring';
 
-import Automerge, { Text } from 'automerge';
+import Automerge, { Observable } from 'automerge';
 
-type CursorPerUser = {
-  [userName: string]: Automerge.Cursor;
-};
-
-type AMString = {
-  text: Text;
-  cursors: CursorPerUser;
-};
+import { AMString } from './automergemodeldb';
 
 /**
  * A concrete implementation of [[IObservableString]]
@@ -23,15 +16,17 @@ export class AutomergeString implements IObservableString {
   /**
    * Construct a new observable string.
    */
-  constructor(ws: WebSocket, actorId: string, initialText: string = '') {
+  constructor(
+    ws: WebSocket,
+    actorId: string,
+    text: AMString,
+    observable: Observable,
+    initialText: string = ''
+  ) {
     this._ws = ws;
     this._actorId = actorId;
-
-    this._observable = new Automerge.Observable();
-    this._text = Automerge.init<AMString>({
-      actorId: this._actorId,
-      observable: this._observable
-    });
+    this._text = text;
+    this._observable = observable;
 
     // Observe and handle remote changes.
     this._observable.observe(this._text, (diff, before, after, local) => {
@@ -92,6 +87,7 @@ export class AutomergeString implements IObservableString {
           changes.map(change => this._ws.send(change));
           this._text = newText;
         }
+        /*
         Object.keys(this._text.cursors).map(userId => {
           console.log(
             '--- Cursor Index',
@@ -103,6 +99,7 @@ export class AutomergeString implements IObservableString {
             )
           );
         });
+        */
       }
     };
   }
@@ -236,8 +233,8 @@ export class AutomergeString implements IObservableString {
 
   private _ws: WebSocket;
   private _actorId: string;
-  private _observable: Automerge.Observable;
   private _text: AMString;
+  private _observable: Observable;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, IObservableString.IChangedArgs>(this);
 }
