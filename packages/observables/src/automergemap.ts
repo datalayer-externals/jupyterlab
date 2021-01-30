@@ -3,7 +3,11 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
+import Automerge, { Observable } from 'automerge';
+
 import { IObservableMap } from './observablemap';
+
+import { AMModelDB } from './automergemodeldb';
 
 /**
  * A concrete implementation of IObservbleMap<T>.
@@ -12,11 +16,40 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   /**
    * Construct a new observable map.
    */
-  constructor(options: AutomergeMap.IOptions<T> = {}) {
+  constructor(
+    ws: WebSocket,
+    actorId: string,
+    map: AMModelDB,
+    observable: Observable,
+    options: AutomergeMap.IOptions<T> = {}
+  ) {
+    this._ws = ws;
+    this._actorId = actorId;
+    this._map = map;
+    this._observable = observable;
+
+    // Observe and handle remote changes.
+    this._observable.observe(this._map, (diff, before, after, local) => {
+      if (!local && diff.props && diff.props && diff.props.selections) {
+        console.log('--- diff', diff.props.selections);
+      }
+    });
+
+    // Listen on remote changes.
+    this._ws.onmessage = (message: MessageEvent) => {
+      if (message.data) {
+        const change = new Uint8Array(message.data);
+        Automerge.Frontend.setActorId(this._map, this._actorId);
+        this._map = Automerge.applyChanges(this._map, [change]);
+        console.log('--- map', this._map.selections[this._actorId]);
+      }
+    };
+
     this._itemCmp = options.itemCmp || Private.itemCmp;
+
     if (options.values) {
       for (const key in options.values) {
-        this._map.set(key, options.values[key]);
+        this._map.selections[key] = options.values[key];
       }
     }
   }
@@ -46,7 +79,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * The number of key-value pairs in the map.
    */
   get size(): number {
-    return this._map.size;
+    return this._map.selections.size;
   }
 
   /**
@@ -65,7 +98,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * This is a no-op if the value does not change.
    */
   set(key: string, value: T): T | undefined {
-    const oldVal = this._map.get(key);
+    const oldVal = this._map.selections[key];
     if (value === undefined) {
       throw Error('Cannot set an undefined value, use remove');
     }
@@ -74,8 +107,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     if (oldVal !== undefined && itemCmp(oldVal, value)) {
       return oldVal;
     }
-    this._map.set(key, value);
-    console.log('--- automergemap set', key, value);
+    this._map.selections[key] = value;
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
       key: key,
@@ -93,7 +125,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns the value for that key.
    */
   get(key: string): T | undefined {
-    return this._map.get(key);
+    return this._map.selections[key];
   }
 
   /**
@@ -104,7 +136,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns `true` if the map has the key, `false` otherwise.
    */
   has(key: string): boolean {
-    return this._map.has(key);
+    return this._map.selections[key] ? true : false;
   }
 
   /**
@@ -113,11 +145,14 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns - a list of keys.
    */
   keys(): string[] {
+    /*
     const keyList: string[] = [];
-    this._map.forEach((v: T, k: string) => {
+    this._map.selections.forEach((v: T, k: string) => {
       keyList.push(k);
     });
     return keyList;
+    */
+    return this._map.selections ? Object.keys(this._map.selections) : [];
   }
 
   /**
@@ -126,11 +161,14 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns - a list of values.
    */
   values(): T[] {
+    /*
     const valList: T[] = [];
-    this._map.forEach((v: T, k: string) => {
+    this._map.selections.forEach((v: T, k: string) => {
       valList.push(v);
     });
     return valList;
+    */
+    return this._map.selections ? Object.values(this._map.selections) : [];
   }
 
   /**
@@ -145,8 +183,9 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * This is a no-op if the value does not change.
    */
   delete(key: string): T | undefined {
-    const oldVal = this._map.get(key);
-    const removed = this._map.delete(key);
+    const oldVal = this._map.selections[key];
+    // TODO Fix Me
+    const removed = (this._map.selections[key] = undefined);
     if (removed) {
       this._changed.emit({
         type: 'remove',
@@ -178,10 +217,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    this._map.clear();
+    this._map.selections.clear();
   }
 
-  private _map: Map<string, T> = new Map<string, T>();
+  private _ws: WebSocket;
+  private _actorId: string;
+  private _map: AMModelDB;
+  private _observable: Observable;
   private _itemCmp: (first: T, second: T) => boolean;
   private _changed = new Signal<this, IObservableMap.IChangedArgs<T>>(this);
   private _isDisposed = false;

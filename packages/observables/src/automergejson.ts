@@ -24,11 +24,11 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
   constructor(
     ws: WebSocket,
     actorId: string,
-    selections: AMModelDB,
+    map: AMModelDB,
     observable: Observable,
     options: AutomergeJSON.IOptions = {}
   ) {
-    super({
+    super(ws, actorId, map, observable, {
       itemCmp: JSONExt.deepEqual,
       values: options.values
     });

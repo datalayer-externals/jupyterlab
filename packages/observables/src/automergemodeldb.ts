@@ -9,13 +9,13 @@ import Automerge, { Observable, Text } from 'automerge';
 
 import { ObservableMap } from './observablemap';
 
-import { IObservableJSON } from './observablejson';
+import { IObservableJSON, ObservableJSON } from './observablejson';
 
 import { IObservableString } from './observablestring';
 
 import { AutomergeString } from './automergestring';
 
-import { AutomergeJSON } from './automergejson';
+// import { AutomergeJSON } from './automergejson';
 
 import {
   IObservableUndoableList,
@@ -238,7 +238,7 @@ export type CursorPerUser = {
 };
 
 export type AMSelections = {
-  [uuid: string]: string;
+  [uuid: string]: any;
 };
 
 export type AMModelDB = {
@@ -275,7 +275,7 @@ export class AutomergeModelDB implements IModelDB {
     this._ws = new WebSocket(uri);
     this._ws.binaryType = 'arraybuffer';
     this._observable = new Observable();
-    this._text = Automerge.init<AMModelDB>({
+    this._amModelDB = Automerge.init<AMModelDB>({
       actorId: this._actorId,
       observable: this._observable
     });
@@ -359,7 +359,7 @@ export class AutomergeModelDB implements IModelDB {
     let str: IObservableString = new AutomergeString(
       this._ws,
       this._actorId,
-      this._text,
+      this._amModelDB,
       this._observable
     );
     this._disposables.add(str);
@@ -399,12 +399,15 @@ export class AutomergeModelDB implements IModelDB {
    * JSON Objects and primitives.
    */
   createMap(path: string): IObservableJSON {
+    /*
     const map = new AutomergeJSON(
       this._ws,
       this._actorId,
-      this._text,
+      this._amModelDB,
       this._observable
     );
+    */
+    const map = new ObservableJSON();
     this._disposables.add(map);
     this.set(path, map);
     return map;
@@ -507,7 +510,7 @@ export class AutomergeModelDB implements IModelDB {
 
   private _ws: WebSocket;
   private _actorId: string;
-  private _text: AMModelDB;
+  private _amModelDB: AMModelDB;
   private _observable: Observable;
   private _collaborators: ICollaboratorMap;
   private _basePath: string;
