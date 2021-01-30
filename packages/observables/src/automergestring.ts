@@ -33,9 +33,9 @@ export class AutomergeString implements IObservableString {
       observable: this._observable
     });
 
-    // Handler remote changes.
+    // Observe and handle remote changes.
     this._observable.observe(this._text, (diff, before, after, local) => {
-      if (!local) {
+      if (!local && diff.props && diff.props.text) {
         const opId = Object.keys(diff.props?.text as any)[0];
         const ad = diff.props?.text[opId] as Automerge.ObjectDiff;
         const edits = ad.edits;
@@ -82,16 +82,27 @@ export class AutomergeString implements IObservableString {
         const change = new Uint8Array(message.data);
         Automerge.Frontend.setActorId(this._text, this._actorId);
         this._text = Automerge.applyChanges(this._text, [change]);
-        /*
-        console.log(
-          '--- Get Cursor Index',
-          Automerge.getCursorIndex(
-            this._text,
-            this._text.cursors[this._actorId],
-            true
-          )
-        );
-        */
+        if (!this._text.cursors[this._actorId]) {
+          const newText = Automerge.change(this._text, s => {
+            s.cursors[this._actorId] = s.text.getCursorAt(
+              s.text.toString().length - 1
+            );
+          });
+          const changes = Automerge.getChanges(this._text, newText);
+          changes.map(change => this._ws.send(change));
+          this._text = newText;
+        }
+        Object.keys(this._text.cursors).map(userId => {
+          console.log(
+            '--- Cursor Index',
+            userId,
+            Automerge.getCursorIndex(
+              this._text,
+              this._text.cursors[userId],
+              true
+            )
+          );
+        });
       }
     };
   }
@@ -165,16 +176,6 @@ export class AutomergeString implements IObservableString {
     const changes = Automerge.getChanges(this._text, newText);
     changes.map(change => this._ws.send(change));
     this._text = newText;
-    /*
-    console.log(
-      '--- Cursor Index',
-      Automerge.getCursorIndex(
-        this._text,
-        this._text.cursors[this._actorId],
-        true
-      )
-    );
-    */
     this._changed.emit({
       type: 'insert',
       start: index,
