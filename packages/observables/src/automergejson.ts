@@ -8,16 +8,26 @@ import {
   ReadonlyPartialJSONValue
 } from '@lumino/coreutils';
 
+import { Observable } from 'automerge';
+
 import { AutomergeMap } from './automergemap';
 
+import { AMModelDB } from './automergemodeldb';
+
 /**
- * A concrete Observable map for JSON data.
+ * A concrete Automerge map for JSON data.
  */
 export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
   /**
-   * Construct a new observable JSON object.
+   * Construct a new automerge JSON object.
    */
-  constructor(options: AutomergeJSON.IOptions = {}) {
+  constructor(
+    ws: WebSocket,
+    actorId: string,
+    selections: AMModelDB,
+    observable: Observable,
+    options: AutomergeJSON.IOptions = {}
+  ) {
     super({
       itemCmp: JSONExt.deepEqual,
       values: options.values

@@ -7,7 +7,7 @@ import { IObservableString } from './observablestring';
 
 import Automerge, { Observable } from 'automerge';
 
-import { AMString } from './automergemodeldb';
+import { AMModelDB } from './automergemodeldb';
 
 /**
  * A concrete implementation of [[IObservableString]]
@@ -19,7 +19,7 @@ export class AutomergeString implements IObservableString {
   constructor(
     ws: WebSocket,
     actorId: string,
-    text: AMString,
+    text: AMModelDB,
     observable: Observable,
     initialText: string = ''
   ) {
@@ -208,7 +208,7 @@ export class AutomergeString implements IObservableString {
    * Set the ObservableString to an empty string.
    */
   clear(): void {
-    this._text = Automerge.init<AMString>();
+    this._text = Automerge.init<AMModelDB>();
     this.text = '';
   }
 
@@ -233,7 +233,7 @@ export class AutomergeString implements IObservableString {
 
   private _ws: WebSocket;
   private _actorId: string;
-  private _text: AMString;
+  private _text: AMModelDB;
   private _observable: Observable;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, IObservableString.IChangedArgs>(this);
