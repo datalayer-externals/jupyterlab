@@ -26,13 +26,62 @@ export class AutomergeString implements IObservableString {
   constructor(ws: WebSocket, actorId: string, initialText: string = '') {
     this._ws = ws;
     this._actorId = actorId;
-    // TODO use replaceAll - replaceAll is not available with current TS config.
-    this._text = Automerge.init<AMString>({ actorId: this._actorId });
+
+    this._observable = new Automerge.Observable();
+    this._text = Automerge.init<AMString>({
+      actorId: this._actorId,
+      observable: this._observable
+    });
+
+    // Handler remote changes.
+    this._observable.observe(this._text, (diff, before, after, local) => {
+      if (!local) {
+        const opId = Object.keys(diff.props?.text as any)[0];
+        const ad = diff.props?.text[opId] as Automerge.ObjectDiff;
+        const edits = ad.edits;
+        if (edits) {
+          const props = ad.props;
+          if (props) {
+            let propsMap = new Map<any, string>();
+            Object.keys(props).map(key => {
+              const s = props[key];
+              const t = Object.keys(s)[0];
+              propsMap.set(t, (s[t] as any).value as string);
+            });
+            for (let i = 0; i < edits.length; i++) {
+              const edit = edits[i];
+              let value = propsMap.get(edit.elemId);
+              if (edit.action === 'insert') {
+                if (value) {
+                  this._changed.emit({
+                    type: 'insert',
+                    start: edit.index,
+                    end: edit.index + value.length,
+                    value: value
+                  });
+                }
+              }
+              if (edit.action === 'remove') {
+                if (!value) value = ' ';
+                this._changed.emit({
+                  type: 'remove',
+                  start: edit.index,
+                  end: edit.index + value.length,
+                  value: value
+                });
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Listen on remote changes.
     this._ws.onmessage = (message: MessageEvent) => {
       if (message.data) {
         const change = new Uint8Array(message.data);
+        Automerge.Frontend.setActorId(this._text, this._actorId);
         this._text = Automerge.applyChanges(this._text, [change]);
-        console.log('--- actorId', this._actorId);
         /*
         console.log(
           '--- Get Cursor Index',
@@ -43,13 +92,6 @@ export class AutomergeString implements IObservableString {
           )
         );
         */
-        const text = this._text.text.toString();
-        this._changed.emit({
-          type: 'set',
-          start: 0,
-          end: text.length,
-          value: text
-        });
       }
     };
   }
@@ -82,12 +124,13 @@ export class AutomergeString implements IObservableString {
     ) {
       return;
     }
+    /*
     let newText = Automerge.change(this._text, text => {
       text.text = new Text(value);
       //      text.cursors[this._actorId] = text.text.getCursorAt(value.length - 1);
     });
     const changes = Automerge.getChanges(this._text, newText);
-    this._ws.send(changes[0] as any);
+    changes.map(change => this._ws.send(change));
     this._text = newText;
     this._changed.emit({
       type: 'set',
@@ -95,6 +138,7 @@ export class AutomergeString implements IObservableString {
       end: value.length,
       value: value
     });
+    */
   }
 
   /**
@@ -119,7 +163,7 @@ export class AutomergeString implements IObservableString {
       doc.text.insertAt!(index, ...text);
     });
     const changes = Automerge.getChanges(this._text, newText);
-    this._ws.send(changes[0] as any);
+    changes.map(change => this._ws.send(change));
     this._text = newText;
     /*
     console.log(
@@ -147,12 +191,12 @@ export class AutomergeString implements IObservableString {
    * @param end - The ending index.
    */
   remove(start: number, end: number): void {
-    const oldValue: string = this._text.text.toString().slice(start, end);
+    const oldValue = this._text.text.toString().slice(start, end);
     const newText = Automerge.change(this._text, doc => {
       doc.text.deleteAt!(start, end - start);
     });
     const changes = Automerge.getChanges(this._text, newText);
-    this._ws.send(changes[0] as any);
+    changes.map(change => this._ws.send(change));
     this._text = newText;
     this._changed.emit({
       type: 'remove',
@@ -191,6 +235,7 @@ export class AutomergeString implements IObservableString {
 
   private _ws: WebSocket;
   private _actorId: string;
+  private _observable: Automerge.Observable;
   private _text: AMString;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, IObservableString.IChangedArgs>(this);
