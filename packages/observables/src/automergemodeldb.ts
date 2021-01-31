@@ -269,23 +269,62 @@ export class AutomergeModelDB implements IModelDB {
     );
     this._collaborators = new CollaboratorMap(localCollaborator);
 
-    const uri = encodeURI(
-      `ws://localhost:4321/${this._actorId}/${options.localPath}`
-    );
-    this._ws = new WebSocket(uri);
-    this._ws.binaryType = 'arraybuffer';
-    this._observable = new Observable();
-    this._amModelDB = Automerge.init<AMModelDB>({
-      actorId: this._actorId,
-      observable: this._observable
-    });
-
     if (options.baseDB) {
       this._db = options.baseDB;
     } else {
       this._db = new ObservableMap<IObservable>();
       this._toDispose = true;
     }
+
+    const uri = encodeURI(
+      `ws://localhost:4321/${this._actorId}/${options.localPath}`
+    );
+    this._ws = new WebSocket(uri);
+    this._ws.binaryType = 'arraybuffer';
+
+    this._observable = new Observable();
+    this._amModelDB = Automerge.init<AMModelDB>({
+      actorId: this._actorId,
+      observable: this._observable
+    });
+
+    // Listen to Local Changes.
+    this._observable.observe(this._amModelDB, (diff, before, after, local) => {
+      this._amModelDB = after;
+      if (local) {
+        const changes = Automerge.getChanges(before, after);
+        changes.map(change => this._ws.send(change));
+      }
+    });
+
+    // Listen to Remote Changes.
+    this._ws.addEventListener('message', (message: MessageEvent) => {
+      if (message.data) {
+        const change = new Uint8Array(message.data);
+        Automerge.Frontend.setActorId(this._amModelDB, this._actorId);
+        this._amModelDB = Automerge.applyChanges(this._amModelDB, [change]);
+        if (!this._amModelDB.cursors[this._actorId]) {
+          this._amModelDB = Automerge.change(this._amModelDB, s => {
+            s.cursors[this._actorId] = s.text.getCursorAt(
+              s.text.toString().length - 1
+            );
+          });
+        }
+        /*
+        Object.keys(this._amModelDB.cursors).map(userId => {
+          console.log(
+            '--- Cursor Index',
+            userId,
+            Automerge.getCursorIndex(
+              this._amModelDB,
+              this._amModelDB.cursors[userId],
+              true
+            )
+          );
+        });
+        */
+      }
+    });
   }
 
   /**

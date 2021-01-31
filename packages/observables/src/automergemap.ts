@@ -19,17 +19,17 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   constructor(
     ws: WebSocket,
     actorId: string,
-    map: AMModelDB,
+    amModelDB: AMModelDB,
     observable: Observable,
     options: AutomergeMap.IOptions<T> = {}
   ) {
     this._ws = ws;
     this._actorId = actorId;
-    this._map = map;
+    this._amModelDB = amModelDB;
     this._observable = observable;
 
     // Observe and handle remote changes.
-    this._observable.observe(this._map, (diff, before, after, local) => {
+    this._observable.observe(this._amModelDB, (diff, before, after, local) => {
       if (!local && diff.props && diff.props && diff.props.selections) {
         console.log('--- diff', diff.props.selections);
       }
@@ -39,9 +39,9 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     this._ws.onmessage = (message: MessageEvent) => {
       if (message.data) {
         const change = new Uint8Array(message.data);
-        Automerge.Frontend.setActorId(this._map, this._actorId);
-        this._map = Automerge.applyChanges(this._map, [change]);
-        console.log('--- map', this._map.selections[this._actorId]);
+        Automerge.Frontend.setActorId(this._amModelDB, this._actorId);
+        this._amModelDB = Automerge.applyChanges(this._amModelDB, [change]);
+        console.log('--- map', this._amModelDB.selections[this._actorId]);
       }
     };
 
@@ -49,7 +49,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
 
     if (options.values) {
       for (const key in options.values) {
-        this._map.selections[key] = options.values[key];
+        this._amModelDB.selections[key] = options.values[key];
       }
     }
   }
@@ -79,7 +79,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * The number of key-value pairs in the map.
    */
   get size(): number {
-    return this._map.selections.size;
+    return this._amModelDB.selections.size;
   }
 
   /**
@@ -98,7 +98,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * This is a no-op if the value does not change.
    */
   set(key: string, value: T): T | undefined {
-    const oldVal = this._map.selections[key];
+    const oldVal = this._amModelDB.selections[key];
     if (value === undefined) {
       throw Error('Cannot set an undefined value, use remove');
     }
@@ -107,7 +107,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     if (oldVal !== undefined && itemCmp(oldVal, value)) {
       return oldVal;
     }
-    this._map.selections[key] = value;
+    this._amModelDB.selections[key] = value;
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
       key: key,
@@ -125,7 +125,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns the value for that key.
    */
   get(key: string): T | undefined {
-    return this._map.selections[key];
+    return this._amModelDB.selections[key];
   }
 
   /**
@@ -136,7 +136,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns `true` if the map has the key, `false` otherwise.
    */
   has(key: string): boolean {
-    return this._map.selections[key] ? true : false;
+    return this._amModelDB.selections[key] ? true : false;
   }
 
   /**
@@ -147,12 +147,14 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   keys(): string[] {
     /*
     const keyList: string[] = [];
-    this._map.selections.forEach((v: T, k: string) => {
+    this._amModelDB.selections.forEach((v: T, k: string) => {
       keyList.push(k);
     });
     return keyList;
     */
-    return this._map.selections ? Object.keys(this._map.selections) : [];
+    return this._amModelDB.selections
+      ? Object.keys(this._amModelDB.selections)
+      : [];
   }
 
   /**
@@ -163,12 +165,14 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   values(): T[] {
     /*
     const valList: T[] = [];
-    this._map.selections.forEach((v: T, k: string) => {
+    this._amModelDB.selections.forEach((v: T, k: string) => {
       valList.push(v);
     });
     return valList;
     */
-    return this._map.selections ? Object.values(this._map.selections) : [];
+    return this._amModelDB.selections
+      ? Object.values(this._amModelDB.selections)
+      : [];
   }
 
   /**
@@ -183,9 +187,9 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * This is a no-op if the value does not change.
    */
   delete(key: string): T | undefined {
-    const oldVal = this._map.selections[key];
+    const oldVal = this._amModelDB.selections[key];
     // TODO Fix Me
-    const removed = (this._map.selections[key] = undefined);
+    const removed = (this._amModelDB.selections[key] = undefined);
     if (removed) {
       this._changed.emit({
         type: 'remove',
@@ -217,12 +221,12 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    this._map.selections.clear();
+    this._amModelDB.selections.clear();
   }
 
   private _ws: WebSocket;
   private _actorId: string;
-  private _map: AMModelDB;
+  private _amModelDB: AMModelDB;
   private _observable: Observable;
   private _itemCmp: (first: T, second: T) => boolean;
   private _changed = new Signal<this, IObservableMap.IChangedArgs<T>>(this);
