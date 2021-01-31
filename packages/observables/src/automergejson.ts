@@ -22,13 +22,12 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
    * Construct a new automerge JSON object.
    */
   constructor(
-    ws: WebSocket,
     actorId: string,
     map: AMModelDB,
     observable: Observable,
     options: AutomergeJSON.IOptions = {}
   ) {
-    super(ws, actorId, map, observable, {
+    super(actorId, map, observable, {
       itemCmp: JSONExt.deepEqual,
       values: options.values
     });
@@ -46,6 +45,7 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
         out[key] = JSONExt.deepCopy(value) as PartialJSONObject;
       }
     }
+    console.log('---- out', out);
     return out;
   }
 }

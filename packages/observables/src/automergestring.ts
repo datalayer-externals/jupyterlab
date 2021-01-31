@@ -16,57 +16,48 @@ export class AutomergeString implements IObservableString {
   /**
    * Construct a new observable string.
    */
-  constructor(
-    ws: WebSocket,
-    actorId: string,
-    amModelDB: AMModelDB,
-    observable: Observable,
-    initialText: string = ''
-  ) {
-    this._ws = ws;
-    this._actorId = actorId;
+  constructor(actorId: string, amModelDB: AMModelDB, observable: Observable) {
+    //    this._actorId = actorId;
     this._amModelDB = amModelDB;
     this._observable = observable;
 
-    // Observe and handle Remote Changes.
+    // Observe and Handle Remote Changes.
     this._observable.observe(this._amModelDB, (diff, before, after, local) => {
       this._amModelDB = after;
-      if (!local) {
-        if (!local && diff.props && diff.props.text) {
-          const opId = Object.keys(diff.props?.text as any)[0];
-          const ad = diff.props?.text[opId] as Automerge.ObjectDiff;
-          const edits = ad.edits;
-          if (edits) {
-            const props = ad.props;
-            if (props) {
-              let propsMap = new Map<any, string>();
-              Object.keys(props).map(key => {
-                const s = props[key];
-                const t = Object.keys(s)[0];
-                propsMap.set(t, (s[t] as any).value as string);
-              });
-              for (let i = 0; i < edits.length; i++) {
-                const edit = edits[i];
-                let value = propsMap.get(edit.elemId);
-                if (edit.action === 'insert') {
-                  if (value) {
-                    this._changed.emit({
-                      type: 'insert',
-                      start: edit.index,
-                      end: edit.index + value.length,
-                      value: value
-                    });
-                  }
-                }
-                if (edit.action === 'remove') {
-                  if (!value) value = ' ';
+      if (!local && diff.props && diff.props.text) {
+        const opId = Object.keys(diff.props?.text as any)[0];
+        const ad = diff.props?.text[opId] as Automerge.ObjectDiff;
+        const edits = ad.edits;
+        if (edits) {
+          const props = ad.props;
+          if (props) {
+            let propsMap = new Map<any, string>();
+            Object.keys(props).map(key => {
+              const s = props[key];
+              const t = Object.keys(s)[0];
+              propsMap.set(t, (s[t] as any).value as string);
+            });
+            for (let i = 0; i < edits.length; i++) {
+              const edit = edits[i];
+              let value = propsMap.get(edit.elemId);
+              if (edit.action === 'insert') {
+                if (value) {
                   this._changed.emit({
-                    type: 'remove',
+                    type: 'insert',
                     start: edit.index,
                     end: edit.index + value.length,
                     value: value
                   });
                 }
+              }
+              if (edit.action === 'remove') {
+                if (!value) value = ' ';
+                this._changed.emit({
+                  type: 'remove',
+                  start: edit.index,
+                  end: edit.index + value.length,
+                  value: value
+                });
               }
             }
           }
@@ -93,38 +84,15 @@ export class AutomergeString implements IObservableString {
    * Set the value of the string.
    */
   set text(value: string) {
-    /*
-    if (this._ws.readyState !== this._ws.OPEN) {
-      return;
-    }
-    if (
-      this._amModelDB.text &&
-      value.length === this._amModelDB.text.toString().length &&
-      value === this._amModelDB.text.toString()
-    ) {
-      return;
-    }
-    this._amModelDB = Automerge.change(this._amModelDB, text => {
-      text.text = new Text(value);
-      //      text.cursors[this._actorId] = text.text.getCursorAt(value.length - 1);
-    });
-    this._changed.emit({
-      type: 'set',
-      start: 0,
-      end: value.length,
-      value: value
-    });
-    */
+    // TODO(ECH) Review this...
+    // Bail for now.
   }
 
   /**
    * Get the value of the string.
    */
   get text(): string {
-    if (this._amModelDB.text) {
-      return this._amModelDB.text.toString();
-    }
-    return '';
+    return this._amModelDB.text ? this._amModelDB.text.toString() : '';
   }
 
   /**
@@ -193,8 +161,7 @@ export class AutomergeString implements IObservableString {
     this.clear();
   }
 
-  private _ws: WebSocket;
-  private _actorId: string;
+  //  private _actorId: string;
   private _amModelDB: AMModelDB;
   private _observable: Observable;
   private _isDisposed: boolean = false;

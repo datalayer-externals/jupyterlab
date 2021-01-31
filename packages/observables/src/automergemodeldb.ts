@@ -9,13 +9,13 @@ import Automerge, { Observable, Text } from 'automerge';
 
 import { ObservableMap } from './observablemap';
 
-import { IObservableJSON, ObservableJSON } from './observablejson';
+import { IObservableJSON } from './observablejson';
 
 import { IObservableString } from './observablestring';
 
 import { AutomergeString } from './automergestring';
 
-// import { AutomergeJSON } from './automergejson';
+import { AutomergeJSON } from './automergejson';
 
 import {
   IObservableUndoableList,
@@ -233,7 +233,7 @@ export class CollaboratorMap extends ObservableMap<ICollaborator> {
   private _localCollaborator: ICollaborator;
 }
 
-export type CursorPerUser = {
+export type Cursors = {
   [uuid: string]: Automerge.Cursor;
 };
 
@@ -243,7 +243,7 @@ export type AMSelections = {
 
 export type AMModelDB = {
   text: Text;
-  cursors: CursorPerUser;
+  cursors: Cursors;
   selections: AMSelections;
 };
 
@@ -293,20 +293,37 @@ export class AutomergeModelDB implements IModelDB {
       this._amModelDB = after;
       if (local) {
         const changes = Automerge.getChanges(before, after);
-        changes.map(change => this._ws.send(change));
+        // Get the total length of all arrays.
+        let length = 0;
+        changes.forEach(item => {
+          length += item.length;
+        });
+        // Create a new array with total length and merge all source arrays.
+        let combined = new Uint8Array(length);
+        let offset = 0;
+        changes.forEach(item => {
+          combined.set(item, offset);
+          offset += item.length;
+        });
+        this._ws.send(combined);
       }
     });
 
     // Listen to Remote Changes.
     this._ws.addEventListener('message', (message: MessageEvent) => {
       if (message.data) {
-        const change = new Uint8Array(message.data);
-        Automerge.Frontend.setActorId(this._amModelDB, this._actorId);
-        this._amModelDB = Automerge.applyChanges(this._amModelDB, [change]);
+        const changes = new Uint8Array(message.data);
+        //        Automerge.Frontend.setActorId(this._amModelDB, this._actorId);
+        this._amModelDB = Automerge.applyChanges(this._amModelDB, [changes]);
+        if (!this._amModelDB.cursors) {
+          this._amModelDB = Automerge.change(this._amModelDB, doc => {
+            doc.cursors = {};
+          });
+        }
         if (!this._amModelDB.cursors[this._actorId]) {
-          this._amModelDB = Automerge.change(this._amModelDB, s => {
-            s.cursors[this._actorId] = s.text.getCursorAt(
-              s.text.toString().length - 1
+          this._amModelDB = Automerge.change(this._amModelDB, doc => {
+            doc.cursors[this._actorId] = doc.text.getCursorAt(
+              doc.text.toString().length - 1
             );
           });
         }
@@ -323,6 +340,16 @@ export class AutomergeModelDB implements IModelDB {
           );
         });
         */
+        if (!this._amModelDB.selections) {
+          this._amModelDB = Automerge.change(this._amModelDB, doc => {
+            doc.selections = {};
+          });
+        }
+        if (!this._amModelDB.selections[this._actorId]) {
+          this._amModelDB = Automerge.change(this._amModelDB, doc => {
+            doc.selections[this._actorId] = [];
+          });
+        }
       }
     });
   }
@@ -396,7 +423,6 @@ export class AutomergeModelDB implements IModelDB {
    */
   createString(path: string): IObservableString {
     let str: IObservableString = new AutomergeString(
-      this._ws,
       this._actorId,
       this._amModelDB,
       this._observable
@@ -438,15 +464,11 @@ export class AutomergeModelDB implements IModelDB {
    * JSON Objects and primitives.
    */
   createMap(path: string): IObservableJSON {
-    /*
     const map = new AutomergeJSON(
-      this._ws,
       this._actorId,
       this._amModelDB,
       this._observable
     );
-    */
-    const map = new ObservableJSON();
     this._disposables.add(map);
     this.set(path, map);
     return map;
