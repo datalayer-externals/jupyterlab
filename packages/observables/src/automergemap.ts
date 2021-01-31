@@ -32,7 +32,20 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     this._observable.observe(this._amModelDB, (diff, before, after, local) => {
       this._amModelDB = after;
       if (!local && diff.props && diff.props && diff.props.selections) {
-        console.log('--- selections diff props', diff.props.selections);
+        Object.keys(after.selections).map(uuid => {
+          if (before.selections) {
+            const oldVal = before.selections[uuid];
+            const newVal = after.selections
+              ? after.selections[uuid]
+              : undefined;
+            this._changed.emit({
+              type: oldVal ? 'change' : 'add',
+              key: uuid,
+              oldValue: oldVal,
+              newValue: newVal
+            });
+          }
+        });
       }
     });
 
@@ -108,7 +121,6 @@ export class AutomergeMap<T> implements IObservableMap<T> {
       console.warn(err.message);
       return oldVal;
     }
-
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
       key: key,
@@ -195,10 +207,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    */
   delete(key: string): T | undefined {
     const oldVal = this._amModelDB.selections[key];
-    // TODO(ECH) Fix Me
-    //    const removed = (this._amModelDB.selections[key] = undefined);
     this._amModelDB = Automerge.change(this._amModelDB, doc => {
-      doc.selections[key] = undefined;
+      delete doc.selections[key];
     });
     const removed = true;
     if (removed) {
@@ -216,7 +226,6 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * Set the ObservableMap to an empty map.
    */
   clear(): void {
-    // TODO(ECH) Fix Me
     // Delete one by one to emit the correct signals.
     const keyList = this.keys();
     for (let i = 0; i < keyList.length; i++) {

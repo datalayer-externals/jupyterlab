@@ -724,7 +724,6 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     selections: IObservableMap<CodeEditor.ITextSelection[]>,
     args: IObservableMap.IChangedArgs<CodeEditor.ITextSelection[]>
   ): void {
-    //    console.log('--- CM', selections, args);
     //    const index = this.doc.indexFromPos(this._toCodeMirrorPosition(args.newValue![0].end))
     //    console.log('---', this.doc.posFromIndex(index))
     const uuid = args.key;
@@ -1024,7 +1023,7 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
    */
   private _getCaret(collaborator: ICollaborator): HTMLElement {
     // FIXME-TRANS: Is this localizable?
-    const name = collaborator ? collaborator.displayName : 'Anonymous';
+    const name = collaborator ? collaborator.shortName : 'Anonymous';
     const color = collaborator
       ? collaborator.color
       : this._selectionStyle.color;

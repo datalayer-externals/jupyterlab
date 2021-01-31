@@ -31,7 +31,7 @@ import {
   IObservableValue,
   ObservableValue
 } from './modeldb';
-
+/*
 const CSS_COLOR_NAMES = [
   'AliceBlue',
   'AntiqueWhite',
@@ -182,6 +182,25 @@ const CSS_COLOR_NAMES = [
   'Yellow',
   'YellowGreen'
 ];
+*/
+
+const CSS_COLOR_NAMES = [
+  'Red',
+  'Orange',
+  'Yellow',
+  'Olive',
+  'Green',
+  'Purple',
+  'Fuchsia',
+  'Lime',
+  'Teal',
+  'Aqua',
+  'Blue',
+  'Navy',
+  'Black',
+  'Gray',
+  'Silver'
+];
 
 export class Collaborator implements ICollaborator {
   constructor(
@@ -258,16 +277,18 @@ export class AutomergeModelDB implements IModelDB {
     this._basePath = options.basePath || '';
 
     const splits = UUID.uuid4().split('-');
-    this._actorId = splits.join('');
+    const id = splits.join('');
 
     const localCollaborator = new Collaborator(
-      this._actorId,
-      this._actorId,
-      this._actorId,
+      id,
+      id,
+      `Me ${id}`,
       CSS_COLOR_NAMES[Math.floor(Math.random() * CSS_COLOR_NAMES.length)],
-      this._actorId
+      `Me ${id.substr(0, 5)}`
     );
     this._collaborators = new CollaboratorMap(localCollaborator);
+
+    this._actorId = localCollaborator.sessionId;
 
     if (options.baseDB) {
       this._db = options.baseDB;
@@ -313,8 +334,34 @@ export class AutomergeModelDB implements IModelDB {
     this._ws.addEventListener('message', (message: MessageEvent) => {
       if (message.data) {
         const changes = new Uint8Array(message.data);
-        //        Automerge.Frontend.setActorId(this._amModelDB, this._actorId);
+        Automerge.Frontend.setActorId(this._amModelDB, this._actorId);
         this._amModelDB = Automerge.applyChanges(this._amModelDB, [changes]);
+        console.log('---', this._amModelDB);
+        if (!this._amModelDB.selections) {
+          this._amModelDB = Automerge.change(this._amModelDB, doc => {
+            doc.selections = {};
+          });
+        }
+        if (!this._amModelDB.selections[this._actorId]) {
+          this._amModelDB = Automerge.change(this._amModelDB, doc => {
+            doc.selections[this._actorId] = [];
+          });
+        }
+        Object.keys(this._amModelDB.selections).map(uuid => {
+          if (!this.collaborators.get(uuid)) {
+            const collaborator = new Collaborator(
+              uuid,
+              uuid,
+              `Anonymous ${uuid}`,
+              CSS_COLOR_NAMES[
+                Math.floor(Math.random() * CSS_COLOR_NAMES.length)
+              ],
+              `Anonymous ${uuid.substr(0, 5)}`
+            );
+            this.collaborators.set(uuid, collaborator);
+          }
+        });
+        /*
         if (!this._amModelDB.cursors) {
           this._amModelDB = Automerge.change(this._amModelDB, doc => {
             doc.cursors = {};
@@ -327,6 +374,7 @@ export class AutomergeModelDB implements IModelDB {
             );
           });
         }
+        */
         /*
         Object.keys(this._amModelDB.cursors).map(userId => {
           console.log(
@@ -340,16 +388,6 @@ export class AutomergeModelDB implements IModelDB {
           );
         });
         */
-        if (!this._amModelDB.selections) {
-          this._amModelDB = Automerge.change(this._amModelDB, doc => {
-            doc.selections = {};
-          });
-        }
-        if (!this._amModelDB.selections[this._actorId]) {
-          this._amModelDB = Automerge.change(this._amModelDB, doc => {
-            doc.selections[this._actorId] = [];
-          });
-        }
       }
     });
   }
