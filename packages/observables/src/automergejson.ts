@@ -12,7 +12,7 @@ import { Observable } from 'automerge';
 
 import { AutomergeMap } from './automergemap';
 
-import { AMModelDB } from './automergemodeldb';
+import { AutomergeModelDB } from './automergemodeldb';
 
 /**
  * A concrete Automerge map for JSON data.
@@ -22,12 +22,12 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
    * Construct a new automerge JSON object.
    */
   constructor(
-    actorId: string,
-    map: AMModelDB,
+    modelDB: AutomergeModelDB,
     observable: Observable,
+    lock: any,
     options: AutomergeJSON.IOptions = {}
   ) {
-    super(actorId, map, observable, {
+    super(modelDB, observable, lock, {
       itemCmp: JSONExt.deepEqual,
       values: options.values
     });
@@ -45,7 +45,6 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
         out[key] = JSONExt.deepCopy(value) as PartialJSONObject;
       }
     }
-    console.log('---- out', out);
     return out;
   }
 }

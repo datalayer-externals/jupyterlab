@@ -187,7 +187,6 @@ const CSS_COLOR_NAMES = [
 const CSS_COLOR_NAMES = [
   'Red',
   'Orange',
-  'Yellow',
   'Olive',
   'Green',
   'Purple',
@@ -201,6 +200,22 @@ const CSS_COLOR_NAMES = [
   'Gray',
   'Silver'
 ];
+
+export const createLock = () => {
+  let token = true;
+  return (f: any, g: any) => {
+    if (token) {
+      token = false;
+      try {
+        f();
+      } finally {
+        token = true;
+      }
+    } else if (g !== undefined) {
+      g();
+    }
+  };
+};
 
 export class Collaborator implements ICollaborator {
   constructor(
@@ -251,18 +266,18 @@ export class CollaboratorMap extends ObservableMap<ICollaborator> {
 
   private _localCollaborator: ICollaborator;
 }
-
+/*
 export type Cursors = {
   [uuid: string]: Automerge.Cursor;
 };
-
+*/
 export type AMSelections = {
   [uuid: string]: any;
 };
 
-export type AMModelDB = {
+export type AMModel = {
   text: Text;
-  cursors: Cursors;
+  //  cursors: Cursors;
   selections: AMSelections;
 };
 
@@ -304,14 +319,15 @@ export class AutomergeModelDB implements IModelDB {
     this._ws.binaryType = 'arraybuffer';
 
     this._observable = new Observable();
-    this._amModelDB = Automerge.init<AMModelDB>({
+    this._lock = createLock();
+    this._amModel = Automerge.init<AMModel>({
       actorId: this._actorId,
       observable: this._observable
     });
 
     // Listen to Local Changes.
-    this._observable.observe(this._amModelDB, (diff, before, after, local) => {
-      this._amModelDB = after;
+    this._observable.observe(this._amModel, (diff, before, after, local) => {
+      this._amModel = after;
       if (local) {
         const changes = Automerge.getChanges(before, after);
         // Get the total length of all arrays.
@@ -334,41 +350,42 @@ export class AutomergeModelDB implements IModelDB {
     this._ws.addEventListener('message', (message: MessageEvent) => {
       if (message.data) {
         const changes = new Uint8Array(message.data);
-        Automerge.Frontend.setActorId(this._amModelDB, this._actorId);
-        this._amModelDB = Automerge.applyChanges(this._amModelDB, [changes]);
-        console.log('---', this._amModelDB);
-        if (!this._amModelDB.selections) {
-          this._amModelDB = Automerge.change(this._amModelDB, doc => {
-            doc.selections = {};
-          });
-        }
-        if (!this._amModelDB.selections[this._actorId]) {
-          this._amModelDB = Automerge.change(this._amModelDB, doc => {
-            doc.selections[this._actorId] = [];
-          });
-        }
-        Object.keys(this._amModelDB.selections).map(uuid => {
-          if (!this.collaborators.get(uuid)) {
-            const collaborator = new Collaborator(
-              uuid,
-              uuid,
-              `Anonymous ${uuid}`,
-              CSS_COLOR_NAMES[
-                Math.floor(Math.random() * CSS_COLOR_NAMES.length)
-              ],
-              `Anonymous ${uuid.substr(0, 5)}`
-            );
-            this.collaborators.set(uuid, collaborator);
+        //        Automerge.Frontend.setActorId(this._amModel, this._actorId);
+        this._lock(() => {
+          this._amModel = Automerge.applyChanges(this._amModel, [changes]);
+          if (!this._amModel.selections) {
+            this._amModel = Automerge.change(this._amModel, doc => {
+              doc.selections = {};
+            });
           }
+          if (!this._amModel.selections[this._actorId]) {
+            this._amModel = Automerge.change(this._amModel, doc => {
+              doc.selections[this._actorId] = [];
+            });
+          }
+          Object.keys(this._amModel.selections).map(uuid => {
+            if (!this.collaborators.get(uuid)) {
+              const collaborator = new Collaborator(
+                uuid,
+                uuid,
+                `Anonymous ${uuid}`,
+                CSS_COLOR_NAMES[
+                  Math.floor(Math.random() * CSS_COLOR_NAMES.length)
+                ],
+                `Anonymous ${uuid.substr(0, 5)}`
+              );
+              this.collaborators.set(uuid, collaborator);
+            }
+          });
         });
         /*
-        if (!this._amModelDB.cursors) {
-          this._amModelDB = Automerge.change(this._amModelDB, doc => {
+        if (!this._amModel.cursors) {
+          this._amModel = Automerge.change(this._amModel, doc => {
             doc.cursors = {};
           });
         }
-        if (!this._amModelDB.cursors[this._actorId]) {
-          this._amModelDB = Automerge.change(this._amModelDB, doc => {
+        if (!this._amModel.cursors[this._actorId]) {
+          this._amModel = Automerge.change(this._amModel, doc => {
             doc.cursors[this._actorId] = doc.text.getCursorAt(
               doc.text.toString().length - 1
             );
@@ -376,13 +393,13 @@ export class AutomergeModelDB implements IModelDB {
         }
         */
         /*
-        Object.keys(this._amModelDB.cursors).map(userId => {
+        Object.keys(this._amModel.cursors).map(userId => {
           console.log(
             '--- Cursor Index',
             userId,
             Automerge.getCursorIndex(
-              this._amModelDB,
-              this._amModelDB.cursors[userId],
+              this._amModel,
+              this._amModel.cursors[userId],
               true
             )
           );
@@ -406,6 +423,14 @@ export class AutomergeModelDB implements IModelDB {
    */
   get isDisposed(): boolean {
     return this._isDisposed;
+  }
+
+  get amModel(): AMModel {
+    return this._amModel;
+  }
+
+  set amModel(amModel: AMModel) {
+    this._amModel = amModel;
   }
 
   /**
@@ -460,11 +485,7 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the string that was created.
    */
   createString(path: string): IObservableString {
-    let str: IObservableString = new AutomergeString(
-      this._actorId,
-      this._amModelDB,
-      this._observable
-    );
+    let str: IObservableString = new AutomergeString(this, this._observable);
     this._disposables.add(str);
     this.set(path, str);
     return str;
@@ -502,11 +523,7 @@ export class AutomergeModelDB implements IModelDB {
    * JSON Objects and primitives.
    */
   createMap(path: string): IObservableJSON {
-    const map = new AutomergeJSON(
-      this._actorId,
-      this._amModelDB,
-      this._observable
-    );
+    const map = new AutomergeJSON(this, this._observable, this._lock);
     this._disposables.add(map);
     this.set(path, map);
     return map;
@@ -609,8 +626,9 @@ export class AutomergeModelDB implements IModelDB {
 
   private _ws: WebSocket;
   private _actorId: string;
-  private _amModelDB: AMModelDB;
+  private _amModel: AMModel;
   private _observable: Observable;
+  private _lock: any;
   private _collaborators: ICollaboratorMap;
   private _basePath: string;
   private _db: IModelDB | ObservableMap<IObservable>;
