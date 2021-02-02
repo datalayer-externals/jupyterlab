@@ -10,9 +10,9 @@ import {
 
 import { Observable } from 'automerge';
 
-import { AutomergeMap } from './automergemap';
+import { AutomergeMap } from './ammap';
 
-import { AutomergeModelDB } from './automergemodeldb';
+import { AutomergeModelDB } from './ammodeldb';
 
 /**
  * A concrete Automerge map for JSON data.

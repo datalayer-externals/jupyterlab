@@ -7,7 +7,7 @@ import { IObservableString } from './observablestring';
 
 import Automerge, { Observable } from 'automerge';
 
-import { AutomergeModelDB, AmDoc } from './automergemodeldb';
+import { AutomergeModelDB, AmDoc } from './ammodeldb';
 
 /**
  * A concrete implementation of [[IObservableString]]

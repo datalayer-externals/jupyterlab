@@ -13,9 +13,9 @@ import { IObservableJSON } from './observablejson';
 
 import { IObservableString } from './observablestring';
 
-import { AutomergeString } from './automergestring';
+import { AutomergeString } from './amstring';
 
-import { AutomergeJSON } from './automergejson';
+import { AutomergeJSON } from './amjson';
 
 import {
   IObservableUndoableList,
@@ -191,17 +191,17 @@ export class AutomergeModelDB implements IModelDB {
         //        Automerge.Frontend.setActorId(this._amDoc, this._actorId);
         this._lock(() => {
           this._amDoc = Automerge.applyChanges(this._amDoc, [changes]);
-          if (!this._amDoc['selections']) {
+          if (!this._amDoc['users']) {
             this._amDoc = Automerge.change(this._amDoc, doc => {
-              doc['selections'] = {};
+              doc['users'] = {};
             });
           }
-          if (!this._amDoc['selections'][this._actorId]) {
+          if (!this._amDoc['users'][this._actorId]) {
             this._amDoc = Automerge.change(this._amDoc, doc => {
-              doc['selections'][this._actorId] = [];
+              doc['users'][this._actorId] = [];
             });
           }
-          Object.keys(this._amDoc['selections']).map(uuid => {
+          Object.keys(this._amDoc['users']).map(uuid => {
             if (!this.collaborators.get(uuid)) {
               const collaborator = new Collaborator(
                 uuid,
@@ -216,31 +216,6 @@ export class AutomergeModelDB implements IModelDB {
             }
           });
         });
-        /*
-        if (!this._amDoc.cursors) {
-          this._amDoc = Automerge.change(this._amDoc, doc => {
-            doc.cursors = {};
-          });
-        }
-        if (!this._amDoc.cursors[this._actorId]) {
-          this._amDoc = Automerge.change(this._amDoc, doc => {
-            doc.cursors[this._actorId] = doc.text.getCursorAt(
-              doc.text.toString().length - 1
-            );
-          });
-        }
-        Object.keys(this._amDoc.cursors).map(userId => {
-          console.log(
-            '--- Cursor Index',
-            userId,
-            Automerge.getCursorIndex(
-              this._amDoc,
-              this._amDoc.cursors[userId],
-              true
-            )
-          );
-        });
-        */
       }
     });
   }

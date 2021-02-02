@@ -7,7 +7,7 @@ import Automerge, { Observable } from 'automerge';
 
 import { IObservableMap } from './observablemap';
 
-import { AutomergeModelDB } from './automergemodeldb';
+import { AutomergeModelDB } from './ammodeldb';
 
 /**
  * A concrete implementation of IObservbleMap<T>.
@@ -111,10 +111,9 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     if (value === undefined) {
       throw Error('Cannot set an undefined value, use remove');
     }
-    if (!this._modelDB.amDoc[this._path]) {
-      return;
-    }
-    const oldVal = this._modelDB.amDoc[this._path][key];
+    const oldVal = this._modelDB.amDoc[this._path]
+      ? this._modelDB.amDoc[this._path][key]
+      : undefined;
     // Bail if the value does not change.
     const itemCmp = this._itemCmp;
     if (oldVal !== undefined && itemCmp(oldVal, value)) {
@@ -122,6 +121,9 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     }
     this._lock(() => {
       this._modelDB.amDoc = Automerge.change(this._modelDB.amDoc, doc => {
+        if (!doc[this._path]) {
+          doc[this._path] = {};
+        }
         doc[this._path][key] = value;
       });
     });
