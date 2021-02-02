@@ -7,7 +7,7 @@ import { IObservableString } from './observablestring';
 
 import Automerge, { Observable } from 'automerge';
 
-import { AutomergeModelDB, AMModel } from './automergemodeldb';
+import { AutomergeModelDB, AmDoc } from './automergemodeldb';
 
 /**
  * A concrete implementation of [[IObservableString]]
@@ -16,17 +16,18 @@ export class AutomergeString implements IObservableString {
   /**
    * Construct a new observable string.
    */
-  constructor(modelDB: AutomergeModelDB, observable: Observable) {
+  constructor(path: string, modelDB: AutomergeModelDB, observable: Observable) {
+    this._path = path;
     this._modelDB = modelDB;
     this._observable = observable;
 
     // Observe and Handle Remote Changes.
     this._observable.observe(
-      this._modelDB.amModel,
+      this._modelDB.amDoc,
       (diff, before, after, local) => {
-        if (!local && diff.props && diff.props.text) {
-          const opId = Object.keys(diff.props?.text as any)[0];
-          const ad = diff.props?.text[opId] as Automerge.ObjectDiff;
+        if (!local && diff.props && diff.props[this._path]) {
+          const opId = Object.keys(diff.props[this._path] as any)[0];
+          const ad = diff.props[this._path][opId] as Automerge.ObjectDiff;
           const edits = ad.edits;
           if (edits) {
             const props = ad.props;
@@ -93,8 +94,8 @@ export class AutomergeString implements IObservableString {
    * Get the value of the string.
    */
   get text(): string {
-    return this._modelDB.amModel.text
-      ? this._modelDB.amModel.text.toString()
+    return this._modelDB.amDoc[this._path]
+      ? this._modelDB.amDoc[this._path].toString()
       : '';
   }
 
@@ -106,8 +107,8 @@ export class AutomergeString implements IObservableString {
    * @param text - The substring to insert.
    */
   insert(index: number, text: string): void {
-    this._modelDB.amModel = Automerge.change(this._modelDB.amModel, doc => {
-      doc.text.insertAt!(index, ...text);
+    this._modelDB.amDoc = Automerge.change(this._modelDB.amDoc, doc => {
+      doc[this._path].insertAt!(index, ...text);
     });
     this._changed.emit({
       type: 'insert',
@@ -125,9 +126,11 @@ export class AutomergeString implements IObservableString {
    * @param end - The ending index.
    */
   remove(start: number, end: number): void {
-    const oldValue = this._modelDB.amModel.text.toString().slice(start, end);
-    this._modelDB.amModel = Automerge.change(this._modelDB.amModel, doc => {
-      doc.text.deleteAt!(start, end - start);
+    const oldValue = this._modelDB.amDoc[this._path]
+      .toString()
+      .slice(start, end);
+    this._modelDB.amDoc = Automerge.change(this._modelDB.amDoc, doc => {
+      doc[this._path].deleteAt!(start, end - start);
     });
     this._changed.emit({
       type: 'remove',
@@ -141,8 +144,7 @@ export class AutomergeString implements IObservableString {
    * Set the ObservableString to an empty string.
    */
   clear(): void {
-    console.log('--- CLEAR');
-    this._modelDB.amModel = Automerge.init<AMModel>();
+    this._modelDB.amDoc = Automerge.init<AmDoc>();
     this.text = '';
   }
 
@@ -165,6 +167,7 @@ export class AutomergeString implements IObservableString {
     this.clear();
   }
 
+  private _path: string;
   private _modelDB: AutomergeModelDB;
   private _observable: Observable;
   private _isDisposed: boolean = false;

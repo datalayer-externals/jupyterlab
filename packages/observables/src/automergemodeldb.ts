@@ -5,7 +5,7 @@ import { DisposableSet } from '@lumino/disposable';
 
 import { JSONValue, UUID } from '@lumino/coreutils';
 
-import Automerge, { Observable, Text } from 'automerge';
+import Automerge, { Observable } from 'automerge';
 
 import { ObservableMap } from './observablemap';
 
@@ -31,158 +31,6 @@ import {
   IObservableValue,
   ObservableValue
 } from './modeldb';
-/*
-const CSS_COLOR_NAMES = [
-  'AliceBlue',
-  'AntiqueWhite',
-  'Aqua',
-  'Aquamarine',
-  'Azure',
-  'Beige',
-  'Bisque',
-  'Black',
-  'BlanchedAlmond',
-  'Blue',
-  'BlueViolet',
-  'Brown',
-  'BurlyWood',
-  'CadetBlue',
-  'Chartreuse',
-  'Chocolate',
-  'Coral',
-  'CornflowerBlue',
-  'Cornsilk',
-  'Crimson',
-  'Cyan',
-  'DarkBlue',
-  'DarkCyan',
-  'DarkGoldenRod',
-  'DarkGray',
-  'DarkGrey',
-  'DarkGreen',
-  'DarkKhaki',
-  'DarkMagenta',
-  'DarkOliveGreen',
-  'DarkOrange',
-  'DarkOrchid',
-  'DarkRed',
-  'DarkSalmon',
-  'DarkSeaGreen',
-  'DarkSlateBlue',
-  'DarkSlateGray',
-  'DarkSlateGrey',
-  'DarkTurquoise',
-  'DarkViolet',
-  'DeepPink',
-  'DeepSkyBlue',
-  'DimGray',
-  'DimGrey',
-  'DodgerBlue',
-  'FireBrick',
-  'FloralWhite',
-  'ForestGreen',
-  'Fuchsia',
-  'Gainsboro',
-  'GhostWhite',
-  'Gold',
-  'GoldenRod',
-  'Gray',
-  'Grey',
-  'Green',
-  'GreenYellow',
-  'HoneyDew',
-  'HotPink',
-  'IndianRed',
-  'Indigo',
-  'Ivory',
-  'Khaki',
-  'Lavender',
-  'LavenderBlush',
-  'LawnGreen',
-  'LemonChiffon',
-  'LightBlue',
-  'LightCoral',
-  'LightCyan',
-  'LightGoldenRodYellow',
-  'LightGray',
-  'LightGrey',
-  'LightGreen',
-  'LightPink',
-  'LightSalmon',
-  'LightSeaGreen',
-  'LightSkyBlue',
-  'LightSlateGray',
-  'LightSlateGrey',
-  'LightSteelBlue',
-  'LightYellow',
-  'Lime',
-  'LimeGreen',
-  'Linen',
-  'Magenta',
-  'Maroon',
-  'MediumAquaMarine',
-  'MediumBlue',
-  'MediumOrchid',
-  'MediumPurple',
-  'MediumSeaGreen',
-  'MediumSlateBlue',
-  'MediumSpringGreen',
-  'MediumTurquoise',
-  'MediumVioletRed',
-  'MidnightBlue',
-  'MintCream',
-  'MistyRose',
-  'Moccasin',
-  'NavajoWhite',
-  'Navy',
-  'OldLace',
-  'Olive',
-  'OliveDrab',
-  'Orange',
-  'OrangeRed',
-  'Orchid',
-  'PaleGoldenRod',
-  'PaleGreen',
-  'PaleTurquoise',
-  'PaleVioletRed',
-  'PapayaWhip',
-  'PeachPuff',
-  'Peru',
-  'Pink',
-  'Plum',
-  'PowderBlue',
-  'Purple',
-  'RebeccaPurple',
-  'Red',
-  'RosyBrown',
-  'RoyalBlue',
-  'SaddleBrown',
-  'Salmon',
-  'SandyBrown',
-  'SeaGreen',
-  'SeaShell',
-  'Sienna',
-  'Silver',
-  'SkyBlue',
-  'SlateBlue',
-  'SlateGray',
-  'SlateGrey',
-  'Snow',
-  'SpringGreen',
-  'SteelBlue',
-  'Tan',
-  'Teal',
-  'Thistle',
-  'Tomato',
-  'Turquoise',
-  'Violet',
-  'Wheat',
-  'White',
-  'WhiteSmoke',
-  'Yellow',
-  'YellowGreen'
-];
-*/
 
 const CSS_COLOR_NAMES = [
   'Red',
@@ -200,22 +48,6 @@ const CSS_COLOR_NAMES = [
   'Gray',
   'Silver'
 ];
-
-export const createLock = () => {
-  let token = true;
-  return (f: any, g: any) => {
-    if (token) {
-      token = false;
-      try {
-        f();
-      } finally {
-        token = true;
-      }
-    } else if (g !== undefined) {
-      g();
-    }
-  };
-};
 
 export class Collaborator implements ICollaborator {
   constructor(
@@ -266,19 +98,25 @@ export class CollaboratorMap extends ObservableMap<ICollaborator> {
 
   private _localCollaborator: ICollaborator;
 }
-/*
-export type Cursors = {
-  [uuid: string]: Automerge.Cursor;
-};
-*/
-export type AMSelections = {
-  [uuid: string]: any;
+
+export const createLock = () => {
+  let lock = true;
+  return (a: any, b: any) => {
+    if (lock) {
+      lock = false;
+      try {
+        a();
+      } finally {
+        lock = true;
+      }
+    } else if (b !== undefined) {
+      b();
+    }
+  };
 };
 
-export type AMModel = {
-  text: Text;
-  //  cursors: Cursors;
-  selections: AMSelections;
+export type AmDoc = {
+  [uuid: string]: any;
 };
 
 /**
@@ -320,14 +158,14 @@ export class AutomergeModelDB implements IModelDB {
 
     this._observable = new Observable();
     this._lock = createLock();
-    this._amModel = Automerge.init<AMModel>({
+    this._amDoc = Automerge.init<AmDoc>({
       actorId: this._actorId,
       observable: this._observable
     });
 
     // Listen to Local Changes.
-    this._observable.observe(this._amModel, (diff, before, after, local) => {
-      this._amModel = after;
+    this._observable.observe(this._amDoc, (diff, before, after, local) => {
+      this._amDoc = after;
       if (local) {
         const changes = Automerge.getChanges(before, after);
         // Get the total length of all arrays.
@@ -350,20 +188,20 @@ export class AutomergeModelDB implements IModelDB {
     this._ws.addEventListener('message', (message: MessageEvent) => {
       if (message.data) {
         const changes = new Uint8Array(message.data);
-        //        Automerge.Frontend.setActorId(this._amModel, this._actorId);
+        //        Automerge.Frontend.setActorId(this._amDoc, this._actorId);
         this._lock(() => {
-          this._amModel = Automerge.applyChanges(this._amModel, [changes]);
-          if (!this._amModel.selections) {
-            this._amModel = Automerge.change(this._amModel, doc => {
-              doc.selections = {};
+          this._amDoc = Automerge.applyChanges(this._amDoc, [changes]);
+          if (!this._amDoc['selections']) {
+            this._amDoc = Automerge.change(this._amDoc, doc => {
+              doc['selections'] = {};
             });
           }
-          if (!this._amModel.selections[this._actorId]) {
-            this._amModel = Automerge.change(this._amModel, doc => {
-              doc.selections[this._actorId] = [];
+          if (!this._amDoc['selections'][this._actorId]) {
+            this._amDoc = Automerge.change(this._amDoc, doc => {
+              doc['selections'][this._actorId] = [];
             });
           }
-          Object.keys(this._amModel.selections).map(uuid => {
+          Object.keys(this._amDoc['selections']).map(uuid => {
             if (!this.collaborators.get(uuid)) {
               const collaborator = new Collaborator(
                 uuid,
@@ -379,27 +217,25 @@ export class AutomergeModelDB implements IModelDB {
           });
         });
         /*
-        if (!this._amModel.cursors) {
-          this._amModel = Automerge.change(this._amModel, doc => {
+        if (!this._amDoc.cursors) {
+          this._amDoc = Automerge.change(this._amDoc, doc => {
             doc.cursors = {};
           });
         }
-        if (!this._amModel.cursors[this._actorId]) {
-          this._amModel = Automerge.change(this._amModel, doc => {
+        if (!this._amDoc.cursors[this._actorId]) {
+          this._amDoc = Automerge.change(this._amDoc, doc => {
             doc.cursors[this._actorId] = doc.text.getCursorAt(
               doc.text.toString().length - 1
             );
           });
         }
-        */
-        /*
-        Object.keys(this._amModel.cursors).map(userId => {
+        Object.keys(this._amDoc.cursors).map(userId => {
           console.log(
             '--- Cursor Index',
             userId,
             Automerge.getCursorIndex(
-              this._amModel,
-              this._amModel.cursors[userId],
+              this._amDoc,
+              this._amDoc.cursors[userId],
               true
             )
           );
@@ -425,12 +261,12 @@ export class AutomergeModelDB implements IModelDB {
     return this._isDisposed;
   }
 
-  get amModel(): AMModel {
-    return this._amModel;
+  get amDoc(): AmDoc {
+    return this._amDoc;
   }
 
-  set amModel(amModel: AMModel) {
-    this._amModel = amModel;
+  set amDoc(amDoc: AmDoc) {
+    this._amDoc = amDoc;
   }
 
   /**
@@ -485,7 +321,11 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the string that was created.
    */
   createString(path: string): IObservableString {
-    let str: IObservableString = new AutomergeString(this, this._observable);
+    let str: IObservableString = new AutomergeString(
+      path,
+      this,
+      this._observable
+    );
     this._disposables.add(str);
     this.set(path, str);
     return str;
@@ -523,7 +363,7 @@ export class AutomergeModelDB implements IModelDB {
    * JSON Objects and primitives.
    */
   createMap(path: string): IObservableJSON {
-    const map = new AutomergeJSON(this, this._observable, this._lock);
+    const map = new AutomergeJSON(path, this, this._observable, this._lock);
     this._disposables.add(map);
     this.set(path, map);
     return map;
@@ -582,6 +422,7 @@ export class AutomergeModelDB implements IModelDB {
    *   `IModelDB`, with `basePath` prepended to all paths.
    */
   view(basePath: string): ModelDB {
+    console.log('---', basePath);
     const view = new ModelDB({ basePath, baseDB: this });
     this._disposables.add(view);
     return view;
@@ -626,7 +467,7 @@ export class AutomergeModelDB implements IModelDB {
 
   private _ws: WebSocket;
   private _actorId: string;
-  private _amModel: AMModel;
+  private _amDoc: AmDoc;
   private _observable: Observable;
   private _lock: any;
   private _collaborators: ICollaboratorMap;

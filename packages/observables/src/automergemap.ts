@@ -17,11 +17,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * Construct a new observable map.
    */
   constructor(
+    path: string,
     modelDB: AutomergeModelDB,
     observable: Observable,
     lock: any,
     options: AutomergeMap.IOptions<T> = {}
   ) {
+    this._path = path;
     this._modelDB = modelDB;
     this._observable = observable;
     this._lock = lock;
@@ -30,16 +32,16 @@ export class AutomergeMap<T> implements IObservableMap<T> {
 
     // Observe and Handle Remote Changes.
     this._observable.observe(
-      this._modelDB.amModel,
+      this._modelDB.amDoc,
       (diff, before, after, local) => {
-        if (!local && diff.props && diff.props && diff.props.selections) {
-          Object.keys(after.selections).map(uuid => {
-            if (before.selections) {
-              const oldVal = before.selections
-                ? before.selections[uuid]
+        if (!local && diff.props && diff.props && diff.props[this._path]) {
+          Object.keys(after[this._path]).map(uuid => {
+            if (before[this._path]) {
+              const oldVal = before[this._path]
+                ? before[this._path][uuid]
                 : undefined;
-              const newVal = after.selections
-                ? after.selections[uuid]
+              const newVal = after[this._path]
+                ? after[this._path][uuid]
                 : undefined;
               this._changed.emit({
                 type: oldVal ? 'change' : 'add',
@@ -55,7 +57,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
 
     if (options.values) {
       for (const key in options.values) {
-        this._modelDB.amModel.selections[key] = options.values[key];
+        this._modelDB.amDoc[this._path][key] = options.values[key];
       }
     }
   }
@@ -85,8 +87,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * The number of key-value pairs in the map.
    */
   get size(): number {
-    return this._modelDB.amModel.selections
-      ? this._modelDB.amModel.selections.size
+    return this._modelDB.amDoc[this._path]
+      ? this._modelDB.amDoc[this._path].size
       : 0;
   }
 
@@ -109,18 +111,18 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     if (value === undefined) {
       throw Error('Cannot set an undefined value, use remove');
     }
-    if (!this._modelDB.amModel.selections) {
+    if (!this._modelDB.amDoc[this._path]) {
       return;
     }
-    const oldVal = this._modelDB.amModel.selections[key];
+    const oldVal = this._modelDB.amDoc[this._path][key];
     // Bail if the value does not change.
     const itemCmp = this._itemCmp;
     if (oldVal !== undefined && itemCmp(oldVal, value)) {
       return oldVal;
     }
     this._lock(() => {
-      this._modelDB.amModel = Automerge.change(this._modelDB.amModel, doc => {
-        doc.selections[key] = value;
+      this._modelDB.amDoc = Automerge.change(this._modelDB.amDoc, doc => {
+        doc[this._path][key] = value;
       });
     });
     this._changed.emit({
@@ -140,8 +142,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns the value for that key.
    */
   get(key: string): T | undefined {
-    return this._modelDB.amModel.selections
-      ? this._modelDB.amModel.selections[key]
+    return this._modelDB.amDoc[this._path]
+      ? this._modelDB.amDoc[this._path][key]
       : undefined;
   }
 
@@ -153,8 +155,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns `true` if the map has the key, `false` otherwise.
    */
   has(key: string): boolean {
-    return this._modelDB.amModel.selections
-      ? this._modelDB.amModel.selections[key]
+    return this._modelDB.amDoc[this._path]
+      ? this._modelDB.amDoc[this._path][key]
         ? true
         : false
       : false;
@@ -168,13 +170,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   keys(): string[] {
     /*
     const keyList: string[] = [];
-    this._modelDB.amModel.selections.forEach((v: T, k: string) => {
+    this._modelDB.amDoc[this._path].forEach((v: T, k: string) => {
       keyList.push(k);
     });
     return keyList;
     */
-    return this._modelDB.amModel.selections
-      ? Object.keys(this._modelDB.amModel.selections)
+    return this._modelDB.amDoc[this._path]
+      ? Object.keys(this._modelDB.amDoc[this._path])
       : [];
   }
 
@@ -186,13 +188,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   values(): T[] {
     /*
     const valList: T[] = [];
-    this._modelDB.amModel.selections.forEach((v: T, k: string) => {
+    this._modelDB.amDoc[this._path].forEach((v: T, k: string) => {
       valList.push(v);
     });
     return valList;
     */
-    return this._modelDB.amModel.selections
-      ? Object.values(this._modelDB.amModel.selections)
+    return this._modelDB.amDoc[this._path]
+      ? Object.values(this._modelDB.amDoc[this._path])
       : [];
   }
 
@@ -208,10 +210,10 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * This is a no-op if the value does not change.
    */
   delete(key: string): T | undefined {
-    const oldVal = this._modelDB.amModel.selections[key];
+    const oldVal = this._modelDB.amDoc[this._path][key];
     this._lock(() => {
-      this._modelDB.amModel = Automerge.change(this._modelDB.amModel, doc => {
-        delete doc.selections[key];
+      this._modelDB.amDoc = Automerge.change(this._modelDB.amDoc, doc => {
+        delete doc[this._path][key];
       });
     });
     const removed = true;
@@ -231,7 +233,6 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    */
   clear(): void {
     // Delete one by one to emit the correct signals.
-    console.log('--- CLEAR');
     const keyList = this.keys();
     for (let i = 0; i < keyList.length; i++) {
       this.delete(keyList[i]);
@@ -247,9 +248,10 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    this._modelDB.amModel.selections.clear();
+    this._modelDB.amDoc[this._path].clear();
   }
 
+  private _path: string;
   private _modelDB: AutomergeModelDB;
   private _observable: Observable;
   private _lock: any;

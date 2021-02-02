@@ -22,12 +22,13 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
    * Construct a new automerge JSON object.
    */
   constructor(
+    path: string,
     modelDB: AutomergeModelDB,
     observable: Observable,
     lock: any,
     options: AutomergeJSON.IOptions = {}
   ) {
-    super(modelDB, observable, lock, {
+    super(path, modelDB, observable, lock, {
       itemCmp: JSONExt.deepEqual,
       values: options.values
     });
