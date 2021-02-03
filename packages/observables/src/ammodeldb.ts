@@ -49,6 +49,38 @@ const CSS_COLOR_NAMES = [
   'Silver'
 ];
 
+// const WS_READY_STATE_CONNECTING = 0
+const WS_READY_STATE_OPEN = 1;
+
+// Make the function wait until the connection is made...
+function waitForSocketConnection(socket: WebSocket, callback: any) {
+  setTimeout(function () {
+    if (socket.readyState === WS_READY_STATE_OPEN) {
+      if (callback != null) {
+        callback();
+      }
+    } else {
+      waitForSocketConnection(socket, callback);
+    }
+  }, 10); // wait 10 miliseconds for the connection...
+}
+
+export const combine = (changes: Uint8Array[]) => {
+  // Get the total length of all arrays.
+  let length = 0;
+  changes.forEach(item => {
+    length += item.length;
+  });
+  // Create a new array with total length and merge all source arrays.
+  let combined = new Uint8Array(length);
+  let offset = 0;
+  changes.forEach(change => {
+    combined.set(change, offset);
+    offset += change.length;
+  });
+  return combined;
+};
+
 export class Collaborator implements ICollaborator {
   constructor(
     userId: string,
@@ -150,8 +182,12 @@ export class AutomergeModelDB implements IModelDB {
       this._toDispose = true;
     }
 
+    let params = '';
+    if (options.localPath?.endsWith('md')) {
+      params = params + 'initialize';
+    }
     const uri = encodeURI(
-      `ws://localhost:4321/${this._actorId}/${options.localPath}`
+      `ws://localhost:4321/${this._actorId}/${options.localPath}?${params}`
     );
     this._ws = new WebSocket(uri);
     this._ws.binaryType = 'arraybuffer';
@@ -167,20 +203,12 @@ export class AutomergeModelDB implements IModelDB {
     this._observable.observe(this._amDoc, (diff, before, after, local) => {
       this._amDoc = after;
       if (local) {
+        //        const changes = Automerge.Frontend.getLastLocalChange(after);
         const changes = Automerge.getChanges(before, after);
-        // Get the total length of all arrays.
-        let length = 0;
-        changes.forEach(item => {
-          length += item.length;
+        waitForSocketConnection(this._ws, () => {
+          const combined = combine(changes);
+          this._ws.send(combined);
         });
-        // Create a new array with total length and merge all source arrays.
-        let combined = new Uint8Array(length);
-        let offset = 0;
-        changes.forEach(item => {
-          combined.set(item, offset);
-          offset += item.length;
-        });
-        this._ws.send(combined);
       }
     });
 
@@ -188,18 +216,24 @@ export class AutomergeModelDB implements IModelDB {
     this._ws.addEventListener('message', (message: MessageEvent) => {
       if (message.data) {
         const changes = new Uint8Array(message.data);
-        //        Automerge.Frontend.setActorId(this._amDoc, this._actorId);
         this._lock(() => {
+          if (this._amDoc['ownerId']) {
+            Automerge.Frontend.setActorId(this._amDoc, this._amDoc['ownerId']);
+          }
           this._amDoc = Automerge.applyChanges(this._amDoc, [changes]);
           if (!this._amDoc['users']) {
-            this._amDoc = Automerge.change(this._amDoc, doc => {
+            this._amDoc = Automerge.change(this._amDoc, `users`, doc => {
               doc['users'] = {};
             });
           }
           if (!this._amDoc['users'][this._actorId]) {
-            this._amDoc = Automerge.change(this._amDoc, doc => {
-              doc['users'][this._actorId] = [];
-            });
+            this._amDoc = Automerge.change(
+              this._amDoc,
+              `users ${this._actorId}`,
+              doc => {
+                doc['users'][this._actorId] = true;
+              }
+            );
           }
           Object.keys(this._amDoc['users']).map(uuid => {
             if (!this.collaborators.get(uuid)) {
@@ -227,6 +261,10 @@ export class AutomergeModelDB implements IModelDB {
    */
   get basePath(): string {
     return this._basePath;
+  }
+
+  get ws(): WebSocket {
+    return this._ws;
   }
 
   /**
@@ -299,7 +337,8 @@ export class AutomergeModelDB implements IModelDB {
     let str: IObservableString = new AutomergeString(
       path,
       this,
-      this._observable
+      this._observable,
+      this._lock
     );
     this._disposables.add(str);
     this.set(path, str);

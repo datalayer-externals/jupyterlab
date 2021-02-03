@@ -119,13 +119,25 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     if (oldVal !== undefined && itemCmp(oldVal, value)) {
       return oldVal;
     }
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(this._modelDB.amDoc, doc => {
-        if (!doc[this._path]) {
-          doc[this._path] = {};
-        }
-        doc[this._path][key] = value;
+    if (!this._modelDB.amDoc[key]) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `set ${this._path} ${key}`,
+          doc => {
+            doc[this._path] = {};
+          }
+        );
       });
+    }
+    this._lock(() => {
+      this._modelDB.amDoc = Automerge.change(
+        this._modelDB.amDoc,
+        `set ${this._path} ${key} ${value}`,
+        doc => {
+          doc[this._path][key] = value;
+        }
+      );
     });
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
@@ -214,9 +226,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   delete(key: string): T | undefined {
     const oldVal = this._modelDB.amDoc[this._path][key];
     this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(this._modelDB.amDoc, doc => {
-        delete doc[this._path][key];
-      });
+      this._modelDB.amDoc = Automerge.change(
+        this._modelDB.amDoc,
+        `delete ${this._path} ${key}`,
+        doc => {
+          delete doc[this._path][key];
+        }
+      );
     });
     const removed = true;
     if (removed) {
