@@ -37,30 +37,34 @@ export class AutomergeList<T> implements IObservableList<T> {
     this._observable = observable;
     this._lock = lock;
 
-    // Observe and Handle Remote Changes.
-    this._observable.observe(
-      this._modelDB.amDoc,
-      (diff, before, after, local) => {
-        console.log('---', diff, before, after, local);
-        if (!local) {
-          console.log('---', local);
-        }
-      }
-    );
-
     if (options.values !== void 0) {
-      each(options.values, value => {
+      if (this._modelDB.isInitialized) {
+        each(options.values, value => {
+          this._lock(() => {
+            this._modelDB.amDoc = Automerge.change(
+              this._modelDB.amDoc,
+              `list init ${this._path} ${value}`,
+              doc => {
+                (doc[this._path] as List<T>).push(value);
+              }
+            );
+          });
+        });
+      }
+    } else {
+      if (this._modelDB.isInitialized) {
         this._lock(() => {
           this._modelDB.amDoc = Automerge.change(
             this._modelDB.amDoc,
-            `list init ${this._path} ${value}`,
+            `list init ${this._path}`,
             doc => {
-              (doc[this._path] as List<T>).push(value);
+              doc[this._path] = [];
             }
           );
         });
-      });
+      }
     }
+
     this._itemCmp = options.itemCmp || Private.itemCmp;
   }
 
@@ -92,6 +96,21 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   get isDisposed(): boolean {
     return this._isDisposed;
+  }
+
+  public observeRemotes() {
+    // Observe and Handle Remote Changes.
+    this._observable.observe(
+      this._modelDB.amDoc,
+      (diff, before, after, local) => {
+        console.log('---', after);
+        if (!local && diff.props && diff.props && diff.props[this._path]) {
+          Object.keys(after[this._path]).map(uuid => {
+            console.log('uuid');
+          });
+        }
+      }
+    );
   }
 
   /**
@@ -161,15 +180,17 @@ export class AutomergeList<T> implements IObservableList<T> {
     if (itemCmp(oldValue, value)) {
       return;
     }
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list set ${this._path} ${index} ${value}`,
-        doc => {
-          (doc[this._path] as List<T>)[index] = value;
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list set ${this._path} ${index} ${value}`,
+          doc => {
+            (doc[this._path] as List<T>)[index] = value;
+          }
+        );
+      });
+    }
     this._changed.emit({
       type: 'set',
       oldIndex: index,
@@ -193,15 +214,17 @@ export class AutomergeList<T> implements IObservableList<T> {
    * No changes.
    */
   push(value: T): number {
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list push ${this._path} ${value}`,
-        doc => {
-          (doc[this._path] as List<T>).push(value);
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list push ${this._path} ${value}`,
+          doc => {
+            (doc[this._path] as List<T>).push(value);
+          }
+        );
+      });
+    }
     const num = (this._modelDB.amDoc[this._path] as List<T>).length;
     this._changed.emit({
       type: 'add',
@@ -233,15 +256,17 @@ export class AutomergeList<T> implements IObservableList<T> {
    * An `index` which is non-integral.
    */
   insert(index: number, value: T): void {
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list insert ${this._path} ${index} ${value}`,
-        doc => {
-          ArrayExt.insert(doc[this._path] as List<T>, index, value);
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list insert ${this._path} ${index} ${value}`,
+          doc => {
+            ArrayExt.insert(doc[this._path] as List<T>, index, value);
+          }
+        );
+      });
+    }
     this._changed.emit({
       type: 'add',
       oldIndex: -1,
@@ -296,15 +321,17 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   remove(index: number): T | undefined {
     let value = undefined;
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list remove ${this._path} ${index}`,
-        doc => {
-          value = ArrayExt.removeAt(doc[this._path] as List<T>, index);
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list remove ${this._path} ${index}`,
+          doc => {
+            value = ArrayExt.removeAt(doc[this._path] as List<T>, index);
+          }
+        );
+      });
+    }
     if (value === undefined) {
       return;
     }
@@ -329,15 +356,17 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   clear(): void {
     const copy = (this._modelDB.amDoc[this._path] as List<T>).slice();
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list clear ${this._path}`,
-        doc => {
-          (doc[this._path] as List<T>).length = 0;
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list clear ${this._path}`,
+          doc => {
+            (doc[this._path] as List<T>).length = 0;
+          }
+        );
+      });
+    }
     this._changed.emit({
       type: 'remove',
       oldIndex: 0,
@@ -369,16 +398,18 @@ export class AutomergeList<T> implements IObservableList<T> {
       return;
     }
     let values = Array<T>();
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list move ${this._path} ${fromIndex} ${toIndex}`,
-        doc => {
-          values = [(doc[this._path] as List<T>)[fromIndex]];
-          ArrayExt.move(doc[this._path] as List<T>, fromIndex, toIndex);
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list move ${this._path} ${fromIndex} ${toIndex}`,
+          doc => {
+            values = [(doc[this._path] as List<T>)[fromIndex]];
+            ArrayExt.move(doc[this._path] as List<T>, fromIndex, toIndex);
+          }
+        );
+      });
+    }
     this._changed.emit({
       type: 'move',
       oldIndex: fromIndex,
@@ -403,17 +434,19 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   pushAll(values: IterableOrArrayLike<T>): number {
     const newIndex = this.length;
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list pushAll ${this._path} ${values}`,
-        doc => {
-          each(values, value => {
-            (doc[this._path] as List<T>).push(value);
-          });
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list pushAll ${this._path} ${values}`,
+          doc => {
+            each(values, value => {
+              (doc[this._path] as List<T>).push(value);
+            });
+          }
+        );
+      });
+    }
     this._changed.emit({
       type: 'add',
       oldIndex: -1,
@@ -445,17 +478,19 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   insertAll(index: number, values: IterableOrArrayLike<T>): void {
     const newIndex = index;
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list insertAll ${this._path} ${index} ${values}`,
-        doc => {
-          each(values, value => {
-            ArrayExt.insert(doc[this._path] as List<T>, index++, value);
-          });
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list insertAll ${this._path} ${index} ${values}`,
+          doc => {
+            each(values, value => {
+              ArrayExt.insert(doc[this._path] as List<T>, index++, value);
+            });
+          }
+        );
+      });
+    }
     this._changed.emit({
       type: 'add',
       oldIndex: -1,
@@ -488,17 +523,19 @@ export class AutomergeList<T> implements IObservableList<T> {
       startIndex,
       endIndex
     );
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list removeRange ${this._path} ${startIndex} ${endIndex}`,
-        doc => {
-          for (let i = startIndex; i < endIndex; i++) {
-            ArrayExt.removeAt(doc[this._path] as List<T>, startIndex);
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list removeRange ${this._path} ${startIndex} ${endIndex}`,
+          doc => {
+            for (let i = startIndex; i < endIndex; i++) {
+              ArrayExt.removeAt(doc[this._path] as List<T>, startIndex);
+            }
           }
-        }
-      );
-    });
+        );
+      });
+    }
     this._changed.emit({
       type: 'remove',
       oldIndex: startIndex,

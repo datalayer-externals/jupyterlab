@@ -7,6 +7,8 @@ import { IDisposable } from '@lumino/disposable';
 
 import { ISignal, Signal } from '@lumino/signaling';
 
+// import { UUID } from '@lumino/coreutils';
+
 import { IChangedArgs } from '@jupyterlab/coreutils';
 
 import {
@@ -211,13 +213,15 @@ export namespace CodeEditor {
     constructor(options?: Model.IOptions) {
       options = options || {};
 
+      console.log('---', options);
+
       if (options.modelDB) {
         this.modelDB = options.modelDB;
       } else {
         this.modelDB = new ModelDB();
       }
 
-      const value = this.modelDB.createString('value');
+      const value = this.modelDB.createString('value2');
       value.text = value.text || options.value || '';
 
       const mimeType = this.modelDB.createValue('mimeType');
@@ -244,7 +248,7 @@ export namespace CodeEditor {
      * Get the value of the model.
      */
     get value(): IObservableString {
-      return this.modelDB.get('value') as IObservableString;
+      return this.modelDB.get('value2') as IObservableString;
     }
 
     /**

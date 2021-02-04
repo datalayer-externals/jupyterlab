@@ -30,6 +30,14 @@ export class AutomergeMap<T> implements IObservableMap<T> {
 
     this._itemCmp = options.itemCmp || Private.itemCmp;
 
+    if (options.values) {
+      for (const key in options.values) {
+        this._modelDB.amDoc[this._path][key] = options.values[key];
+      }
+    }
+  }
+
+  public observeRemotes() {
     // Observe and Handle Remote Changes.
     this._observable.observe(
       this._modelDB.amDoc,
@@ -54,12 +62,6 @@ export class AutomergeMap<T> implements IObservableMap<T> {
         }
       }
     );
-
-    if (options.values) {
-      for (const key in options.values) {
-        this._modelDB.amDoc[this._path][key] = options.values[key];
-      }
-    }
   }
 
   /**
@@ -130,15 +132,17 @@ export class AutomergeMap<T> implements IObservableMap<T> {
         );
       });
     }
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `map set ${this._path} ${key} ${value}`,
-        doc => {
-          doc[this._path][key] = value;
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `map set ${this._path} ${key} ${value}`,
+          doc => {
+            doc[this._path][key] = value;
+          }
+        );
+      });
+    }
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
       key: key,
@@ -225,15 +229,17 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    */
   delete(key: string): T | undefined {
     const oldVal = this._modelDB.amDoc[this._path][key];
-    this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `map delete ${this._path} ${key}`,
-        doc => {
-          delete doc[this._path][key];
-        }
-      );
-    });
+    if (this._modelDB.isInitialized) {
+      this._lock(() => {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `map delete ${this._path} ${key}`,
+          doc => {
+            delete doc[this._path][key];
+          }
+        );
+      });
+    }
     const removed = true;
     if (removed) {
       this._changed.emit({

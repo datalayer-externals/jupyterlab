@@ -85,9 +85,11 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
    */
   constructor(options: NotebookModel.IOptions = {}) {
     super(options.languagePreference, options.modelDB);
+
     const factory =
       options.contentFactory || NotebookModel.defaultContentFactory;
     this.contentFactory = factory.clone(this.modelDB.view('cells'));
+
     this._cells = new CellList(this.modelDB, this.contentFactory);
     this._trans = (options.translator || nullTranslator).load('jupyterlab');
     this._cells.changed.connect(this._onCellsChanged, this);

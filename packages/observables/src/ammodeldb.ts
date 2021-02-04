@@ -17,6 +17,8 @@ import { IObservableString } from './observablestring';
 
 import { AutomergeList } from './amlist';
 
+import { AutomergeUndoableList } from './amundoablelist';
+
 import { AutomergeString } from './amstring';
 
 import { AutomergeJSON } from './amjson';
@@ -199,7 +201,7 @@ export class AutomergeModelDB implements IModelDB {
     this._observable = new Observable();
     this._lock = createLock();
     this._amDoc = Automerge.init<AmDoc>({
-      actorId: this._actorId,
+      //      actorId: this._actorId,
       observable: this._observable
     });
 
@@ -207,6 +209,8 @@ export class AutomergeModelDB implements IModelDB {
     //    window.docs = window.docs || [];
     // @ts-ignore
     //    window.docs.push(this._amDoc);
+
+    this._isInitialized = false;
 
     // Listen to Local Changes.
     this._observable.observe(this._amDoc, (diff, before, after, local) => {
@@ -258,6 +262,15 @@ export class AutomergeModelDB implements IModelDB {
               this.collaborators.set(uuid, collaborator);
             }
           });
+          console.log('---', this.isInitialized);
+          if (!this.isInitialized) {
+            (this._db as ObservableMap<any>).values().map(value => {
+              if (value.observeRemotes) {
+                value.observeRemotes();
+              }
+            });
+            this._isInitialized = true;
+          }
         });
       }
     });
@@ -274,6 +287,10 @@ export class AutomergeModelDB implements IModelDB {
 
   get ws(): WebSocket {
     return this._ws;
+  }
+
+  get isInitialized() {
+    return this._isInitialized;
   }
 
   /**
@@ -349,6 +366,9 @@ export class AutomergeModelDB implements IModelDB {
       this._observable,
       this._lock
     );
+    if (this._isInitialized) {
+      (str as any).observeRemotes();
+    }
     this._disposables.add(str);
     this.set(path, str);
     return str;
@@ -356,6 +376,9 @@ export class AutomergeModelDB implements IModelDB {
 
   createList<T extends JSONValue>(path: string): IObservableList<T> {
     const list = new AutomergeList<T>(path, this, this._observable, this._lock);
+    if (this._isInitialized) {
+      (list as any).observeRemotes();
+    }
     this._disposables.add(list);
     this.set(path, list);
     return list;
@@ -375,12 +398,19 @@ export class AutomergeModelDB implements IModelDB {
   createUndoableList<T extends JSONValue>(
     path: string
   ): IObservableUndoableList<T> {
-    const vec = new ObservableUndoableList<T>(
+    const list = new AutomergeUndoableList<T>(
+      path,
+      this,
+      this._observable,
+      this._lock,
       new ObservableUndoableList.IdentitySerializer<T>()
     );
-    this._disposables.add(vec);
-    this.set(path, vec);
-    return vec;
+    if (this._isInitialized) {
+      (list as any).observeRemotes();
+    }
+    this._disposables.add(list);
+    this.set(path, list);
+    return list;
   }
 
   /**
@@ -396,6 +426,9 @@ export class AutomergeModelDB implements IModelDB {
    */
   createMap(path: string): IObservableJSON {
     const map = new AutomergeJSON(path, this, this._observable, this._lock);
+    if (this._isInitialized) {
+      (map as any).observeRemotes();
+    }
     this._disposables.add(map);
     this.set(path, map);
     return map;
@@ -501,6 +534,7 @@ export class AutomergeModelDB implements IModelDB {
   private _amDoc: AmDoc;
   private _observable: Observable;
   private _lock: any;
+  private _isInitialized: boolean;
   private _collaborators: ICollaboratorMap;
   private _basePath: string;
   private _db: IModelDB | ObservableMap<IObservable>;

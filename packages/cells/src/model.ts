@@ -164,8 +164,6 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
   constructor(options: CellModel.IOptions) {
     super({ modelDB: options.modelDB });
 
-    console.log('---', options);
-
     this.id = options.id || UUID.uuid4();
 
     this.value.changed.connect(this.onGenericChange, this);
@@ -472,7 +470,6 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
     const trusted = this.trusted;
     const cell = options.cell as nbformat.ICodeCell;
     let outputs: nbformat.IOutput[] = [];
-    console.log('---');
     const executionCount = this.modelDB.createValue('executionCount');
     if (!executionCount.get()) {
       if (cell && cell.cell_type === 'code') {
