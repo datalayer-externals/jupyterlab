@@ -7,6 +7,18 @@ import { JSONValue, UUID } from '@lumino/coreutils';
 
 import Automerge, { Observable } from 'automerge';
 
+import { AutomergeList } from './amlist';
+
+import { AutomergeModelDBView } from './ammodeldbview'
+
+import { AutomergeUndoableList } from './amundoablelist';
+
+import { AutomergeString } from './amstring';
+
+import { AutomergeJSON } from './amjson';
+
+import { AutomergeValue } from './amvalue';
+
 import { IObservableList } from './observablelist';
 
 import { ObservableMap } from './observablemap';
@@ -14,14 +26,6 @@ import { ObservableMap } from './observablemap';
 import { IObservableJSON } from './observablejson';
 
 import { IObservableString } from './observablestring';
-
-import { AutomergeList } from './amlist';
-
-import { AutomergeUndoableList } from './amundoablelist';
-
-import { AutomergeString } from './amstring';
-
-import { AutomergeJSON } from './amjson';
 
 import {
   IObservableUndoableList,
@@ -330,7 +334,7 @@ export class AutomergeModelDB implements IModelDB {
   readonly connected: Promise<void> = Promise.resolve(void 0);
 
   get uuid(): string {
-    return this._basePath;
+    return '_uuid_' + this._basePath;
   }
 
   /**
@@ -445,7 +449,12 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the value that was created.
    */
   createValue(path: string): IObservableValue {
-    const val = new ObservableValue();
+    const val = new AutomergeValue(
+      path,
+      this,
+      this._observable,
+      this._lock
+    );
     this._disposables.add(val);
     this.set(path, val);
     return val;
@@ -489,8 +498,8 @@ export class AutomergeModelDB implements IModelDB {
    * @returns an `IModelDB` with a view onto the original
    *   `IModelDB`, with `basePath` prepended to all paths.
    */
-  view(basePath: string): ModelDB {
-    const view = new ModelDB({ basePath, baseDB: this });
+  view(basePath: string): IModelDB {
+    const view = new AutomergeModelDBView(basePath, this);
     this._disposables.add(view);
     return view;
   }

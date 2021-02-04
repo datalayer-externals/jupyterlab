@@ -212,13 +212,8 @@ export namespace CodeEditor {
       options = options || {};
 
       if (options.modelDB) {
-        if ((options.modelDB as any).uuid)
-          this._uuid = (options.modelDB as any).uuid();
-      } else {
-        this._uuid = '';
+        this._uuid = options.modelDB.uuid || '';
       }
-
-      console.log('---', options);
 
       if (options.modelDB) {
         this.modelDB = options.modelDB;

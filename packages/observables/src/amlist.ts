@@ -37,6 +37,8 @@ export class AutomergeList<T> implements IObservableList<T> {
     this._observable = observable;
     this._lock = lock;
 
+    this._modelDB.amDoc[this._path] = new Array<T>();
+
     if (options.values !== void 0) {
       if (this._modelDB.isInitialized) {
         each(options.values, value => {
@@ -66,6 +68,24 @@ export class AutomergeList<T> implements IObservableList<T> {
     }
 
     this._itemCmp = options.itemCmp || Private.itemCmp;
+
+  }
+
+  public observeRemotes() {
+    // Observe and Handle Remote Changes.
+    this._observable.observe(
+      this._modelDB.amDoc,
+      (diff, before, after, local) => {
+        console.log('---', diff.props);
+        if (!local && diff.props && diff.props && diff.props[this._path]) {
+          /*
+          Object.keys(after[this._path]).map(uuid => {
+            console.log('uuid');
+          });
+          */
+        }
+      }
+    );
   }
 
   /**
@@ -96,21 +116,6 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   get isDisposed(): boolean {
     return this._isDisposed;
-  }
-
-  public observeRemotes() {
-    // Observe and Handle Remote Changes.
-    this._observable.observe(
-      this._modelDB.amDoc,
-      (diff, before, after, local) => {
-        console.log('---', after);
-        if (!local && diff.props && diff.props && diff.props[this._path]) {
-          Object.keys(after[this._path]).map(uuid => {
-            console.log('uuid');
-          });
-        }
-      }
-    );
   }
 
   /**

@@ -28,6 +28,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     this._observable = observable;
     this._lock = lock;
 
+    this._modelDB.amDoc[this._path] = {};
+
     this._itemCmp = options.itemCmp || Private.itemCmp;
 
     if (options.values) {

@@ -26,6 +26,9 @@ export class AutomergeString implements IObservableString {
     this._modelDB = modelDB;
     this._observable = observable;
     this._lock = lock;
+
+    // TODO(ECH) Don't do this?
+    // this._modelDB.amDoc[this._path] = new Text();
   }
 
   public observeRemotes() {
@@ -102,7 +105,7 @@ export class AutomergeString implements IObservableString {
         return;
       }
     }
-    // TODO(ECH) Check this condition.
+    // TODO(ECH) Check this condition...
     if (!this._modelDB.isInitialized) {
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(

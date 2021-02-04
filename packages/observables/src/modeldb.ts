@@ -153,6 +153,11 @@ export interface IModelDB extends IDisposable {
   readonly collaborators?: ICollaboratorMap;
 
   /**
+   * TODO(ECH)
+   */
+  readonly uuid?: string;
+
+  /**
    * Get a value for a path.
    *
    * @param path: the path for the object.
