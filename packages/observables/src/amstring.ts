@@ -102,6 +102,7 @@ export class AutomergeString implements IObservableString {
         return;
       }
     }
+    // TODO(ECH) Check this condition.
     if (!this._modelDB.isInitialized) {
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(

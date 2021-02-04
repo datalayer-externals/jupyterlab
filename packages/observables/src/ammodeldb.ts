@@ -262,7 +262,6 @@ export class AutomergeModelDB implements IModelDB {
               this.collaborators.set(uuid, collaborator);
             }
           });
-          console.log('---', this.isInitialized);
           if (!this.isInitialized) {
             (this._db as ObservableMap<any>).values().map(value => {
               if (value.observeRemotes) {
@@ -329,6 +328,10 @@ export class AutomergeModelDB implements IModelDB {
    * is immediately resolved.
    */
   readonly connected: Promise<void> = Promise.resolve(void 0);
+
+  get uuid(): string {
+    return this._basePath;
+  }
 
   /**
    * Get a value for a path.

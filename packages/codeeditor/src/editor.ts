@@ -7,8 +7,6 @@ import { IDisposable } from '@lumino/disposable';
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-// import { UUID } from '@lumino/coreutils';
-
 import { IChangedArgs } from '@jupyterlab/coreutils';
 
 import {
@@ -213,6 +211,13 @@ export namespace CodeEditor {
     constructor(options?: Model.IOptions) {
       options = options || {};
 
+      if (options.modelDB) {
+        if ((options.modelDB as any).uuid)
+          this._uuid = (options.modelDB as any).uuid();
+      } else {
+        this._uuid = '';
+      }
+
       console.log('---', options);
 
       if (options.modelDB) {
@@ -221,14 +226,14 @@ export namespace CodeEditor {
         this.modelDB = new ModelDB();
       }
 
-      const value = this.modelDB.createString('value2');
+      const value = this.modelDB.createString(`value_${this._uuid}`);
       value.text = value.text || options.value || '';
 
-      const mimeType = this.modelDB.createValue('mimeType');
+      const mimeType = this.modelDB.createValue(`mimeType_${this._uuid}`);
       mimeType.set(options.mimeType || 'text/plain');
       mimeType.changed.connect(this._onMimeTypeChanged, this);
 
-      this.modelDB.createMap('selections');
+      this.modelDB.createMap(`selections_${this._uuid}`);
     }
 
     /**
@@ -248,28 +253,30 @@ export namespace CodeEditor {
      * Get the value of the model.
      */
     get value(): IObservableString {
-      return this.modelDB.get('value2') as IObservableString;
+      return this.modelDB.get(`value_${this._uuid}`) as IObservableString;
     }
 
     /**
      * Get the selections for the model.
      */
     get selections(): IObservableMap<ITextSelection[]> {
-      return this.modelDB.get('selections') as IObservableMap<ITextSelection[]>;
+      return this.modelDB.get(`selections_${this._uuid}`) as IObservableMap<
+        ITextSelection[]
+      >;
     }
 
     /**
      * A mime type of the model.
      */
     get mimeType(): string {
-      return this.modelDB.getValue('mimeType') as string;
+      return this.modelDB.getValue(`mimeType_${this._uuid}`) as string;
     }
     set mimeType(newValue: string) {
       const oldValue = this.mimeType;
       if (oldValue === newValue) {
         return;
       }
-      this.modelDB.setValue('mimeType', newValue);
+      this.modelDB.setValue(`mimeType_${this._uuid}`, newValue);
     }
 
     /**
@@ -302,6 +309,7 @@ export namespace CodeEditor {
       });
     }
 
+    private _uuid;
     private _isDisposed = false;
     private _mimeTypeChanged = new Signal<this, IChangedArgs<string>>(this);
   }
