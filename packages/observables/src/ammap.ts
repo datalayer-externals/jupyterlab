@@ -123,7 +123,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
-          `set ${this._path} ${key}`,
+          `map set ${this._path} ${key}`,
           doc => {
             doc[this._path] = {};
           }
@@ -133,7 +133,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     this._lock(() => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
-        `set ${this._path} ${key} ${value}`,
+        `map set ${this._path} ${key} ${value}`,
         doc => {
           doc[this._path][key] = value;
         }
@@ -228,7 +228,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     this._lock(() => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
-        `delete ${this._path} ${key}`,
+        `map delete ${this._path} ${key}`,
         doc => {
           delete doc[this._path][key];
         }

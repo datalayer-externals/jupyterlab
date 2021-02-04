@@ -5,7 +5,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { IObservableString } from './observablestring';
 
-import Automerge, { Observable } from 'automerge';
+import Automerge, { Observable, Text } from 'automerge';
 
 import { AutomergeModelDB, AmDoc } from './ammodeldb';
 
@@ -102,7 +102,7 @@ export class AutomergeString implements IObservableString {
       }
     }
     this._lock(() => {
-      this._modelDB.amDoc = Automerge.change(this._modelDB.amDoc, `set ${this._path} ${value}`,doc => {
+      this._modelDB.amDoc = Automerge.change(this._modelDB.amDoc, `string set ${this._path} ${value}`,doc => {
         doc[this._path] = new Text(value)
       })
     });
@@ -120,7 +120,7 @@ export class AutomergeString implements IObservableString {
    */
   get text(): string {
     return this._modelDB.amDoc[this._path]
-      ? this._modelDB.amDoc[this._path].toString()
+      ? (this._modelDB.amDoc[this._path] as Text).toString()
       : '';
   }
 
@@ -135,9 +135,9 @@ export class AutomergeString implements IObservableString {
     this._lock(() => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
-        `insert ${this._path} ${index} ${text}`,
+        `string insert ${this._path} ${index} ${text}`,
         doc => {
-          doc[this._path].insertAt!(index, ...text);
+          (doc[this._path] as Text).insertAt!(index, ...text);
         }
       );
     });
@@ -163,9 +163,9 @@ export class AutomergeString implements IObservableString {
     this._lock(() => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
-        `remove ${this._path} ${start} ${end}`,
+        `string remove ${this._path} ${start} ${end}`,
         doc => {
-          doc[this._path].deleteAt!(start, end - start);
+          (doc[this._path] as Text).deleteAt!(start, end - start);
         }
       );
     });

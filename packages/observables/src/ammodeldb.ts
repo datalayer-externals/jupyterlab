@@ -203,6 +203,11 @@ export class AutomergeModelDB implements IModelDB {
       observable: this._observable
     });
 
+    // @ts-ignore
+    //    window.docs = window.docs || [];
+    // @ts-ignore
+    //    window.docs.push(this._amDoc);
+
     // Listen to Local Changes.
     this._observable.observe(this._amDoc, (diff, before, after, local) => {
       this._amDoc = after;
@@ -350,10 +355,10 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   createList<T extends JSONValue>(path: string): IObservableList<T> {
-    const vec = new AutomergeList<T>();
-    this._disposables.add(vec);
-    this.set(path, vec);
-    return vec;
+    const list = new AutomergeList<T>(path, this, this._observable, this._lock);
+    this._disposables.add(list);
+    this.set(path, list);
+    return list;
   }
 
   /**
