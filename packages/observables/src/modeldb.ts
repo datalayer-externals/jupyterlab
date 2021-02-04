@@ -13,6 +13,8 @@ import { IObservableJSON, ObservableJSON } from './observablejson';
 
 import { IObservableString, ObservableString } from './observablestring';
 
+import { IObservableList, ObservableList } from './observablelist';
+
 import {
   IObservableUndoableList,
   ObservableUndoableList
@@ -179,6 +181,8 @@ export interface IModelDB extends IDisposable {
    */
   createString(path: string): IObservableString;
 
+  createList<T extends JSONValue>(path: string): IObservableList<T>;
+
   /**
    * Create an undoable list and insert it in the database.
    *
@@ -190,7 +194,9 @@ export interface IModelDB extends IDisposable {
    * The list can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createList<T extends JSONValue>(path: string): IObservableUndoableList<T>;
+  createUndoableList<T extends JSONValue>(
+    path: string
+  ): IObservableUndoableList<T>;
 
   /**
    * Create a map and insert it in the database.
@@ -429,6 +435,13 @@ export class ModelDB implements IModelDB {
     return str;
   }
 
+  createList<T extends JSONValue>(path: string): IObservableList<T> {
+    const vec = new ObservableList<T>();
+    this._disposables.add(vec);
+    this.set(path, vec);
+    return vec;
+  }
+
   /**
    * Create an undoable list and insert it in the database.
    *
@@ -440,7 +453,9 @@ export class ModelDB implements IModelDB {
    * The list can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createList<T extends JSONValue>(path: string): IObservableUndoableList<T> {
+  createUndoableList<T extends JSONValue>(
+    path: string
+  ): IObservableUndoableList<T> {
     const vec = new ObservableUndoableList<T>(
       new ObservableUndoableList.IdentitySerializer<T>()
     );

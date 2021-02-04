@@ -7,11 +7,15 @@ import { JSONValue, UUID } from '@lumino/coreutils';
 
 import Automerge, { Observable } from 'automerge';
 
+import { IObservableList } from './observablelist';
+
 import { ObservableMap } from './observablemap';
 
 import { IObservableJSON } from './observablejson';
 
 import { IObservableString } from './observablestring';
+
+import { AutomergeList } from './amlist';
 
 import { AutomergeString } from './amstring';
 
@@ -286,7 +290,7 @@ export class AutomergeModelDB implements IModelDB {
    * Whether the model has been populated with
    * any model values.
    */
-  readonly isPrepopulated: boolean = false;
+  readonly isPrepopulated: boolean = true;
 
   /**
    * Whether the model is collaborative.
@@ -345,6 +349,13 @@ export class AutomergeModelDB implements IModelDB {
     return str;
   }
 
+  createList<T extends JSONValue>(path: string): IObservableList<T> {
+    const vec = new AutomergeList<T>();
+    this._disposables.add(vec);
+    this.set(path, vec);
+    return vec;
+  }
+
   /**
    * Create an undoable list and insert it in the database.
    *
@@ -356,7 +367,9 @@ export class AutomergeModelDB implements IModelDB {
    * The list can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createList<T extends JSONValue>(path: string): IObservableUndoableList<T> {
+  createUndoableList<T extends JSONValue>(
+    path: string
+  ): IObservableUndoableList<T> {
     const vec = new ObservableUndoableList<T>(
       new ObservableUndoableList.IdentitySerializer<T>()
     );
@@ -436,7 +449,6 @@ export class AutomergeModelDB implements IModelDB {
    *   `IModelDB`, with `basePath` prepended to all paths.
    */
   view(basePath: string): ModelDB {
-    console.log('---', basePath);
     const view = new ModelDB({ basePath, baseDB: this });
     this._disposables.add(view);
     return view;
