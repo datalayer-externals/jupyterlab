@@ -236,6 +236,8 @@ export class StaticNotebook extends Widget {
       });
     }
 
+    console.log('---', newValue);
+
     // Trigger private, protected, and public changes.
     this._onModelChanged(oldValue, newValue);
     this.onModelChanged(oldValue, newValue);

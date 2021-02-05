@@ -66,14 +66,6 @@ export interface INotebookModel extends DocumentRegistry.IModel {
    * The array of deleted cells since the notebook was last run.
    */
   readonly deletedCells: string[];
-  /*
-  insertCell(index: number, cell: ICellModel): void;
-  insertCells(index: number, cells: ICellModel[]): void;
-  setCell(index: number, cell: ICellModel): void;
-  getCell(index: number): ICellModel;
-  deleteCell(index: number, length?: number): void;
-  moveCell(from: number, to: number): void;
-*/
 }
 
 /**

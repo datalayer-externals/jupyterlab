@@ -212,23 +212,19 @@ export namespace CodeEditor {
       options = options || {};
 
       if (options.modelDB) {
-        this._uuid = options.modelDB.uuid || '';
-      }
-
-      if (options.modelDB) {
         this.modelDB = options.modelDB;
       } else {
         this.modelDB = new ModelDB();
       }
 
-      const value = this.modelDB.createString(`value_${this._uuid}`);
+      const value = this.modelDB.createString('value');
       value.text = value.text || options.value || '';
 
-      const mimeType = this.modelDB.createValue(`mimeType_${this._uuid}`);
+      const mimeType = this.modelDB.createValue('mimeType');
       mimeType.set(options.mimeType || 'text/plain');
       mimeType.changed.connect(this._onMimeTypeChanged, this);
 
-      this.modelDB.createMap(`selections_${this._uuid}`);
+      this.modelDB.createMap('selections');
     }
 
     /**
@@ -248,14 +244,14 @@ export namespace CodeEditor {
      * Get the value of the model.
      */
     get value(): IObservableString {
-      return this.modelDB.get(`value_${this._uuid}`) as IObservableString;
+      return this.modelDB.get('value') as IObservableString;
     }
 
     /**
      * Get the selections for the model.
      */
     get selections(): IObservableMap<ITextSelection[]> {
-      return this.modelDB.get(`selections_${this._uuid}`) as IObservableMap<
+      return this.modelDB.get('selections') as IObservableMap<
         ITextSelection[]
       >;
     }
@@ -264,14 +260,14 @@ export namespace CodeEditor {
      * A mime type of the model.
      */
     get mimeType(): string {
-      return this.modelDB.getValue(`mimeType_${this._uuid}`) as string;
+      return this.modelDB.getValue('mimeType') as string;
     }
     set mimeType(newValue: string) {
       const oldValue = this.mimeType;
       if (oldValue === newValue) {
         return;
       }
-      this.modelDB.setValue(`mimeType_${this._uuid}`, newValue);
+      this.modelDB.setValue('mimeType', newValue);
     }
 
     /**
@@ -304,7 +300,6 @@ export namespace CodeEditor {
       });
     }
 
-    private _uuid;
     private _isDisposed = false;
     private _mimeTypeChanged = new Signal<this, IChangedArgs<string>>(this);
   }

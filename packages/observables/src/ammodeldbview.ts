@@ -41,9 +41,9 @@ export class AutomergeModelDBView implements IModelDB {
   get collaborators() {
     return this._automergeModelDB.collaborators;
   }
-
-  get uuid() {
-    return this._automergeModelDB.uuid;
+  
+  get id() {
+    return this._automergeModelDB.id;
   }
 
   public get(path: string) {

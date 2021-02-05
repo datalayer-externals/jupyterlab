@@ -37,6 +37,7 @@ export class AutomergeList<T> implements IObservableList<T> {
     this._observable = observable;
     this._lock = lock;
 
+    // TODO(ECH) Do we need this?
     this._modelDB.amDoc[this._path] = new Array<T>();
 
     if (options.values !== void 0) {
@@ -60,7 +61,7 @@ export class AutomergeList<T> implements IObservableList<T> {
             this._modelDB.amDoc,
             `list init ${this._path}`,
             doc => {
-              doc[this._path] = [];
+              doc[this._path] = new Array<T>();
             }
           );
         });
@@ -76,7 +77,7 @@ export class AutomergeList<T> implements IObservableList<T> {
     this._observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local) => {
-        console.log('---', diff.props);
+//        console.log('---', diff.props);
         if (!local && diff.props && diff.props && diff.props[this._path]) {
           /*
           Object.keys(after[this._path]).map(uuid => {
@@ -367,7 +368,7 @@ export class AutomergeList<T> implements IObservableList<T> {
           this._modelDB.amDoc,
           `list clear ${this._path}`,
           doc => {
-            (doc[this._path] as List<T>).length = 0;
+            doc[this._path] = new Array<T>();
           }
         );
       });

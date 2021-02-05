@@ -171,15 +171,17 @@ export class AutomergeModelDB implements IModelDB {
   constructor(options: ModelDB.ICreateOptions = {}) {
     this._basePath = options.basePath || '';
 
-    const splits = UUID.uuid4().split('-');
-    const id = splits.join('');
+    this._id = this._basePath;
+
+    this._localCollaboratorId = UUID.uuid4().split('-').join('');
+    this._localCollaboratorShortId = this._localCollaboratorId.substr(0, 7);
 
     const localCollaborator = new Collaborator(
-      id,
-      id,
-      `Me ${id}`,
+      this._localCollaboratorId,
+      this._localCollaboratorId,
+      `Me ${this._localCollaboratorId}`,
       CSS_COLOR_NAMES[Math.floor(Math.random() * CSS_COLOR_NAMES.length)],
-      `Me ${id.substr(0, 5)}`
+      `Me ${this._localCollaboratorShortId}`
     );
     this._collaborators = new CollaboratorMap(localCollaborator);
 
@@ -234,15 +236,18 @@ export class AutomergeModelDB implements IModelDB {
       if (message.data) {
         const changes = new Uint8Array(message.data);
         this._lock(() => {
+          // Check Owner ID.
           if (this._amDoc['ownerId']) {
             Automerge.Frontend.setActorId(this._amDoc, this._amDoc['ownerId']);
           }
+          // Apply the changes.
           this._amDoc = Automerge.applyChanges(this._amDoc, [changes]);
           if (!this._amDoc['users']) {
             this._amDoc = Automerge.change(this._amDoc, `users`, doc => {
               doc['users'] = {};
             });
           }
+          // Check users.
           if (!this._amDoc['users'][this._actorId]) {
             this._amDoc = Automerge.change(
               this._amDoc,
@@ -266,6 +271,7 @@ export class AutomergeModelDB implements IModelDB {
               this.collaborators.set(uuid, collaborator);
             }
           });
+          // Observe only after initialisation is done.
           if (!this.isInitialized) {
             (this._db as ObservableMap<any>).values().map(value => {
               if (value.observeRemotes) {
@@ -277,6 +283,13 @@ export class AutomergeModelDB implements IModelDB {
         });
       }
     });
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  get id(): string {
+    return this._id;
   }
 
   /**
@@ -315,7 +328,7 @@ export class AutomergeModelDB implements IModelDB {
    * Whether the model has been populated with
    * any model values.
    */
-  readonly isPrepopulated: boolean = true;
+  readonly isPrepopulated: boolean = false;
 
   /**
    * Whether the model is collaborative.
@@ -333,32 +346,6 @@ export class AutomergeModelDB implements IModelDB {
    */
   readonly connected: Promise<void> = Promise.resolve(void 0);
 
-  get uuid(): string {
-    return '_uuid_' + this._basePath;
-  }
-
-  /**
-   * Get a value for a path.
-   *
-   * @param path: the path for the object.
-   *
-   * @returns an `IObservable`.
-   */
-  get(path: string): IObservable | undefined {
-    return this._db.get(this._resolvePath(path));
-  }
-
-  /**
-   * Whether the `IModelDB` has an object at this path.
-   *
-   * @param path: the path for the object.
-   *
-   * @returns a boolean for whether an object is at `path`.
-   */
-  has(path: string): boolean {
-    return this._db.has(this._resolvePath(path));
-  }
-
   /**
    * Create a string and insert it in the database.
    *
@@ -367,13 +354,15 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the string that was created.
    */
   createString(path: string): IObservableString {
+    const idPath = this._idPath(path);
     let str: IObservableString = new AutomergeString(
-      path,
+      idPath,
       this,
       this._observable,
       this._lock
     );
     if (this._isInitialized) {
+      // TODO(ECH)
       (str as any).observeRemotes();
     }
     this._disposables.add(str);
@@ -382,8 +371,15 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   createList<T extends JSONValue>(path: string): IObservableList<T> {
-    const list = new AutomergeList<T>(path, this, this._observable, this._lock);
+    const idPath = this._idPath(path);
+    const list = new AutomergeList<T>(
+      idPath, 
+      this, 
+      this._observable, 
+      this._lock
+    );
     if (this._isInitialized) {
+      // TODO(ECH)
       (list as any).observeRemotes();
     }
     this._disposables.add(list);
@@ -405,14 +401,16 @@ export class AutomergeModelDB implements IModelDB {
   createUndoableList<T extends JSONValue>(
     path: string
   ): IObservableUndoableList<T> {
+    const idPath = this._idPath(path);
     const list = new AutomergeUndoableList<T>(
-      path,
+      idPath,
       this,
       this._observable,
       this._lock,
       new ObservableUndoableList.IdentitySerializer<T>()
     );
     if (this._isInitialized) {
+      // TODO(ECH)
       (list as any).observeRemotes();
     }
     this._disposables.add(list);
@@ -432,8 +430,15 @@ export class AutomergeModelDB implements IModelDB {
    * JSON Objects and primitives.
    */
   createMap(path: string): IObservableJSON {
-    const map = new AutomergeJSON(path, this, this._observable, this._lock);
+    const idPath = this._idPath(path);
+    const map = new AutomergeJSON(
+      idPath, 
+      this, 
+      this._observable, 
+      this._lock
+    );
     if (this._isInitialized) {
+      // TODO(ECH)
       (map as any).observeRemotes();
     }
     this._disposables.add(map);
@@ -449,12 +454,17 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the value that was created.
    */
   createValue(path: string): IObservableValue {
+    const idPath = this._idPath(path);
     const val = new AutomergeValue(
-      path,
+      idPath,
       this,
       this._observable,
       this._lock
     );
+    if (this._isInitialized) {
+      // TODO(ECH)
+      (val as any).observeRemotes();
+    }
     this._disposables.add(val);
     this.set(path, val);
     return val;
@@ -505,6 +515,18 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   /**
+   * Get a value for a path.
+   *
+   * @param path: the path for the object.
+   *
+   * @returns an `IObservable`.
+   */
+  get(path: string): IObservable | undefined {
+    const idPath = this._idPath(path);
+    return this._db.get(this._resolvePath(idPath));
+  }
+
+  /**
    * Set a value at a path. Not intended to
    * be called by user code, instead use the
    * `create*` factory methods.
@@ -514,7 +536,20 @@ export class AutomergeModelDB implements IModelDB {
    * @param value: the value to set at the path.
    */
   set(path: string, value: IObservable): void {
-    this._db.set(this._resolvePath(path), value);
+    const idPath = this._idPath(path);
+    this._db.set(this._resolvePath(idPath), value);
+  }
+
+  /**
+   * Whether the `IModelDB` has an object at this path.
+   *
+   * @param path: the path for the object.
+   *
+   * @returns a boolean for whether an object is at `path`.
+   */
+  has(path: string): boolean {
+    const idPath = this._idPath(path);
+    return this._db.has(this._resolvePath(idPath));
   }
 
   /**
@@ -541,6 +576,13 @@ export class AutomergeModelDB implements IModelDB {
     return path;
   }
 
+  private _idPath(path: string) {
+    return this._id + '_' + path;
+  }
+
+  private _id: string;
+  private _localCollaboratorId: string;
+  private _localCollaboratorShortId: string;
   private _ws: WebSocket;
   private _actorId: string;
   private _amDoc: AmDoc;

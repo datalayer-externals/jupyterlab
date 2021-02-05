@@ -31,7 +31,8 @@ export class AutomergeValue implements IObservableValue {
       this._observable = observable;
       this._lock = lock;
 
-      this._modelDB.amDoc[this._path] = {}
+    // TODO(ECH) Do we need this?
+    // this._modelDB.amDoc[this._path] = {}
 
   }
 
@@ -40,7 +41,7 @@ export class AutomergeValue implements IObservableValue {
     this._observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local) => {
-        console.log('---', diff.props);
+//        console.log('---', diff.props);
         if (!local && diff.props && diff.props && diff.props[this._path]) {
         }
       }

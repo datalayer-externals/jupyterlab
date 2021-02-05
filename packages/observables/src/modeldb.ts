@@ -155,7 +155,7 @@ export interface IModelDB extends IDisposable {
   /**
    * TODO(ECH)
    */
-  readonly uuid?: string;
+  readonly id?: string
 
   /**
    * Get a value for a path.
