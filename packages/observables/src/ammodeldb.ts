@@ -9,7 +9,7 @@ import Automerge, { Observable } from 'automerge';
 
 import { AutomergeList } from './amlist';
 
-import { AutomergeModelDBView } from './ammodeldbview'
+import { AutomergeModelDBView } from './ammodeldbview';
 
 import { AutomergeUndoableList } from './amundoablelist';
 
@@ -173,19 +173,17 @@ export class AutomergeModelDB implements IModelDB {
 
     this._id = this._basePath;
 
-    this._localCollaboratorId = UUID.uuid4().split('-').join('');
-    this._localCollaboratorShortId = this._localCollaboratorId.substr(0, 7);
+    this._actorId = UUID.uuid4().split('-').join('');
+    this._actorShortId = this._actorId.substr(0, 7);
 
     const localCollaborator = new Collaborator(
-      this._localCollaboratorId,
-      this._localCollaboratorId,
-      `Me ${this._localCollaboratorId}`,
+      this._actorId,
+      this._actorId,
+      `Me ${this._actorId}`,
       CSS_COLOR_NAMES[Math.floor(Math.random() * CSS_COLOR_NAMES.length)],
-      `Me ${this._localCollaboratorShortId}`
+      `Me ${this._actorShortId}`
     );
     this._collaborators = new CollaboratorMap(localCollaborator);
-
-    this._actorId = localCollaborator.sessionId;
 
     if (options.baseDB) {
       this._db = options.baseDB;
@@ -373,9 +371,9 @@ export class AutomergeModelDB implements IModelDB {
   createList<T extends JSONValue>(path: string): IObservableList<T> {
     const idPath = this._idPath(path);
     const list = new AutomergeList<T>(
-      idPath, 
-      this, 
-      this._observable, 
+      idPath,
+      this,
+      this._observable,
       this._lock
     );
     if (this._isInitialized) {
@@ -431,12 +429,7 @@ export class AutomergeModelDB implements IModelDB {
    */
   createMap(path: string): IObservableJSON {
     const idPath = this._idPath(path);
-    const map = new AutomergeJSON(
-      idPath, 
-      this, 
-      this._observable, 
-      this._lock
-    );
+    const map = new AutomergeJSON(idPath, this, this._observable, this._lock);
     if (this._isInitialized) {
       // TODO(ECH)
       (map as any).observeRemotes();
@@ -455,12 +448,7 @@ export class AutomergeModelDB implements IModelDB {
    */
   createValue(path: string): IObservableValue {
     const idPath = this._idPath(path);
-    const val = new AutomergeValue(
-      idPath,
-      this,
-      this._observable,
-      this._lock
-    );
+    const val = new AutomergeValue(idPath, this, this._observable, this._lock);
     if (this._isInitialized) {
       // TODO(ECH)
       (val as any).observeRemotes();
@@ -581,10 +569,9 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   private _id: string;
-  private _localCollaboratorId: string;
-  private _localCollaboratorShortId: string;
   private _ws: WebSocket;
   private _actorId: string;
+  private _actorShortId: string;
   private _amDoc: AmDoc;
   private _observable: Observable;
   private _lock: any;
