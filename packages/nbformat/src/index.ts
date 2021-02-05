@@ -202,6 +202,11 @@ export interface IBaseCell extends PartialJSONObject {
    * Cell-level metadata.
    */
   metadata: Partial<ICellMetadata>;
+
+  /*
+   * TODO (ECH)
+   */
+  id: string;
 }
 
 /**

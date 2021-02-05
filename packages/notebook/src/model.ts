@@ -520,8 +520,11 @@ export namespace NotebookModel {
         options.contentFactory = this.codeCellContentFactory;
       }
       if (this.modelDB) {
-        if (!options.id) {
+        // TODO(ECH) Revisit this...
+        if (!options.cell?.id) {
           options.id = UUID.uuid4();
+        } else {
+          options.id = options.cell?.id;
         }
         options.modelDB = this.modelDB.view(options.id);
       }

@@ -164,6 +164,8 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
   constructor(options: CellModel.IOptions) {
     super({ modelDB: options.modelDB });
 
+    console.log('---', options)
+
     this.id = options.id || UUID.uuid4();
 
     this.value.changed.connect(this.onGenericChange, this);

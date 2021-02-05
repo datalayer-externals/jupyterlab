@@ -369,6 +369,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
   insertAll(index: number, cells: IterableOrArrayLike<ICellModel>): number {
     const newValues = toArray(cells);
     each(newValues, cell => {
+      console.log('---', cell.id, cell);
       this._cellMap.set(cell.id, cell);
       this._cellOrder.beginCompoundOperation();
       this._cellOrder.insert(index++, cell.id);

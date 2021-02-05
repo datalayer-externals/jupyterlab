@@ -69,9 +69,9 @@ export class AutomergeList<T> implements IObservableList<T> {
     this._observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local) => {
-//        console.log('---', diff.props);
         if (!local && diff.props && diff.props && diff.props[this._path]) {
           /*
+          console.log('---', diff.props[this._path]);
           Object.keys(after[this._path]).map(uuid => {
             console.log('uuid');
           });
