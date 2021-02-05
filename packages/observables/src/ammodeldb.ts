@@ -75,6 +75,19 @@ function waitForSocketConnection(socket: WebSocket, callback: any) {
   }, 10); // wait 10 miliseconds for the connection...
 }
 
+// Make the function wait until the mode is initialized...
+export function waitInit(modelDB: AutomergeModelDB, callback: any) {
+  setTimeout(function () {
+    if (modelDB.isInitialized) {
+      if (callback != null) {
+        callback();
+      }
+    } else {
+      waitInit(modelDB, callback);
+    }
+  }, 10); // wait 10 miliseconds for the connection...
+}
+
 export const combine = (changes: Uint8Array[]) => {
   // Get the total length of all arrays.
   let length = 0;
@@ -231,6 +244,15 @@ export class AutomergeModelDB implements IModelDB {
 
     // Listen to Remote Changes.
     this._ws.addEventListener('message', (message: MessageEvent) => {
+      // Start Observing Remotes if not yet the case.
+      if (!this.isInitialized) {
+        (this._db as ObservableMap<any>).values().map(value => {
+          if (value.observeRemotes) {
+            value.observeRemotes();
+          }
+        });
+      }
+      this._isInitialized = true;
       if (message.data) {
         const changes = new Uint8Array(message.data);
         this._lock(() => {
@@ -264,20 +286,11 @@ export class AutomergeModelDB implements IModelDB {
                 CSS_COLOR_NAMES[
                   Math.floor(Math.random() * CSS_COLOR_NAMES.length)
                 ],
-                `Anonymous ${uuid.substr(0, 5)}`
+                `Anonymous ${uuid.substr(0, 7)}`
               );
               this.collaborators.set(uuid, collaborator);
             }
           });
-          // Observe only after initialisation is done.
-          if (!this.isInitialized) {
-            (this._db as ObservableMap<any>).values().map(value => {
-              if (value.observeRemotes) {
-                value.observeRemotes();
-              }
-            });
-            this._isInitialized = true;
-          }
         });
       }
     });

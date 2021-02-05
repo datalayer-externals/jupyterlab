@@ -78,8 +78,6 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
   constructor(options: NotebookModel.IOptions = {}) {
     super(options.languagePreference, options.modelDB);
 
-    console.log('--- new NotebookModel', options);
-
     const factory =
       options.contentFactory || NotebookModel.defaultContentFactory;
     this.contentFactory = factory.clone(this.modelDB.view('cells'));

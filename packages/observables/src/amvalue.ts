@@ -84,7 +84,7 @@ export class AutomergeValue implements IObservableValue {
     if (JSONExt.deepEqual(oldValue, value)) {
       return;
     }
-    if (!this._modelDB.isInitialized) {
+    if (this._modelDB.isInitialized) {
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,

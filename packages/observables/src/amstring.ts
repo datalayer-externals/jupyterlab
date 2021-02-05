@@ -7,7 +7,7 @@ import { IObservableString } from './observablestring';
 
 import Automerge, { Observable, Text } from 'automerge';
 
-import { AutomergeModelDB, AmDoc } from './ammodeldb';
+import { waitInit, AutomergeModelDB, AmDoc } from './ammodeldb';
 
 /**
  * A concrete implementation of [[IObservableString]]
@@ -97,31 +97,36 @@ export class AutomergeString implements IObservableString {
    * Set the value of the string.
    */
   set text(value: string) {
-    if (this._modelDB.amDoc[this._path]) {
-      if (
-        value.length === this._modelDB.amDoc[this._path].length &&
-        value === this._modelDB.amDoc[this._path]
-      ) {
+    waitInit(this._modelDB, () => {
+      if (this._modelDB.amDoc[this._path]) {
         return;
       }
-    }
-    // TODO(ECH) Check this condition...
-    if (!this._modelDB.isInitialized) {
-      this._lock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
-          `string set ${this._path} ${value}`,
-          doc => {
-            doc[this._path] = new Text(value);
-          }
-        );
+      if (this._modelDB.amDoc[this._path]) {
+        if (
+          value.length === this._modelDB.amDoc[this._path].length &&
+          value === this._modelDB.amDoc[this._path]
+        ) {
+          return;
+        }
+      }
+      // TODO(ECH) Check this condition !this...
+      if (this._modelDB.isInitialized) {
+        this._lock(() => {
+          this._modelDB.amDoc = Automerge.change(
+            this._modelDB.amDoc,
+            `string set ${this._path} ${value}`,
+            doc => {
+              doc[this._path] = new Text(value);
+            }
+          );
+        });
+      };
+      this._changed.emit({
+        type: 'set',
+        start: 0,
+        end: value.length,
+        value: value
       });
-    }
-    this._changed.emit({
-      type: 'set',
-      start: 0,
-      end: value.length,
-      value: value
     });
   }
 
