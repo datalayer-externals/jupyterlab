@@ -37,36 +37,28 @@ export class AutomergeList<T> implements IObservableList<T> {
     this._observable = observable;
     this._lock = lock;
 
-    // TODO(ECH) Do we need this?
-    this._modelDB.amDoc[this._path] = new Array<T>();
-
-    if (options.values !== void 0) {
-      if (this._modelDB.isInitialized) {
+    this._lock(() => {
+      if (options.values !== void 0) {
         each(options.values, value => {
-          this._lock(() => {
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `list init ${this._path} ${value}`,
-              doc => {
-                (doc[this._path] as List<T>).push(value);
-              }
-            );
-          });
-        });
-      }
-    } else {
-      if (this._modelDB.isInitialized) {
-        this._lock(() => {
           this._modelDB.amDoc = Automerge.change(
             this._modelDB.amDoc,
-            `list init ${this._path}`,
+            `list init ${this._path} ${value}`,
             doc => {
-              doc[this._path] = new Array<T>();
+              doc[this._path] = [];
+              (doc[this._path] as List<T>).push(value);
             }
           );
         });
+      } else {
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list init ${this._path}`,
+          doc => {
+            doc[this._path] = [];
+          }
+        );
       }
-    }
+    });
 
     this._itemCmp = options.itemCmp || Private.itemCmp;
 
@@ -220,17 +212,16 @@ export class AutomergeList<T> implements IObservableList<T> {
    * No changes.
    */
   push(value: T): number {
-    if (this._modelDB.isInitialized) {
-      this._lock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
-          `list push ${this._path} ${value}`,
-          doc => {
-            (doc[this._path] as List<T>).push(value);
-          }
-        );
-      });
-    }
+//      if (this._modelDB.isInitialized) {
+    this._lock(() => {
+      this._modelDB.amDoc = Automerge.change(
+        this._modelDB.amDoc,
+        `list push ${this._path} ${value}`,
+        doc => {
+          (doc[this._path] as List<T>).push(value);
+        }
+      );
+    });
     const num = (this._modelDB.amDoc[this._path] as List<T>).length;
     this._changed.emit({
       type: 'add',
@@ -262,17 +253,16 @@ export class AutomergeList<T> implements IObservableList<T> {
    * An `index` which is non-integral.
    */
   insert(index: number, value: T): void {
-    if (this._modelDB.isInitialized) {
-      this._lock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
-          `list insert ${this._path} ${index} ${value}`,
-          doc => {
-            ArrayExt.insert(doc[this._path] as List<T>, index, value);
-          }
-        );
-      });
-    }
+//    if (this._modelDB.isInitialized) {
+    this._lock(() => {
+      this._modelDB.amDoc = Automerge.change(
+        this._modelDB.amDoc,
+        `list insert ${this._path} ${index} ${value}`,
+        doc => {
+          ArrayExt.insert(doc[this._path] as List<T>, index, value);
+        }
+      );
+    });
     this._changed.emit({
       type: 'add',
       oldIndex: -1,
@@ -361,25 +351,27 @@ export class AutomergeList<T> implements IObservableList<T> {
    * All current iterators are invalidated.
    */
   clear(): void {
-    const copy = (this._modelDB.amDoc[this._path] as List<T>).slice();
-    if (this._modelDB.isInitialized) {
-      this._lock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
-          `list clear ${this._path}`,
-          doc => {
-            doc[this._path] = new Array<T>();
-          }
-        );
+    if (this._modelDB.amDoc[this._path]) {
+      const copy = (this._modelDB.amDoc[this._path] as List<T>).slice();
+      if (this._modelDB.isInitialized) {
+        this._lock(() => {
+          this._modelDB.amDoc = Automerge.change(
+            this._modelDB.amDoc,
+            `list clear ${this._path}`,
+            doc => {
+              doc[this._path] = new Array<T>();
+            }
+          );
+        });
+      }
+      this._changed.emit({
+        type: 'remove',
+        oldIndex: 0,
+        newIndex: 0,
+        newValues: [],
+        oldValues: copy
       });
     }
-    this._changed.emit({
-      type: 'remove',
-      oldIndex: 0,
-      newIndex: 0,
-      newValues: [],
-      oldValues: copy
-    });
   }
 
   /**

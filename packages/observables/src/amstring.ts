@@ -7,7 +7,7 @@ import { IObservableString } from './observablestring';
 
 import Automerge, { Observable, Text } from 'automerge';
 
-import { waitInit, AutomergeModelDB, AmDoc } from './ammodeldb';
+import { waitForModelInit, AutomergeModelDB, AmDoc } from './ammodeldb';
 
 /**
  * A concrete implementation of [[IObservableString]]
@@ -97,7 +97,7 @@ export class AutomergeString implements IObservableString {
    * Set the value of the string.
    */
   set text(value: string) {
-    waitInit(this._modelDB, () => {
+    waitForModelInit(this._modelDB, () => {
       if (this._modelDB.amDoc[this._path]) {
         return;
       }

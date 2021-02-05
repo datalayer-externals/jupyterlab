@@ -63,29 +63,33 @@ const CSS_COLOR_NAMES = [
 const WS_READY_STATE_OPEN = 1;
 
 // Make the function wait until the connection is made...
-function waitForSocketConnection(socket: WebSocket, callback: any) {
-  setTimeout(function () {
+function waitForSocketReady(socket: WebSocket, callback: any) {
+  if (socket.readyState === WS_READY_STATE_OPEN) {
+    callback();
+  }
+  else setTimeout(function () {
     if (socket.readyState === WS_READY_STATE_OPEN) {
-      if (callback != null) {
-        callback();
-      }
+      callback();
     } else {
-      waitForSocketConnection(socket, callback);
+      waitForSocketReady(socket, callback);
     }
-  }, 10); // wait 10 miliseconds for the connection...
+  }, 10); // Wait 10 miliseconds for the websocket...
 }
 
 // Make the function wait until the mode is initialized...
-export function waitInit(modelDB: AutomergeModelDB, callback: any) {
-  setTimeout(function () {
+export function waitForModelInit(modelDB: AutomergeModelDB, callback: any) {
+  if (modelDB.isInitialized) {
+    callback();
+  }
+  else setTimeout(function () {
     if (modelDB.isInitialized) {
-      if (callback != null) {
-        callback();
-      }
+      console.log('--- ModelDB is now initialized.')
+      callback();
     } else {
-      waitInit(modelDB, callback);
+      console.log('--- Waiting on ModelDB initialisation....')
+      waitForModelInit(modelDB, callback);
     }
-  }, 10); // wait 10 miliseconds for the connection...
+  }, 10); // Wait 10 miliseconds for model initialization...
 }
 
 export const combine = (changes: Uint8Array[]) => {
@@ -229,14 +233,16 @@ export class AutomergeModelDB implements IModelDB {
 
     this._isInitialized = false;
 
-    // Listen to Local Changes.
+    /**
+     * Observe Local Changes.
+     */
     this._observable.observe(this._amDoc, (diff, before, after, local) => {
-      this._amDoc = after;
       if (local) {
-        //        const changes = Automerge.Frontend.getLastLocalChange(after);
+        // this._amDoc = after;
+        // const changes = Automerge.Frontend.getLastLocalChange(after);
         const changes = Automerge.getChanges(before, after);
-        waitForSocketConnection(this._ws, () => {
-          const combined = combine(changes);
+        const combined = combine(changes);
+        waitForSocketReady(this._ws, () => {
           this._ws.send(combined);
         });
       }
@@ -244,17 +250,17 @@ export class AutomergeModelDB implements IModelDB {
 
     // Listen to Remote Changes.
     this._ws.addEventListener('message', (message: MessageEvent) => {
-      // Start Observing Remotes if not yet the case.
-      if (!this.isInitialized) {
-        (this._db as ObservableMap<any>).values().map(value => {
-          if (value.observeRemotes) {
-            value.observeRemotes();
-          }
-        });
-      }
-      this._isInitialized = true;
       if (message.data) {
         const changes = new Uint8Array(message.data);
+        // Start Observing Remotes if not yet the case.
+        if (!this.isInitialized) {
+          (this._db as ObservableMap<any>).values().map(value => {
+            if (value.observeRemotes) {
+              value.observeRemotes();
+            }
+          });
+          this._isInitialized = true;
+        }
         this._lock(() => {
           // Check Owner ID.
           if (this._amDoc['ownerId']) {

@@ -231,7 +231,14 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * This is a no-op if the value does not change.
    */
   delete(key: string): T | undefined {
-    const oldVal = this._modelDB.amDoc[this._path][key];
+    const old = this._modelDB.amDoc[this._path]
+    if (!old) {
+      return;
+    }
+    const oldVal = old[key];
+    if (!oldVal) {
+      return oldVal;
+    }
     if (this._modelDB.isInitialized) {
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(
@@ -275,7 +282,9 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    this._modelDB.amDoc[this._path].clear();
+    if (this._modelDB.amDoc[this._path]) {
+      this._modelDB.amDoc[this._path].clear();
+    }
   }
 
   private _path: string;

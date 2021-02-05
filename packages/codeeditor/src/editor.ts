@@ -260,7 +260,8 @@ export namespace CodeEditor {
      * A mime type of the model.
      */
     get mimeType(): string {
-      return this.modelDB.getValue('mimeType') as string;
+      const mimeType = this.modelDB.getValue('mimeType') as string;
+      return mimeType || 'text/plain';
     }
     set mimeType(newValue: string) {
       const oldValue = this.mimeType;
