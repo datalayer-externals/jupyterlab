@@ -78,6 +78,8 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
   constructor(options: NotebookModel.IOptions = {}) {
     super(options.languagePreference, options.modelDB);
 
+    console.log('--- new NotebookModel', options)
+
     const factory =
       options.contentFactory || NotebookModel.defaultContentFactory;
     this.contentFactory = factory.clone(this.modelDB.view('cells'));
@@ -521,17 +523,15 @@ export namespace NotebookModel {
       }
       if (this.modelDB) {
         // TODO(ECH) Revisit this...
-        if (!options.cell?.id) {
-          options.id = UUID.uuid4();
-        } else {
+        if (options.cell?.id) {
           options.id = options.cell?.id;
+        } else {
+          options.id = UUID.uuid4();
         }
         options.modelDB = this.modelDB.view(options.id);
       }
       return new CodeCellModel(options);
-    }
-
-    /**
+    }    /**
      * Create a new markdown cell.
      *
      * @param source - The data to use for the original source data.
@@ -541,7 +541,10 @@ export namespace NotebookModel {
      */
     createMarkdownCell(options: CellModel.IOptions): IMarkdownCellModel {
       if (this.modelDB) {
-        if (!options.id) {
+        // TODO(ECH) Revisit this...
+        if (options.cell?.id) {
+          options.id = options.cell?.id;
+        } else {
           options.id = UUID.uuid4();
         }
         options.modelDB = this.modelDB.view(options.id);
@@ -559,7 +562,10 @@ export namespace NotebookModel {
      */
     createRawCell(options: CellModel.IOptions): IRawCellModel {
       if (this.modelDB) {
-        if (!options.id) {
+        // TODO(ECH) Revisit this...
+        if (options.cell?.id) {
+          options.id = options.cell?.id;
+        } else {
           options.id = UUID.uuid4();
         }
         options.modelDB = this.modelDB.view(options.id);

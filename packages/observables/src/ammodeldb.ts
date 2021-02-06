@@ -19,7 +19,11 @@ import { AutomergeMap } from './ammap';
 
 import { AutomergeJSON } from './amjson';
 
+import { AutomergeNotebook } from './amnotebook';
+
 import { AutomergeValue } from './amvalue';
+
+import { IObservableNotebook } from './observablenotebook';
 
 import { IObservableList } from './observablelist';
 
@@ -391,7 +395,7 @@ export class AutomergeModelDB implements IModelDB {
     return str;
   }
 
-  createList<T extends JSONValue>(path: string): IObservableList<T> {
+  createList<T extends any>(path: string): IObservableList<T> {
     const idPath = this._idPath(path);
     const list = new AutomergeList<T>(
       idPath,
@@ -481,6 +485,19 @@ export class AutomergeModelDB implements IModelDB {
     this.set(path, json);
     return json;
   }
+
+  public createNotebook(path: string): IObservableNotebook {
+    const idPath = this._idPath(path);
+    const notebook = new AutomergeNotebook(idPath, this, this._observable, this._lock);
+    if (this._isInitialized) {
+      // TODO(ECH)
+      (notebook as any).observeRemotes();
+    }
+    this._disposables.add(notebook);
+    this.set(path, notebook);
+    return notebook;
+  }
+
 
   /**
    * Create an opaque value and insert it in the database.

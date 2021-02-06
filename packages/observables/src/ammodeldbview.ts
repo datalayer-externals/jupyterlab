@@ -7,6 +7,8 @@ import { IObservableList } from './observablelist';
 
 import { IObservableUndoableList } from './undoablelist';
 
+import { IObservableNotebook } from './observablenotebook';
+
 import { AutomergeModelDB } from './ammodeldb';
 
 import { IModelDB, IObservable } from './modeldb';
@@ -62,7 +64,7 @@ export class AutomergeModelDBView implements IModelDB {
     return this._automergeModelDB.createString(this._viewedPath(path));
   }
 
-  public createList<T extends JSONValue>(path: string): IObservableList<T>  {
+  public createList<T extends any>(path: string): IObservableList<T>  {
     return this._automergeModelDB.createList(this._viewedPath(path));
   }
 
@@ -78,6 +80,10 @@ export class AutomergeModelDBView implements IModelDB {
 
   public createJSON(path: string) {
     return this._automergeModelDB.createJSON(this._viewedPath(path));
+  }
+
+  public createNotebook(path: string): IObservableNotebook {
+    return this._automergeModelDB.createNotebook(this._viewedPath(path));
   }
 
   public createValue(path: string) {

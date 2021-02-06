@@ -15,6 +15,8 @@ import { IObservableString, ObservableString } from './observablestring';
 
 import { IObservableList, ObservableList } from './observablelist';
 
+import { IObservableNotebook  } from './observablenotebook';
+
 import {
   IObservableUndoableList,
   ObservableUndoableList
@@ -24,7 +26,7 @@ import {
  * String type annotations for Observable objects that can be
  * created and placed in the IModelDB interface.
  */
-export type ObservableType = 'Map' | 'List' | 'String' | 'Value';
+export type ObservableType = 'Notebook' | 'Map' | 'List' | 'String' | 'Value';
 
 /**
  * Base interface for Observable objects.
@@ -184,7 +186,10 @@ export interface IModelDB extends IDisposable {
    */
   createString(path: string): IObservableString;
 
-  createList<T extends JSONValue>(path: string): IObservableList<T>;
+  /**
+   * TODO(ECH)
+   */
+  createList<T>(path: string): IObservableList<T>;
 
   /**
    * Create an undoable list and insert it in the database.
@@ -226,6 +231,11 @@ export interface IModelDB extends IDisposable {
    * JSON Objects and primitives.
    */
   createJSON(path: string): IObservableJSON;
+
+  /**
+   * TODO(ECH)
+   */
+  createNotebook(path: string): IObservableNotebook;
 
   /**
    * Create an opaque value and insert it in the database.
@@ -451,7 +461,7 @@ export class ModelDB implements IModelDB {
     return str;
   }
 
-  createList<T extends JSONValue>(path: string): IObservableList<T> {
+  createList<T extends any>(path: string): IObservableList<T> {
     const vec = new ObservableList<T>();
     this._disposables.add(vec);
     this.set(path, vec);
@@ -510,6 +520,13 @@ export class ModelDB implements IModelDB {
     this._disposables.add(map);
     this.set(path, map);
     return map;
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  createNotebook(path: string): IObservableNotebook {
+    throw new Error('createNotebook is not implemented')
   }
 
   /**
