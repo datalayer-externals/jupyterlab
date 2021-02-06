@@ -98,6 +98,7 @@ export class AutomergeString implements IObservableString {
    */
   set text(value: string) {
     waitForModelInit(this._modelDB, () => {
+      // TODO(ECH) Document this...
       if (this._modelDB.amDoc[this._path]) {
         return;
       }
@@ -147,7 +148,7 @@ export class AutomergeString implements IObservableString {
    * @param text - The substring to insert.
    */
   insert(index: number, text: string): void {
-    if (this._modelDB.isInitialized) {
+    waitForModelInit(this._modelDB, () => {
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
@@ -157,12 +158,12 @@ export class AutomergeString implements IObservableString {
           }
         );
       });
-    }
-    this._changed.emit({
-      type: 'insert',
-      start: index,
-      end: index + text.length,
-      value: text
+      this._changed.emit({
+        type: 'insert',
+        start: index,
+        end: index + text.length,
+        value: text
+      });
     });
   }
 
@@ -174,10 +175,10 @@ export class AutomergeString implements IObservableString {
    * @param end - The ending index.
    */
   remove(start: number, end: number): void {
-    const oldValue = this._modelDB.amDoc[this._path]
+    waitForModelInit(this._modelDB, () => {
+      const oldValue = this._modelDB.amDoc[this._path]
       .toString()
       .slice(start, end);
-    if (this._modelDB.isInitialized) {
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
@@ -187,12 +188,12 @@ export class AutomergeString implements IObservableString {
           }
         );
       });
-    }
-    this._changed.emit({
-      type: 'remove',
-      start: start,
-      end: end,
-      value: oldValue
+      this._changed.emit({
+        type: 'remove',
+        start: start,
+        end: end,
+        value: oldValue
+      });
     });
   }
 
@@ -200,8 +201,10 @@ export class AutomergeString implements IObservableString {
    * Set the ObservableString to an empty string.
    */
   clear(): void {
-    this._modelDB.amDoc = Automerge.init<AmDoc>();
-    this.text = '';
+    waitForModelInit(this._modelDB, () => {
+      this._modelDB.amDoc = Automerge.init<AmDoc>();
+      this.text = '';
+    });
   }
 
   /**

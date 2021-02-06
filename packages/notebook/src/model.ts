@@ -87,7 +87,7 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
     this._cells.changed.connect(this._onCellsChanged, this);
 
     // Handle initial metadata.
-    const metadata = this.modelDB.createMap('metadata');
+    const metadata = this.modelDB.createJSON('metadata');
     if (!metadata.has('language_info')) {
       const name = options.languagePreference || '';
       metadata.set('language_info', { name });

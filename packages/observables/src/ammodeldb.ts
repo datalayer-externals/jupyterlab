@@ -15,13 +15,15 @@ import { AutomergeUndoableList } from './amundoablelist';
 
 import { AutomergeString } from './amstring';
 
+import { AutomergeMap } from './ammap';
+
 import { AutomergeJSON } from './amjson';
 
 import { AutomergeValue } from './amvalue';
 
 import { IObservableList } from './observablelist';
 
-import { ObservableMap } from './observablemap';
+import { ObservableMap, IObservableMap } from './observablemap';
 
 import { IObservableJSON } from './observablejson';
 
@@ -58,6 +60,8 @@ const CSS_COLOR_NAMES = [
   'Gray',
   'Silver'
 ];
+
+const SHORT_ID_NUMBER_OF_CHARS = 7;
 
 // const WS_READY_STATE_CONNECTING = 0
 const WS_READY_STATE_OPEN = 1;
@@ -191,7 +195,7 @@ export class AutomergeModelDB implements IModelDB {
     this._id = this._basePath;
 
     this._actorId = UUID.uuid4().split('-').join('');
-    this._actorShortId = this._actorId.substr(0, 7);
+    this._actorShortId = this._actorId.substr(0, SHORT_ID_NUMBER_OF_CHARS);
 
     const localCollaborator = new Collaborator(
       this._actorId,
@@ -251,17 +255,17 @@ export class AutomergeModelDB implements IModelDB {
     // Listen to Remote Changes.
     this._ws.addEventListener('message', (message: MessageEvent) => {
       if (message.data) {
-        const changes = new Uint8Array(message.data);
-        // Start Observing Remotes if not yet the case.
-        if (!this.isInitialized) {
-          (this._db as ObservableMap<any>).values().map(value => {
-            if (value.observeRemotes) {
-              value.observeRemotes();
-            }
-          });
-          this._isInitialized = true;
-        }
         this._lock(() => {
+          const changes = new Uint8Array(message.data);
+          // Start Observing Remotes if not yet the case.
+          if (!this.isInitialized) {
+            (this._db as ObservableMap<any>).values().map(value => {
+              if (value.observeRemotes) {
+                value.observeRemotes();
+              }
+            });
+            this._isInitialized = true;
+          }
           // Check Owner ID.
           if (this._amDoc['ownerId']) {
             Automerge.Frontend.setActorId(this._amDoc, this._amDoc['ownerId']);
@@ -292,7 +296,7 @@ export class AutomergeModelDB implements IModelDB {
                 CSS_COLOR_NAMES[
                   Math.floor(Math.random() * CSS_COLOR_NAMES.length)
                 ],
-                `Anonymous ${uuid.substr(0, 7)}`
+                `Anonymous ${uuid.substr(0, SHORT_ID_NUMBER_OF_CHARS)}`
               );
               this.collaborators.set(uuid, collaborator);
             }
@@ -442,13 +446,10 @@ export class AutomergeModelDB implements IModelDB {
    *
    * @returns the map that was created.
    *
-   * #### Notes
-   * The map can only store objects that are simple
-   * JSON Objects and primitives.
    */
-  createMap(path: string): IObservableJSON {
+  createMap(path: string): IObservableMap<any> {
     const idPath = this._idPath(path);
-    const map = new AutomergeJSON(idPath, this, this._observable, this._lock);
+    const map = new AutomergeMap(idPath, this, this._observable, this._lock);
     if (this._isInitialized) {
       // TODO(ECH)
       (map as any).observeRemotes();
@@ -456,6 +457,29 @@ export class AutomergeModelDB implements IModelDB {
     this._disposables.add(map);
     this.set(path, map);
     return map;
+  }
+
+  /**
+   * Create a map and insert it in the database.
+   *
+   * @param path: the path for the map.
+   *
+   * @returns the map that was created.
+   *
+   * #### Notes
+   * The map can only store objects that are simple
+   * JSON Objects and primitives.
+   */
+  createJSON(path: string): IObservableJSON {
+    const idPath = this._idPath(path);
+    const json = new AutomergeJSON(idPath, this, this._observable, this._lock);
+    if (this._isInitialized) {
+      // TODO(ECH)
+      (json as any).observeRemotes();
+    }
+    this._disposables.add(json);
+    this.set(path, json);
+    return json;
   }
 
   /**

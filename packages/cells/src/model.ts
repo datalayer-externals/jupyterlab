@@ -164,8 +164,6 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
   constructor(options: CellModel.IOptions) {
     super({ modelDB: options.modelDB });
 
-    console.log('---', options)
-
     this.id = options.id || UUID.uuid4();
 
     this.value.changed.connect(this.onGenericChange, this);
@@ -173,7 +171,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
     const cellType = this.modelDB.createValue('type');
     cellType.set(this.type);
 
-    const observableMetadata = this.modelDB.createMap('metadata');
+    const observableMetadata = this.modelDB.createJSON('metadata');
     observableMetadata.changed.connect(this.onGenericChange, this);
 
     const cell = options.cell;

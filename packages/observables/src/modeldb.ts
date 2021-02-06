@@ -7,7 +7,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { JSONExt, JSONValue, PartialJSONValue } from '@lumino/coreutils';
 
-import { ObservableMap } from './observablemap';
+import { ObservableMap, IObservableMap } from './observablemap';
 
 import { IObservableJSON, ObservableJSON } from './observablejson';
 
@@ -19,8 +19,6 @@ import {
   IObservableUndoableList,
   ObservableUndoableList
 } from './undoablelist';
-
-import { IObservableMap } from './observablemap';
 
 /**
  * String type annotations for Observable objects that can be
@@ -214,7 +212,20 @@ export interface IModelDB extends IDisposable {
    * The map can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createMap(path: string): IObservableJSON;
+  createMap(path: string): IObservableMap<any>;
+
+  /**
+   * Create a map and insert it in the database.
+   *
+   * @param path: the path for the map.
+   *
+   * @returns the map that was created.
+   *
+   * #### Notes
+   * The map can only store objects that are simple
+   * JSON Objects and primitives.
+   */
+  createJSON(path: string): IObservableJSON;
 
   /**
    * Create an opaque value and insert it in the database.
@@ -475,12 +486,26 @@ export class ModelDB implements IModelDB {
    * @param path: the path for the map.
    *
    * @returns the map that was created.
+   *   */
+  createMap(path: string): IObservableMap<any> {
+    const map = new ObservableJSON();
+    this._disposables.add(map);
+    this.set(path, map);
+    return map;
+  }
+
+  /**
+   * Create a map and insert it in the database.
+   *
+   * @param path: the path for the map.
+   *
+   * @returns the map that was created.
    *
    * #### Notes
    * The map can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createMap(path: string): IObservableJSON {
+  createJSON(path: string): IObservableJSON {
     const map = new ObservableJSON();
     this._disposables.add(map);
     this.set(path, map);

@@ -224,7 +224,7 @@ export namespace CodeEditor {
       mimeType.set(options.mimeType || 'text/plain');
       mimeType.changed.connect(this._onMimeTypeChanged, this);
 
-      this.modelDB.createMap('selections');
+      this.modelDB.createJSON('selections');
     }
 
     /**

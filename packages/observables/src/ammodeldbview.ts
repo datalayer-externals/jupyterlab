@@ -76,6 +76,10 @@ export class AutomergeModelDBView implements IModelDB {
     return this._automergeModelDB.createMap(this._viewedPath(path));
   }
 
+  public createJSON(path: string) {
+    return this._automergeModelDB.createJSON(this._viewedPath(path));
+  }
+
   public createValue(path: string) {
     return this._automergeModelDB.createValue(this._viewedPath(path));
   }
