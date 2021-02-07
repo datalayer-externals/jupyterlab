@@ -12,11 +12,19 @@ import { Message } from '@lumino/messaging';
 
 import { IObservableMap, ObservableMap } from './observablemap';
 
+import { IObservableJSON, ObservableJSON } from './observablejson';
+
+import { IObservableValue, ObservableValue } from './modeldb';
+
 /**
  * An observable Cell value.
  */
 export interface IObservableCell
   extends IObservableMap<ReadonlyPartialJSONValue | undefined> {
+  readonly metadata: IObservableJSON;
+  readonly cellType: IObservableValue;
+  readonly trusted: IObservableValue;
+  readonly executionCount: IObservableValue;
   /**
    * Serialize the model to Cell.
    */
@@ -47,6 +55,32 @@ export class ObservableCell extends ObservableMap<ReadonlyPartialJSONValue> {
       itemCmp: JSONExt.deepEqual,
       values: options.values
     });
+
+    this._metadata = new ObservableJSON();
+    this._cellType = new ObservableValue('');
+    this._trusted = new ObservableValue('');
+    this._executionCount =  new ObservableValue('');
+
+  }
+
+  public initObservables() {
+    // no-op
+  }
+
+  get metadata(): IObservableJSON {
+    return this._metadata;
+  }
+
+  get cellType(): IObservableValue {
+    return this._cellType;
+  }
+
+  get trusted(): IObservableValue {
+    return this._trusted;
+  }
+
+  get executionCount(): IObservableValue {
+    return this._executionCount;
   }
 
   /**
@@ -65,6 +99,11 @@ export class ObservableCell extends ObservableMap<ReadonlyPartialJSONValue> {
     }
     return out;
   }
+
+  private _metadata: IObservableJSON;
+  private _cellType: IObservableValue;
+  private _trusted: IObservableValue;
+  private _executionCount: IObservableValue;
 }
 
 /**

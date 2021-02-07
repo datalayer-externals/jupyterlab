@@ -22,7 +22,8 @@ import {
   IModelDB,
   IObservableValue,
   ObservableValue,
-  IObservableMap
+  IObservableMap,
+  IObservableCell
 } from '@jupyterlab/observables';
 
 import { IOutputAreaModel, OutputAreaModel } from '@jupyterlab/outputarea';
@@ -35,6 +36,11 @@ export interface ICellModel extends CodeEditor.IModel {
    * The type of the cell.
    */
   readonly type: nbformat.CellType;
+
+  /**
+   * TODO(ECH)
+   */
+  readonly cell: IObservableCell;
 
   /**
    * A unique identifier for the cell.
@@ -164,27 +170,23 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
   constructor(options: CellModel.IOptions) {
     super({ modelDB: options.modelDB });
 
-    console.log('---', options);
-
     this.id = options.id || UUID.uuid4();
 
     this.value.changed.connect(this.onGenericChange, this);
 
-    const cellType = this.modelDB.createValue('type');
-    cellType.set(this.type);
+    this._cell = this.modelDB.createCell('cell');
 
-    const observableMetadata = this.modelDB.createJSON('metadata');
-    observableMetadata.changed.connect(this.onGenericChange, this);
+    this._cell.cellType.set(this.type);
+    this._cell.metadata.changed.connect(this.onGenericChange, this);
+    this._cell.trusted.changed.connect(this.onTrustedChanged, this);
 
     const cell = options.cell;
-    const trusted = this.modelDB.createValue('trusted');
-    trusted.changed.connect(this.onTrustedChanged, this);
 
     if (!cell) {
-      trusted.set(false);
+      this._cell.trusted.set(false);
       return;
     }
-    trusted.set(!!cell.metadata['trusted']);
+    this._cell.trusted.set(!!cell.metadata['trusted']);
     delete cell.metadata['trusted'];
 
     if (Array.isArray(cell.source)) {
@@ -202,7 +204,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
     }
 
     for (const key in metadata) {
-      observableMetadata.set(key, metadata[key]);
+      this._cell.metadata.set(key, metadata[key]);
     }
   }
 
@@ -225,6 +227,14 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
    */
   readonly stateChanged = new Signal<this, IChangedArgs<any>>(this);
 
+
+  /**
+   * TOOD(ECH)
+   */
+  get cell(): IObservableCell {
+    return this._cell;
+  }
+
   /**
    * The id for the cell.
    */
@@ -234,14 +244,14 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
    * The metadata associated with the cell.
    */
   get metadata(): IObservableJSON {
-    return this.modelDB.get('metadata') as IObservableJSON;
+    return this._cell.metadata as IObservableJSON;
   }
 
   /**
    * Get the trusted state of the model.
    */
   get trusted(): boolean {
-    return this.modelDB.getValue('trusted') as boolean;
+    return this._cell.trusted.get() as boolean;
   }
 
   /**
@@ -252,7 +262,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
     if (oldValue === newValue) {
       return;
     }
-    this.modelDB.setValue('trusted', newValue);
+    this._cell.trusted.set(newValue);
   }
 
   /**
@@ -292,6 +302,8 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
   protected onGenericChange(): void {
     this.contentChanged.emit(void 0);
   }
+
+  private _cell: IObservableCell;
 }
 
 /**
@@ -472,7 +484,7 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
     const trusted = this.trusted;
     const cell = options.cell as nbformat.ICodeCell;
     let outputs: nbformat.IOutput[] = [];
-    const executionCount = this.modelDB.createValue('executionCount');
+    const executionCount = this.cell.executionCount;
     if (!executionCount.get()) {
       if (cell && cell.cell_type === 'code') {
         executionCount.set(cell.execution_count || null);
@@ -525,14 +537,14 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
    * The execution count of the cell.
    */
   get executionCount(): nbformat.ExecutionCount {
-    return this.modelDB.getValue('executionCount') as nbformat.ExecutionCount;
+    return this.cell.executionCount.get() as nbformat.ExecutionCount;
   }
   set executionCount(newValue: nbformat.ExecutionCount) {
     const oldValue = this.executionCount;
     if (newValue === oldValue) {
       return;
     }
-    this.modelDB.setValue('executionCount', newValue || null);
+    this.cell.executionCount.set(newValue || null);
   }
 
   clearExecution() {

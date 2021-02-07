@@ -83,8 +83,7 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
 
     const factory =
       options.contentFactory || NotebookModel.defaultContentFactory;
-//    this.contentFactory = factory.clone(this.modelDB.view('cells'));
-    this.contentFactory = factory.clone(this.modelDB);
+    this.contentFactory = factory.clone(this.modelDB.view('cells'));
 
     this._cells = new CellList(this.modelDB, this.contentFactory);
     this._trans = (options.translator || nullTranslator).load('jupyterlab');
@@ -531,8 +530,7 @@ export namespace NotebookModel {
         } else {
           options.id = UUID.uuid4();
         }
-//        options.modelDB = this.modelDB.view(options.id);
-        options.modelDB = this.modelDB;
+        options.modelDB = this.modelDB.view(options.id);
       }
       return new CodeCellModel(options);
     }    /**
@@ -551,8 +549,7 @@ export namespace NotebookModel {
         } else {
           options.id = UUID.uuid4();
         }
-//        options.modelDB = this.modelDB.view(options.id);
-        options.modelDB = this.modelDB;
+        options.modelDB = this.modelDB.view(options.id);
       }
       return new MarkdownCellModel(options);
     }
@@ -573,8 +570,7 @@ export namespace NotebookModel {
         } else {
           options.id = UUID.uuid4();
         }
-//        options.modelDB = this.modelDB.view(options.id);
-        options.modelDB = this.modelDB;
+        options.modelDB = this.modelDB.view(options.id);
       }
       return new RawCellModel(options);
     }
