@@ -50,8 +50,8 @@ export class AutomergeUndoableList<T>
     return this._index >= 0;
   }
 
-  public observeRemotes() {
-    super.observeRemotes();
+  public initObservables() {
+    super.initObservables();
   }
 
   /**

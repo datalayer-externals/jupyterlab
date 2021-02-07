@@ -15,8 +15,10 @@ import {
   IObservableValue,
   ObservableValue,
   IObservableMap,
-  IObservableString
+  IObservableString,
+  IObservableCodeEditor
 } from '@jupyterlab/observables';
+
 import { ITranslator } from '@jupyterlab/translation';
 
 /**
@@ -217,14 +219,10 @@ export namespace CodeEditor {
         this.modelDB = new ModelDB();
       }
 
-      const value = this.modelDB.createString('value');
-      value.text = value.text || options.value || '';
-
-      const mimeType = this.modelDB.createValue('mimeType');
-      mimeType.set(options.mimeType || 'text/plain');
-      mimeType.changed.connect(this._onMimeTypeChanged, this);
-
-      this.modelDB.createJSON('selections');
+      this._codeEditor = this.modelDB.createCodeEditor('codeEditor');
+      this._codeEditor.value.text = this._codeEditor.value.text || options.value || '';
+      this._codeEditor.mimeType.set(options.mimeType || 'text/plain');
+      this._codeEditor.mimeType.changed.connect(this._onMimeTypeChanged, this);
     }
 
     /**
@@ -244,14 +242,14 @@ export namespace CodeEditor {
      * Get the value of the model.
      */
     get value(): IObservableString {
-      return this.modelDB.get('value') as IObservableString;
+      return this._codeEditor.value;
     }
 
     /**
      * Get the selections for the model.
      */
     get selections(): IObservableMap<ITextSelection[]> {
-      return this.modelDB.get('selections') as IObservableMap<
+      return this._codeEditor.selections as any as IObservableMap<
         ITextSelection[]
       >;
     }
@@ -260,7 +258,7 @@ export namespace CodeEditor {
      * A mime type of the model.
      */
     get mimeType(): string {
-      const mimeType = this.modelDB.getValue('mimeType') as string;
+      const mimeType = this._codeEditor.mimeType.get() as string;
       return mimeType || 'text/plain';
     }
     set mimeType(newValue: string) {
@@ -268,7 +266,7 @@ export namespace CodeEditor {
       if (oldValue === newValue) {
         return;
       }
-      this.modelDB.setValue('mimeType', newValue);
+      this._codeEditor.mimeType.set(newValue);
     }
 
     /**
@@ -302,6 +300,7 @@ export namespace CodeEditor {
     }
 
     private _isDisposed = false;
+    private _codeEditor: IObservableCodeEditor;
     private _mimeTypeChanged = new Signal<this, IChangedArgs<string>>(this);
   }
 

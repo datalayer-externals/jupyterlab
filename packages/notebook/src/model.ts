@@ -32,6 +32,7 @@ import {
   ITranslator,
   TranslationBundle
 } from '@jupyterlab/translation';
+import { IObservableNotebook } from '@jupyterlab/observables/lib/observablenotebook';
 
 /**
  * The definition of a model object for a notebook widget.
@@ -78,8 +79,6 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
   constructor(options: NotebookModel.IOptions = {}) {
     super(options.languagePreference, options.modelDB);
 
-    console.log('--- new NotebookModel', options)
-
     const factory =
       options.contentFactory || NotebookModel.defaultContentFactory;
     this.contentFactory = factory.clone(this.modelDB.view('cells'));
@@ -88,8 +87,10 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
     this._trans = (options.translator || nullTranslator).load('jupyterlab');
     this._cells.changed.connect(this._onCellsChanged, this);
 
+    this._notebook = this.modelDB.createNotebook('notebook');
+
     // Handle initial metadata.
-    const metadata = this.modelDB.createJSON('metadata');
+    const metadata = this._notebook.createMetadata();
     if (!metadata.has('language_info')) {
       const name = options.languagePreference || '';
       metadata.set('language_info', { name });
@@ -108,7 +109,7 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
    * The metadata associated with the notebook.
    */
   get metadata(): IObservableJSON {
-    return this.modelDB.get('metadata') as IObservableJSON;
+    return this._notebook.metadata;
   }
 
   /**
@@ -361,6 +362,7 @@ close the notebook without saving it.`,
   }
 
   private _trans: TranslationBundle;
+  private _notebook: IObservableNotebook;
   private _cells: CellList;
   private _nbformat = nbformat.MAJOR_VERSION;
   private _nbformatMinor = nbformat.MINOR_VERSION;

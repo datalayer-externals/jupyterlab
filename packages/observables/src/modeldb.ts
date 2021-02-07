@@ -15,6 +15,8 @@ import { IObservableString, ObservableString } from './observablestring';
 
 import { IObservableList, ObservableList } from './observablelist';
 
+import { IObservableCodeEditor  } from './observablecodeeditor';
+
 import { IObservableNotebook  } from './observablenotebook';
 
 import {
@@ -26,7 +28,7 @@ import {
  * String type annotations for Observable objects that can be
  * created and placed in the IModelDB interface.
  */
-export type ObservableType = 'Notebook' | 'Map' | 'List' | 'String' | 'Value';
+export type ObservableType = 'Notebook' | 'CodeEditor' | 'Map' | 'List' | 'String' | 'Value';
 
 /**
  * Base interface for Observable objects.
@@ -231,6 +233,11 @@ export interface IModelDB extends IDisposable {
    * JSON Objects and primitives.
    */
   createJSON(path: string): IObservableJSON;
+
+  /**
+   * TODO(ECH)
+   */
+  createCodeEditor(path: string): IObservableCodeEditor;
 
   /**
    * TODO(ECH)
@@ -520,6 +527,13 @@ export class ModelDB implements IModelDB {
     this._disposables.add(map);
     this.set(path, map);
     return map;
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  createCodeEditor(path: string): IObservableCodeEditor {
+    throw new Error('createNotebook is not implemented')
   }
 
   /**

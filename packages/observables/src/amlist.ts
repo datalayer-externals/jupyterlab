@@ -64,7 +64,7 @@ export class AutomergeList<T> implements IObservableList<T> {
 
   }
 
-  public observeRemotes() {
+  public initObservables() {
     // Observe and Handle Remote Changes.
     this._observable.observe(
       this._modelDB.amDoc,

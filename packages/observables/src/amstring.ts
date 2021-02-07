@@ -31,7 +31,7 @@ export class AutomergeString implements IObservableString {
     // this._modelDB.amDoc[this._path] = new Text();
   }
 
-  public observeRemotes() {
+  public initObservables() {
     // Observe and Handle Remote Changes.
     this._observable.observe(
       this._modelDB.amDoc,
@@ -177,8 +177,8 @@ export class AutomergeString implements IObservableString {
   remove(start: number, end: number): void {
     waitForModelInit(this._modelDB, () => {
       const oldValue = this._modelDB.amDoc[this._path]
-      .toString()
-      .slice(start, end);
+        .toString()
+        .slice(start, end);
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,

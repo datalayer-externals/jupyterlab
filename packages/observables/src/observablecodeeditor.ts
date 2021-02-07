@@ -7,23 +7,42 @@ import { ISignal } from '@lumino/signaling';
 
 import { IObservable } from './modeldb';
 
+import { IObservableString } from './observablestring';
+
+import { IObservableValue } from './modeldb';
+
 import { IObservableJSON } from './observablejson';
 
 /**
- * A notebook which can be observed for changes.
+ * A map which can be observed for changes.
  */
-export interface IObservableNotebook extends IDisposable, IObservable {
-  type: 'Notebook';
-  readonly changed: ISignal<this, IObservableNotebook.IChangedArgs>;
-  readonly metadata: IObservableJSON;
-  createMetadata(): IObservableJSON;
+export interface IObservableCodeEditor extends IDisposable, IObservable {
+  /**
+   * The type of the Observable.
+   */
+  type: 'CodeEditor';
+
+  /**
+   * A signal emitted when the CodeEditor has changed.
+   */
+  readonly changed: ISignal<this, IObservableCodeEditor.IChangedArgs>;
+
+  readonly value: IObservableString;
+
+  readonly mimeType: IObservableValue;
+
+  readonly selections: IObservableJSON;
+
+  /**
+   * Dispose of the resources held by the map.
+   */
   dispose(): void;
 }
 
 /**
- * The interfaces associated with an IObservableNotebook.
+ * The interfaces associated with an IObservableCodeEditor.
  */
-export namespace IObservableNotebook {
+export namespace IObservableCodeEditor {
   /**
    * The change types which occur on an observable map.
    */

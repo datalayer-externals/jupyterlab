@@ -14,3 +14,5 @@ export * from './observablelist';
 export * from './observablemap';
 export * from './observablestring';
 export * from './undoablelist';
+export * from './observablecodeeditor';
+export * from './observablenotebook';

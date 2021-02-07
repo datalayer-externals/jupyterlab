@@ -7,6 +7,8 @@ import { IObservableList } from './observablelist';
 
 import { IObservableUndoableList } from './undoablelist';
 
+import { IObservableCodeEditor } from './observablecodeeditor';
+
 import { IObservableNotebook } from './observablenotebook';
 
 import { AutomergeModelDB } from './ammodeldb';
@@ -80,6 +82,10 @@ export class AutomergeModelDBView implements IModelDB {
 
   public createJSON(path: string) {
     return this._automergeModelDB.createJSON(this._viewedPath(path));
+  }
+
+  public createCodeEditor(path: string): IObservableCodeEditor {
+    return this._automergeModelDB.createCodeEditor(this._viewedPath(path));
   }
 
   public createNotebook(path: string): IObservableNotebook {

@@ -36,14 +36,12 @@ export class AutomergeValue implements IObservableValue {
 
   }
 
-  public observeRemotes() {
+  public initObservables() {
     // Observe and Handle Remote Changes.
     this._observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local) => {
 //        console.log('---', diff.props);
-        if (!local && diff.props && diff.props && diff.props[this._path]) {
-        }
       }
     );
   }
