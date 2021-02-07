@@ -15,6 +15,8 @@ import { IObservableString, ObservableString } from './observablestring';
 
 import { IObservableList, ObservableList } from './observablelist';
 
+import { IObservableCell } from './observablecell';
+
 import { IObservableCodeEditor  } from './observablecodeeditor';
 
 import { IObservableNotebook  } from './observablenotebook';
@@ -28,7 +30,7 @@ import {
  * String type annotations for Observable objects that can be
  * created and placed in the IModelDB interface.
  */
-export type ObservableType = 'Notebook' | 'CodeEditor' | 'Map' | 'List' | 'String' | 'Value';
+export type ObservableType = 'Notebook' | 'Cell' | 'CodeEditor' | 'Map' | 'List' | 'String' | 'Value';
 
 /**
  * Base interface for Observable objects.
@@ -243,6 +245,11 @@ export interface IModelDB extends IDisposable {
    * TODO(ECH)
    */
   createNotebook(path: string): IObservableNotebook;
+
+  /**
+   * TODO(ECH)
+   */
+  createCell(path: string): IObservableCell;
 
   /**
    * Create an opaque value and insert it in the database.
@@ -533,14 +540,21 @@ export class ModelDB implements IModelDB {
    * TODO(ECH)
    */
   createCodeEditor(path: string): IObservableCodeEditor {
-    throw new Error('createNotebook is not implemented')
+    throw new Error('createCodeEditor is not implemented by ModelDB')
   }
 
   /**
    * TODO(ECH)
    */
   createNotebook(path: string): IObservableNotebook {
-    throw new Error('createNotebook is not implemented')
+    throw new Error('createNotebook is not implemented by ModelDB')
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  createCell(path: string): IObservableCell {
+    throw new Error('createCell is not implemented by ModelDB')
   }
 
   /**

@@ -15,6 +15,8 @@ import { AutomergeModelDB } from './ammodeldb';
 
 import { IModelDB, IObservable } from './modeldb';
 
+import { IObservableCell } from './observablecell';
+
 export class AutomergeModelDBView implements IModelDB {
 
   constructor(basePath: string, automergeModelDB: AutomergeModelDB) {
@@ -90,6 +92,10 @@ export class AutomergeModelDBView implements IModelDB {
 
   public createNotebook(path: string): IObservableNotebook {
     return this._automergeModelDB.createNotebook(this._viewedPath(path));
+  }
+
+  public createCell(path: string): IObservableCell {
+    return this._automergeModelDB.createCell(this._viewedPath(path));
   }
 
   public createValue(path: string) {

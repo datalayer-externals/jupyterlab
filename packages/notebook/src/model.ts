@@ -79,15 +79,16 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
   constructor(options: NotebookModel.IOptions = {}) {
     super(options.languagePreference, options.modelDB);
 
+    this._notebook = this.modelDB.createNotebook('notebook');
+
     const factory =
       options.contentFactory || NotebookModel.defaultContentFactory;
-    this.contentFactory = factory.clone(this.modelDB.view('cells'));
+//    this.contentFactory = factory.clone(this.modelDB.view('cells'));
+    this.contentFactory = factory.clone(this.modelDB);
 
     this._cells = new CellList(this.modelDB, this.contentFactory);
     this._trans = (options.translator || nullTranslator).load('jupyterlab');
     this._cells.changed.connect(this._onCellsChanged, this);
-
-    this._notebook = this.modelDB.createNotebook('notebook');
 
     // Handle initial metadata.
     const metadata = this._notebook.createMetadata();
@@ -530,7 +531,8 @@ export namespace NotebookModel {
         } else {
           options.id = UUID.uuid4();
         }
-        options.modelDB = this.modelDB.view(options.id);
+//        options.modelDB = this.modelDB.view(options.id);
+        options.modelDB = this.modelDB;
       }
       return new CodeCellModel(options);
     }    /**
@@ -549,7 +551,8 @@ export namespace NotebookModel {
         } else {
           options.id = UUID.uuid4();
         }
-        options.modelDB = this.modelDB.view(options.id);
+//        options.modelDB = this.modelDB.view(options.id);
+        options.modelDB = this.modelDB;
       }
       return new MarkdownCellModel(options);
     }
@@ -570,7 +573,8 @@ export namespace NotebookModel {
         } else {
           options.id = UUID.uuid4();
         }
-        options.modelDB = this.modelDB.view(options.id);
+//        options.modelDB = this.modelDB.view(options.id);
+        options.modelDB = this.modelDB;
       }
       return new RawCellModel(options);
     }

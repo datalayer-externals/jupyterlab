@@ -9,9 +9,7 @@ import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
 
 import { IObservableNotebook } from './observablenotebook';
 
-import { AutomergeJSON } from './amjson';
-
-import { IObservableJSON } from './observablejson';
+import { IObservableJSON, ObservableJSON } from './observablejson';
 
 export class AutomergeNotebook implements IObservableNotebook {
 
@@ -65,7 +63,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   createMetadata(): IObservableJSON {
-    this._metadata = new AutomergeJSON(this._modelDB.idPath(this._path), this._modelDB, this._observable, this._lock);
+    this._metadata = new ObservableJSON()
     waitForModelInit(this._modelDB, () => {
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(
