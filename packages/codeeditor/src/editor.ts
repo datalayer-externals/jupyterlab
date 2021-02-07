@@ -178,6 +178,11 @@ export namespace CodeEditor {
      */
     mimeTypeChanged: ISignal<IModel, IChangedArgs<string>>;
 
+    /** 
+     * TODO(ECH)
+     */
+    readonly codeEditor: IObservableCodeEditor;
+
     /**
      * The text stored in the model.
      */
@@ -236,6 +241,13 @@ export namespace CodeEditor {
      */
     get mimeTypeChanged(): ISignal<this, IChangedArgs<string>> {
       return this._mimeTypeChanged;
+    }
+
+    /**
+     * Get the value of the model.
+     */
+    get codeEditor(): IObservableCodeEditor {
+      return this._codeEditor;
     }
 
     /**

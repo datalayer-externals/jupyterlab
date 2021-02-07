@@ -3,16 +3,18 @@
 
 import {
   JSONExt,
-  JSONObject,
   PartialJSONObject,
+  JSONObject,
   ReadonlyPartialJSONValue
 } from '@lumino/coreutils';
 
 import { Message } from '@lumino/messaging';
 
-import { IObservableMap, ObservableMap } from './observablemap';
+import { IObservableMap } from './observablemap';
 
 import { IObservableJSON, ObservableJSON } from './observablejson';
+
+import { IObservableCodeEditor } from './observablecodeeditor';
 
 import { IObservableValue, ObservableValue } from './modeldb';
 
@@ -20,15 +22,13 @@ import { IObservableValue, ObservableValue } from './modeldb';
  * An observable Cell value.
  */
 export interface IObservableCell
-  extends IObservableMap<ReadonlyPartialJSONValue | undefined> {
+  extends IObservableJSON {
+  readonly id: string;
+  readonly codeEditor: IObservableCodeEditor;
   readonly metadata: IObservableJSON;
   readonly cellType: IObservableValue;
   readonly trusted: IObservableValue;
   readonly executionCount: IObservableValue;
-  /**
-   * Serialize the model to Cell.
-   */
-  toJSON(): PartialJSONObject;
 }
 
 /**
@@ -46,25 +46,32 @@ export namespace IObservableCell {
 /**
  * A concrete Observable map for JSON data.
  */
-export class ObservableCell extends ObservableMap<ReadonlyPartialJSONValue> {
+export class ObservableCell extends ObservableJSON {
   /**
    * Construct a new observable JSON object.
    */
-  constructor(options: ObservableCell.IOptions = {}) {
+  constructor(id: string, codeEditor: IObservableCodeEditor, options: ObservableCell.IOptions = {}) {
     super({
-      itemCmp: JSONExt.deepEqual,
       values: options.values
     });
-
+    this._id = id;
+    this._codeEditor = codeEditor;
     this._metadata = new ObservableJSON();
     this._cellType = new ObservableValue('');
     this._trusted = new ObservableValue('');
     this._executionCount =  new ObservableValue('');
-
   }
 
   public initObservables() {
     // no-op
+  }
+
+  get id(): string {
+    return this._id;
+  }
+
+  get codeEditor(): IObservableCodeEditor {
+    return this._codeEditor;
   }
 
   get metadata(): IObservableJSON {
@@ -89,17 +96,23 @@ export class ObservableCell extends ObservableMap<ReadonlyPartialJSONValue> {
   toJSON(): PartialJSONObject {
     const out: PartialJSONObject = Object.create(null);
     const keys = this.keys();
-
     for (const key of keys) {
       const value = this.get(key);
-
       if (value !== undefined) {
         out[key] = JSONExt.deepCopy(value) as PartialJSONObject;
       }
     }
+    out['source'] = this._codeEditor.value.text;
+    out['mimeType'] = this._codeEditor.mimeType.get();
+    out['metadata'] = this._metadata.toJSON();
+    out['cellType'] = this._cellType.get();
+    out['trusted'] = this._trusted.get();
+    out['executionCount'] = this._executionCount.get();
     return out;
   }
 
+  private _id: string;
+  private _codeEditor: IObservableCodeEditor;
   private _metadata: IObservableJSON;
   private _cellType: IObservableValue;
   private _trusted: IObservableValue;

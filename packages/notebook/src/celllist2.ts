@@ -18,8 +18,9 @@ import {
   IObservableMap,
   ObservableMap,
   IObservableList,
-  IObservableUndoableList,
-  IModelDB
+  IModelDB,
+  IObservableCell,
+  IObservableNotebook
 } from '@jupyterlab/observables';
 
 import { NotebookModel } from './model';
@@ -27,16 +28,18 @@ import { NotebookModel } from './model';
 /**
  * A cell list object that supports undo/redo.
  */
-export class CellList implements IObservableUndoableList<ICellModel> {
+export class CellList implements IObservableList<ICellModel> {
   /**
    * Construct the cell list.
    */
   constructor(modelDB: IModelDB, factory: NotebookModel.IContentFactory) {
     this._factory = factory;
-    this._cellOrder = modelDB.createUndoableList<string>('cells');
+
+    this._notebook = modelDB.get('notebook') as IObservableNotebook;
+    this._cells = this._notebook.cells;
     this._cellMap = new ObservableMap<ICellModel>();
 
-    this._cellOrder.changed.connect(this._onOrderChanged, this);
+    this._cells.changed.connect(this._onOrderChanged, this);
   }
 
   type: 'List';
@@ -70,7 +73,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * No changes.
    */
   get isEmpty(): boolean {
-    return this._cellOrder.length === 0;
+    return this._cells.length === 0;
   }
 
   /**
@@ -88,7 +91,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * No changes.
    */
   get length(): number {
-    return this._cellOrder.length;
+    return this._cells.length;
   }
 
   /**
@@ -104,8 +107,8 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    */
   iter(): IIterator<ICellModel> {
     const arr: ICellModel[] = [];
-    for (const id of toArray(this._cellOrder)) {
-      arr.push(this._cellMap.get(id)!);
+    for (const cell of toArray(this._cells)) {
+      arr.push(this._cellMap.get(cell.id)!);
     }
     return new ArrayIterator<ICellModel>(arr);
   }
@@ -124,7 +127,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
       cell.dispose();
     }
     this._cellMap.dispose();
-    this._cellOrder.dispose();
+    this._cells.dispose();
   }
 
   /**
@@ -144,7 +147,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * An `index` which is non-integral or out of range.
    */
   get(index: number): ICellModel {
-    return this._cellMap.get(this._cellOrder.get(index))!;
+    return this._cellMap.get(this._cells.get(index).id)!;
   }
 
   /**
@@ -171,7 +174,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
   set(index: number, cell: ICellModel): void {
     // Set the internal data structures.
     this._cellMap.set(cell.id, cell);
-    this._cellOrder.set(index, cell.id);
+    this._cells.set(index, cell.cell);
   }
 
   /**
@@ -195,7 +198,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
   push(cell: ICellModel): number {
     // Set the internal data structures.
     this._cellMap.set(cell.id, cell);
-    const num = this._cellOrder.push(cell.id);
+    const num = this._cells.push(cell.cell);
     return num;
   }
 
@@ -228,7 +231,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
     this._cellMap.set(cell.id, cell);
-    this._cellOrder.insert(index, cell.id);
+    this._cells.insert(index, cell.cell);
   }
 
   /**
@@ -247,8 +250,8 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    */
   removeValue(cell: ICellModel): number {
     const index = ArrayExt.findFirstIndex(
-      toArray(this._cellOrder),
-      id => this._cellMap.get(id) === cell
+      toArray(this._cells),
+      id => this._cellMap.get(cell.id) === cell
     );
     this.remove(index);
     return index;
@@ -272,9 +275,9 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * An `index` which is non-integral.
    */
   remove(index: number): ICellModel {
-    const id = this._cellOrder.get(index);
-    this._cellOrder.remove(index);
-    const cell = this._cellMap.get(id)!;
+    const c = this._cells.get(index);
+    this._cells.remove(index);
+    const cell = this._cellMap.get(c.id)!;
     return cell;
   }
 
@@ -288,7 +291,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * All current iterators are invalidated.
    */
   clear(): void {
-    this._cellOrder.clear();
+    this._cells.clear();
   }
 
   /**
@@ -309,7 +312,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * A `fromIndex` or a `toIndex` which is non-integral.
    */
   move(fromIndex: number, toIndex: number): void {
-    this._cellOrder.move(fromIndex, toIndex);
+    this._cells.move(fromIndex, toIndex);
   }
 
   /**
@@ -335,7 +338,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
     each(newValues, cell => {
       // Set the internal data structures.
       this._cellMap.set(cell.id, cell);
-      this._cellOrder.push(cell.id);
+      this._cells.push(cell.cell);
     });
     return this.length;
   }
@@ -370,9 +373,9 @@ export class CellList implements IObservableUndoableList<ICellModel> {
     const newValues = toArray(cells);
     each(newValues, cell => {
       this._cellMap.set(cell.id, cell);
-      this._cellOrder.beginCompoundOperation();
-      this._cellOrder.insert(index++, cell.id);
-      this._cellOrder.endCompoundOperation();
+//      this._cells.beginCompoundOperation();
+      this._cells.insert(index++, cell.cell);
+//      this._cells.endCompoundOperation();
     });
     return this.length;
   }
@@ -396,7 +399,7 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * A `startIndex` or `endIndex` which is non-integral.
    */
   removeRange(startIndex: number, endIndex: number): number {
-    this._cellOrder.removeRange(startIndex, endIndex);
+    this._cells.removeRange(startIndex, endIndex);
     return this.length;
   }
 
@@ -404,14 +407,16 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * Whether the object can redo changes.
    */
   get canRedo(): boolean {
-    return this._cellOrder.canRedo;
+//    return this._cells.canRedo;
+    return false;
   }
 
   /**
    * Whether the object can undo changes.
    */
   get canUndo(): boolean {
-    return this._cellOrder.canUndo;
+//    return this._cells.canUndo;
+    return false;
   }
 
   /**
@@ -421,28 +426,28 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    *   The default is `true`.
    */
   beginCompoundOperation(isUndoAble?: boolean): void {
-    this._cellOrder.beginCompoundOperation(isUndoAble);
+//    this._cells.beginCompoundOperation(isUndoAble);
   }
 
   /**
    * End a compound operation.
    */
   endCompoundOperation(): void {
-    this._cellOrder.endCompoundOperation();
+//    this._cells.endCompoundOperation();
   }
 
   /**
    * Undo an operation.
    */
   undo(): void {
-    this._cellOrder.undo();
+//    this._cells.undo();
   }
 
   /**
    * Redo an operation.
    */
   redo(): void {
-    this._cellOrder.redo();
+//    this._cells.redo();
   }
 
   /**
@@ -451,9 +456,10 @@ export class CellList implements IObservableUndoableList<ICellModel> {
   clearUndo(): void {
     // Dispose of cells not in the current
     // cell order.
+    /*
     for (const key of this._cellMap.keys()) {
       if (
-        ArrayExt.findFirstIndex(toArray(this._cellOrder), id => id === key) ===
+        ArrayExt.findFirstIndex(toArray(this._cells), id => id === key) ===
         -1
       ) {
         const cell = this._cellMap.get(key) as ICellModel;
@@ -461,41 +467,42 @@ export class CellList implements IObservableUndoableList<ICellModel> {
         this._cellMap.delete(key);
       }
     }
-    this._cellOrder.clearUndo();
+    this._cells.clearUndo();
+    */
   }
 
   private _onOrderChanged(
-    order: IObservableUndoableList<string>,
-    change: IObservableList.IChangedArgs<string>
+    order: IObservableList<IObservableCell>,
+    change: IObservableList.IChangedArgs<IObservableCell>
   ): void {
     if (change.type === 'add' || change.type === 'set') {
-      each(change.newValues, id => {
-        if (!this._cellMap.has(id)) {
+      each(change.newValues, c => {
+        if (!this._cellMap.has(c.id)) {
           const cellDB = this._factory.modelDB!;
-          const cellType = cellDB.createValue(id + '.type');
+          const cellType = cellDB.createValue(c.id + '.type');
           let cell: ICellModel;
           switch (cellType.get()) {
             case 'code':
-              cell = this._factory.createCodeCell({ id: id });
+              cell = this._factory.createCodeCell({ id: c.id });
               break;
             case 'markdown':
-              cell = this._factory.createMarkdownCell({ id: id });
+              cell = this._factory.createMarkdownCell({ id: c.id });
               break;
             default:
-              cell = this._factory.createRawCell({ id: id });
+              cell = this._factory.createRawCell({ id: c.id });
               break;
           }
-          this._cellMap.set(id, cell);
+          this._cellMap.set(c.id, cell);
         }
       });
     }
     const newValues: ICellModel[] = [];
     const oldValues: ICellModel[] = [];
-    each(change.newValues, id => {
-      newValues.push(this._cellMap.get(id)!);
+    each(change.newValues, cell => {
+      newValues.push(this._cellMap.get(cell.id)!);
     });
-    each(change.oldValues, id => {
-      oldValues.push(this._cellMap.get(id)!);
+    each(change.oldValues, cell => {
+      oldValues.push(this._cellMap.get(cell.id)!);
     });
     this._changed.emit({
       type: change.type,
@@ -507,7 +514,8 @@ export class CellList implements IObservableUndoableList<ICellModel> {
   }
 
   private _isDisposed: boolean = false;
-  private _cellOrder: IObservableUndoableList<string>;
+  private _notebook: IObservableNotebook;
+  private _cells: IObservableList<IObservableCell>;
   private _cellMap: IObservableMap<ICellModel>;
   private _changed = new Signal<this, IObservableList.IChangedArgs<ICellModel>>(
     this

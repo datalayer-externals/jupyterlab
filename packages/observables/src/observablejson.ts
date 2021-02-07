@@ -55,10 +55,8 @@ export class ObservableJSON extends ObservableMap<ReadonlyPartialJSONValue> {
   toJSON(): PartialJSONObject {
     const out: PartialJSONObject = Object.create(null);
     const keys = this.keys();
-
     for (const key of keys) {
       const value = this.get(key);
-
       if (value !== undefined) {
         out[key] = JSONExt.deepCopy(value) as PartialJSONObject;
       }

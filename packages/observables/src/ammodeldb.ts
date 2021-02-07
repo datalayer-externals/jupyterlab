@@ -515,7 +515,7 @@ export class AutomergeModelDB implements IModelDB {
     return notebook;
   }
 
-  public createCell(path: string): IObservableCell {
+  public createCell(path: string, id: string, codeEditor: IObservableCodeEditor): IObservableCell {
     throw new Error('createCell is not implemented by AutomergeModelDB')
   }
 

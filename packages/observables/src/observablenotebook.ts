@@ -9,6 +9,10 @@ import { IObservable } from './modeldb';
 
 import { IObservableJSON } from './observablejson';
 
+import { IObservableList } from './observablelist';
+
+import { IObservableCell } from './observablecell';
+
 /**
  * A notebook which can be observed for changes.
  */
@@ -16,7 +20,7 @@ export interface IObservableNotebook extends IDisposable, IObservable {
   type: 'Notebook';
   readonly changed: ISignal<this, IObservableNotebook.IChangedArgs>;
   readonly metadata: IObservableJSON;
-  createMetadata(): IObservableJSON;
+  readonly cells: IObservableList<IObservableCell>;
   dispose(): void;
 }
 

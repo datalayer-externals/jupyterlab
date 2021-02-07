@@ -26,12 +26,15 @@ import {
 } from '@jupyterlab/observables';
 
 import { CellList } from './celllist2';
+
 import { showDialog, Dialog } from '@jupyterlab/apputils';
+
 import {
   nullTranslator,
   ITranslator,
   TranslationBundle
 } from '@jupyterlab/translation';
+
 import { IObservableNotebook } from '@jupyterlab/observables/lib/observablenotebook';
 
 /**
@@ -90,13 +93,12 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
     this._cells.changed.connect(this._onCellsChanged, this);
 
     // Handle initial metadata.
-    const metadata = this._notebook.createMetadata();
-    if (!metadata.has('language_info')) {
+    if (!this._notebook.metadata.has('language_info')) {
       const name = options.languagePreference || '';
-      metadata.set('language_info', { name });
+      this._notebook.metadata.set('language_info', { name });
     }
     this._ensureMetadata();
-    metadata.changed.connect(this.triggerContentChange, this);
+    this._notebook.metadata.changed.connect(this.triggerContentChange, this);
     this._deletedCells = [];
   }
 

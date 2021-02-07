@@ -176,7 +176,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
 
     this.value.changed.connect(this.onGenericChange, this);
 
-    this._cell = this.modelDB.createCell('cell');
+    this._cell = this.modelDB.createCell('cell', this.id, this.codeEditor);
 
     this._cell.cellType.set(this.type);
     this._cell.metadata.changed.connect(this.onGenericChange, this);
@@ -229,9 +229,8 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
    */
   readonly stateChanged = new Signal<this, IChangedArgs<any>>(this);
 
-
   /**
-   * TOOD(ECH)
+   * TODO(ECH)
    */
   get cell(): IObservableCell {
     return this._cell;
