@@ -25,7 +25,7 @@ import {
   IModelDB
 } from '@jupyterlab/observables';
 
-import { CellList } from './celllist';
+import { CellList } from './celllist2';
 import { showDialog, Dialog } from '@jupyterlab/apputils';
 import {
   nullTranslator,

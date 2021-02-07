@@ -33,7 +33,7 @@ import { ObservableMap, IObservableMap } from './observablemap';
 
 import { IObservableJSON } from './observablejson';
 
-import { IObservableCell, ObservableCell } from './observablecell';
+import { IObservableCell } from './observablecell';
 
 import { IObservableString } from './observablestring';
 
@@ -516,14 +516,7 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   public createCell(path: string): IObservableCell {
-    const cell = new ObservableCell();
-    if (this._isInitialized) {
-      // TODO(ECH)
-      (cell as any).initObservables();
-    }
-    this._disposables.add(cell);
-    this.set(path, cell);
-    return cell;
+    throw new Error('createCell is not implemented by AutomergeModelDB')
   }
 
   /**

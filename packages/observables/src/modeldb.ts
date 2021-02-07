@@ -15,9 +15,9 @@ import { IObservableString, ObservableString } from './observablestring';
 
 import { IObservableList, ObservableList } from './observablelist';
 
-import { IObservableCell } from './observablecell';
+import { IObservableCell, ObservableCell } from './observablecell';
 
-import { IObservableCodeEditor  } from './observablecodeeditor';
+import { IObservableCodeEditor, ObservableCodeEditor } from './observablecodeeditor';
 
 import { IObservableNotebook  } from './observablenotebook';
 
@@ -540,7 +540,10 @@ export class ModelDB implements IModelDB {
    * TODO(ECH)
    */
   createCodeEditor(path: string): IObservableCodeEditor {
-    throw new Error('createCodeEditor is not implemented by ModelDB')
+    const codeEditor = new ObservableCodeEditor();
+    this._disposables.add(codeEditor);
+    this.set(path, codeEditor);
+    return codeEditor;
   }
 
   /**
@@ -554,7 +557,10 @@ export class ModelDB implements IModelDB {
    * TODO(ECH)
    */
   createCell(path: string): IObservableCell {
-    throw new Error('createCell is not implemented by ModelDB')
+    const cell = new ObservableCell();
+    this._disposables.add(cell);
+    this.set(path, cell);
+    return cell;
   }
 
   /**

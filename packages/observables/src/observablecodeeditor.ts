@@ -3,15 +3,15 @@
 
 import { IDisposable } from '@lumino/disposable';
 
-import { ISignal } from '@lumino/signaling';
+import { ISignal, Signal } from '@lumino/signaling';
 
 import { IObservable } from './modeldb';
 
-import { IObservableString } from './observablestring';
+import { IObservableValue, ObservableValue } from './modeldb';
 
-import { IObservableValue } from './modeldb';
+import { IObservableString, ObservableString } from './observablestring';
 
-import { IObservableJSON } from './observablejson';
+import { IObservableJSON, ObservableJSON } from './observablejson';
 
 /**
  * A map which can be observed for changes.
@@ -85,5 +85,75 @@ export namespace IObservableCodeEditor {
      * The new value of the change.
      */
     newValue: any | undefined;
+  }
+}
+
+export class ObservableCodeEditor implements IObservableCodeEditor {
+  constructor() {
+    this._value = new ObservableString();
+    this._mimeType = new ObservableValue('');
+    this._selections = new ObservableJSON();
+  }
+
+  /**
+   * The type of the Observable.
+   */
+  get type(): 'CodeEditor' {
+    return 'CodeEditor';
+  }
+
+  /**
+   * A signal emitted when the map has changed.
+   */
+  get changed(): ISignal<this, IObservableCodeEditor.IChangedArgs> {
+    return this._changed;
+  }
+
+  get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  get value(): IObservableString {
+    return this._value;
+  }
+
+  get mimeType(): IObservableValue {
+    return this._mimeType;
+  }
+
+  get selections(): IObservableJSON {
+    return this._selections;
+  }
+
+  /**
+   * Dispose of the resources held by the map.
+   */
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    Signal.clearData(this);
+  }
+
+  private _value: IObservableString;
+  private _mimeType: IObservableValue;
+  private _selections: IObservableJSON;
+  private _changed = new Signal<this, IObservableCodeEditor.IChangedArgs>(this);
+  private _isDisposed = false;
+}
+
+/**
+ * The namespace for `ObservableCodeEditor` class statics.
+ */
+export namespace ObservableCodeEditor {
+  /**
+   * The options used to initialize an observable map.
+   */
+  export interface IOptions {
+    /**
+     * An optional initial set of values.
+     */
+    values?: { [key: string]: any };
   }
 }
