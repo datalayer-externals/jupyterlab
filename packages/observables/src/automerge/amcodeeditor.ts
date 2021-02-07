@@ -7,15 +7,15 @@ import Automerge, { Observable, Text } from 'automerge';
 
 import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
 
-import { IObservableCodeEditor } from './observablecodeeditor';
+import { IObservableCodeEditor } from './../observablecodeeditor';
 
-import { IObservableValue, ObservableValue } from './modeldb';
+import { IObservableValue, ObservableValue } from './../modeldb';
 
-import { IObservableString, ObservableString } from './observablestring';
+import { IObservableString, ObservableString } from './../observablestring';
 
-import { IObservableJSON, ObservableJSON } from './observablejson';
+import { IObservableJSON, ObservableJSON } from './../observablejson';
 
-import { IObservableMap } from './observablemap';
+import { IObservableMap } from './../observablemap';
 
 export class AutomergeCodeEditor implements IObservableCodeEditor {
   constructor(

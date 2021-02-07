@@ -7,17 +7,17 @@ import Automerge, { Observable } from 'automerge';
 
 import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
 
-import { IObservableNotebook } from './observablenotebook';
+import { IObservableNotebook } from '../observablenotebook';
 
-import { IObservableJSON, ObservableJSON } from './observablejson';
+import { IObservableJSON, ObservableJSON } from '../observablejson';
 
-import { IObservableCell } from './observablecell';
+import { IObservableCell } from '../observablecell';
 
-import { IObservableList, ObservableList } from './observablelist';
+import { IObservableList, ObservableList } from '../observablelist';
 
-import { IObservableString } from './observablestring';
+import { IObservableString } from '../observablestring';
 
-import { IObservableMap } from './observablemap';
+import { IObservableMap } from '../observablemap';
 
 export class AutomergeNotebook implements IObservableNotebook {
   constructor(
@@ -73,8 +73,8 @@ export class AutomergeNotebook implements IObservableNotebook {
     this._observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local) => {
+        console.log('---', diff);
         if (!local && diff.props && diff.props[this._path]) {
-          console.log('---', diff);
         }
       }
     );
@@ -128,7 +128,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   ): void {
     waitForModelInit(this._modelDB, () => {
       this._lock(() => {
-        const valueJson = [];
+        const valueJson = new Array();
         const valueIt = value.iter();
         let elem = undefined;
         while ((elem = valueIt.next())) {
@@ -184,7 +184,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
-    console.log('---', value, args);
+//    console.log('---', value, args);
   }
 
   get type(): 'Notebook' {

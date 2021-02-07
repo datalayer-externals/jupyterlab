@@ -7,9 +7,9 @@ import { each } from '@lumino/algorithm';
 
 import { Observable } from 'automerge';
 
-import { IObservableList } from './observablelist';
+import { IObservableList } from '../observablelist';
 
-import { ISerializer, IObservableUndoableList } from './undoablelist';
+import { ISerializer, IObservableUndoableList } from '../undoablelist';
 
 import { AutomergeList } from './amlist';
 

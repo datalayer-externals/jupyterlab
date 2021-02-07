@@ -5,7 +5,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { JSONExt, JSONValue } from '@lumino/coreutils';
 
-import { IObservableValue } from './modeldb';
+import { IObservableValue } from '../modeldb';
 
 import Automerge, { Observable } from 'automerge';
 

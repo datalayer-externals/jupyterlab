@@ -25,22 +25,22 @@ import { AutomergeNotebook } from './amnotebook';
 
 import { AutomergeValue } from './amvalue';
 
-import { IObservableNotebook } from './observablenotebook';
+import { IObservableNotebook } from '../observablenotebook';
 
-import { IObservableList } from './observablelist';
+import { IObservableList } from '../observablelist';
 
-import { ObservableMap, IObservableMap } from './observablemap';
+import { ObservableMap, IObservableMap } from '../observablemap';
 
-import { IObservableJSON } from './observablejson';
+import { IObservableJSON } from '../observablejson';
 
-import { IObservableCell } from './observablecell';
+import { IObservableCell } from '../observablecell';
 
-import { IObservableString } from './observablestring';
+import { IObservableString } from '../observablestring';
 
 import {
   IObservableUndoableList,
   ObservableUndoableList
-} from './undoablelist';
+} from '../undoablelist';
 
 import {
   ICollaboratorMap,
@@ -50,8 +50,8 @@ import {
   IObservable,
   IObservableValue,
   ObservableValue
-} from './modeldb';
-import { IObservableCodeEditor } from './observablecodeeditor';
+} from '../modeldb';
+import { IObservableCodeEditor } from '../observablecodeeditor';
 
 const CSS_COLOR_NAMES = [
   'Red',

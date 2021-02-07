@@ -3,7 +3,7 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import { IObservableString } from './observablestring';
+import { IObservableString } from '../observablestring';
 
 import Automerge, { Observable, Text } from 'automerge';
 

@@ -14,7 +14,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import Automerge, { Observable, List } from 'automerge';
 
-import { IObservableList } from './observablelist';
+import { IObservableList } from '../observablelist';
 
 import { AutomergeModelDB } from './ammodeldb';
 

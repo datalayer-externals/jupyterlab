@@ -7,7 +7,7 @@
  * @module observables
  */
 
-export * from './ammodeldb';
+export * from './automerge/ammodeldb';
 export * from './modeldb';
 export * from './observablejson';
 export * from './observablelist';

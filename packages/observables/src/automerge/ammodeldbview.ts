@@ -3,19 +3,19 @@
 
 import { JSONValue } from '@lumino/coreutils';
 
-import { IObservableList } from './observablelist';
+import { IObservableList } from '../observablelist';
 
-import { IObservableUndoableList } from './undoablelist';
+import { IObservableUndoableList } from '../undoablelist';
 
-import { IObservableCodeEditor } from './observablecodeeditor';
+import { IObservableCodeEditor } from '../observablecodeeditor';
 
-import { IObservableNotebook } from './observablenotebook';
+import { IObservableNotebook } from '../observablenotebook';
 
 import { AutomergeModelDB } from './ammodeldb';
 
-import { IModelDB, IObservable } from './modeldb';
+import { IModelDB, IObservable } from '../modeldb';
 
-import { IObservableCell } from './observablecell';
+import { IObservableCell } from '../observablecell';
 
 export class AutomergeModelDBView implements IModelDB {
 
