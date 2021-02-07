@@ -22,7 +22,8 @@ import {
   IObservableJSON,
   IObservableUndoableList,
   IObservableList,
-  IModelDB
+  IModelDB,
+  IObservableNotebook
 } from '@jupyterlab/observables';
 
 import { CellList } from './celllist2';
@@ -34,8 +35,6 @@ import {
   ITranslator,
   TranslationBundle
 } from '@jupyterlab/translation';
-
-import { IObservableNotebook } from '@jupyterlab/observables/lib/observablenotebook';
 
 /**
  * The definition of a model object for a notebook widget.
@@ -535,7 +534,8 @@ export namespace NotebookModel {
         options.modelDB = this.modelDB.view(options.id);
       }
       return new CodeCellModel(options);
-    }    /**
+    }
+    /**
      * Create a new markdown cell.
      *
      * @param source - The data to use for the original source data.

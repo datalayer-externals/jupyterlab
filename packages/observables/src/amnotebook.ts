@@ -15,10 +15,11 @@ import { IObservableCell } from './observablecell';
 
 import { IObservableList, ObservableList } from './observablelist';
 
+import { IObservableString } from './observablestring';
+
 import { IObservableMap } from './observablemap';
 
 export class AutomergeNotebook implements IObservableNotebook {
-
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
@@ -48,7 +49,7 @@ export class AutomergeNotebook implements IObservableNotebook {
         }
       );
     });
-/*
+    /*
     waitForModelInit(this._modelDB, () => {
       this._lock(() => {
         this._modelDB.amDoc = Automerge.change(
@@ -62,7 +63,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     });
 */
   }
-  
+
   public initObservables() {
     this._observeRemote();
   }
@@ -73,7 +74,7 @@ export class AutomergeNotebook implements IObservableNotebook {
       this._modelDB.amDoc,
       (diff, before, after, local) => {
         if (!local && diff.props && diff.props[this._path]) {
-          console.log('---', diff)
+          console.log('---', diff);
         }
       }
     );
@@ -85,7 +86,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   ): void {
     waitForModelInit(this._modelDB, () => {
       this._lock(() => {
-        switch(args.type) {
+        switch (args.type) {
           case 'add': {
             this._modelDB.amDoc = Automerge.change(
               this._modelDB.amDoc,
@@ -96,12 +97,12 @@ export class AutomergeNotebook implements IObservableNotebook {
             );
             break;
           }
-          case 'remove': { 
+          case 'remove': {
             this._modelDB.amDoc = Automerge.change(
               this._modelDB.amDoc,
               `notebook metadata delete ${this._path} ${args.key}`,
               doc => {
-                delete doc[this._path].metadata[args.key] ;
+                delete doc[this._path].metadata[args.key];
               }
             );
             break;
@@ -115,7 +116,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               }
             );
             break;
-          } 
+          }
         }
       });
     });
@@ -127,11 +128,15 @@ export class AutomergeNotebook implements IObservableNotebook {
   ): void {
     waitForModelInit(this._modelDB, () => {
       this._lock(() => {
-        const valueArr = new Array();
+        const valueJson = [];
         const valueIt = value.iter();
-        let elem = null;
-        while (elem = valueIt.next()) {
-          valueArr.push(elem.toJSON());
+        let elem = undefined;
+        while ((elem = valueIt.next())) {
+          valueJson.push(elem.toJSON());
+        }
+        const valueIt2 = value.iter();
+        while ((elem = valueIt2.next())) {
+          elem.codeEditor.value.changed.connect(this._onValueChanged, this);
         }
         switch (args.type) {
           case 'add':
@@ -139,7 +144,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `cells add ${this._path} ${args.newIndex}`,
               doc => {
-                doc[this._path].cells = valueArr;
+                doc[this._path].cells = valueJson;
               }
             );
             break;
@@ -148,7 +153,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `cells move ${this._path} ${args.newIndex}`,
               doc => {
-                doc[this._path].cells = valueArr;
+                doc[this._path].cells = valueJson;
               }
             );
             break;
@@ -157,7 +162,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `cells remove ${this._path} ${args.newIndex}`,
               doc => {
-                doc[this._path].cells = valueArr;
+                doc[this._path].cells = valueJson;
               }
             );
             break;
@@ -166,13 +171,20 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `cells set ${this._path} ${args.newIndex}`,
               doc => {
-                doc[this._path].cells = valueArr;
+                doc[this._path].cells = valueJson;
               }
             );
             break;
         }
       });
     });
+  }
+
+  private _onValueChanged(
+    value: IObservableString,
+    args: IObservableString.IChangedArgs
+  ): void {
+    console.log('---', value, args);
   }
 
   get type(): 'Notebook' {
