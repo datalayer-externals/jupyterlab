@@ -3,7 +3,7 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import Automerge, { Observable } from 'automerge';
+import Automerge, { Observable, List, Text } from 'automerge';
 
 import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
 
@@ -45,7 +45,7 @@ export class AutomergeNotebook implements IObservableNotebook {
         doc => {
           doc[this._path] = {};
           doc[this._path].metadata = this.metadata.toJSON();
-          doc[this._path].cells = [];
+          doc[this._path].cells = new Array<any>();
         }
       );
     });
@@ -71,9 +71,9 @@ export class AutomergeNotebook implements IObservableNotebook {
   // Observe and Handle Remote Changes.
   private _observeRemote() {
     this._observable.observe(
-      this._modelDB.amDoc,
+      this._modelDB.amDoc[this._path],
       (diff, before, after, local) => {
-        console.log('---', diff);
+        console.log('--- diff', diff, after)
         if (!local && diff.props && diff.props[this._path]) {
         }
       }
@@ -122,58 +122,67 @@ export class AutomergeNotebook implements IObservableNotebook {
     });
   }
 
+  private _obsCellToCell(obsCell: IObservableCell) {
+    const cell = {
+      source: new Text(obsCell.codeEditor.value.text)
+    };
+    return cell;
+  }
+
   private _onCellsChanged(
     value: IObservableList<IObservableCell>,
     args: IObservableList.IChangedArgs<IObservableCell>
   ): void {
     waitForModelInit(this._modelDB, () => {
       this._lock(() => {
+        /*
         const valueJson = new Array();
-        const valueIt = value.iter();
+        const iter = value.iter();
         let elem = undefined;
-        while ((elem = valueIt.next())) {
+        while ((elem = iter.next())) {
           valueJson.push(elem.toJSON());
         }
-        const valueIt2 = value.iter();
-        while ((elem = valueIt2.next())) {
+        const iter2 = value.iter();
+        while ((elem = iter2.next())) {
           elem.codeEditor.value.changed.connect(this._onValueChanged, this);
         }
+        */
+        console.log('------', this._modelDB.amDoc[this._path])
+        this._observable.observe(
+          this._modelDB.amDoc[this._path].cells,
+          (diff, before, after, local) => {
+            console.log(`--- diff cells`, diff);
+          });
         switch (args.type) {
           case 'add':
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `cells add ${this._path} ${args.newIndex}`,
-              doc => {
-                doc[this._path].cells = valueJson;
-              }
-            );
+            console.log('--- amnotebook add', value, args)
+            args.newValues.map(obsCell => {
+              const cell = this._obsCellToCell(obsCell);
+              this._modelDB.amDoc = Automerge.change(
+                  this._modelDB.amDoc,
+                  `cells add ${this._path} ${args.newIndex}`,
+                  doc => {
+                    args.newValues.map(obsCell => {
+                      (doc[this._path].cells as List<any>).insertAt!(args.newIndex, cell);
+                    });
+                  });
+                  obsCell.codeEditor.value.changed.connect(this._onValueChanged, this);
+                  this._observable.observe(
+                    this._modelDB.amDoc[this._path].cells[args.newIndex].source,
+                    (diff, before, after, local) => {
+                      console.log(`--- diff cell source index ${args.newIndex}`, diff);
+                  });
+                }
+              );
             break;
           case 'move':
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `cells move ${this._path} ${args.newIndex}`,
-              doc => {
-                doc[this._path].cells = valueJson;
-              }
-            );
+            console.log('--- amnotebook move', value, args)
             break;
-          case 'remove':
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `cells remove ${this._path} ${args.newIndex}`,
-              doc => {
-                doc[this._path].cells = valueJson;
-              }
-            );
+         case 'remove':
+            console.log('--- amnotebook remove', value, args)
             break;
           case 'set':
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `cells set ${this._path} ${args.newIndex}`,
-              doc => {
-                doc[this._path].cells = valueJson;
-              }
-            );
+            console.log('--- amnotebook set', value, args)
             break;
         }
       });
@@ -184,8 +193,43 @@ export class AutomergeNotebook implements IObservableNotebook {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
-//    console.log('---', value, args);
-  }
+      waitForModelInit(this._modelDB, () => {
+        this._lock(() => {
+          switch(args.type) {
+            case 'set': {
+              this._modelDB.amDoc = Automerge.change(
+                this._modelDB.amDoc,
+                `string set ${this._path} ${args.value}`,
+                doc => {
+                  (doc[this._path].cells as List<any>)[0].source = new Text(args.value);
+                }
+              );
+              break;
+            }
+            case 'insert': { 
+              this._modelDB.amDoc = Automerge.change(
+                this._modelDB.amDoc,
+                `string insert ${this._path} ${args.start} ${args.value}`,
+                doc => {
+                  ((doc[this._path].cells as List<any>)[0].source as Text).insertAt!(args.start, ...args.value);
+                }
+              );
+              break;
+            }
+            case 'remove': {
+              this._modelDB.amDoc = Automerge.change(
+                this._modelDB.amDoc,
+                `string remove ${this._path} ${args.start} ${args.end}`,
+                doc => {
+                  ((doc[this._path].cells as List<any>)[0].source as Text).deleteAt!(args.start, args.end - args.start);
+                }
+              );
+              break;
+            }
+          }
+        });
+      });
+    }
 
   get type(): 'Notebook' {
     return 'Notebook';

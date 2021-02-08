@@ -8,6 +8,8 @@
  */
 
 export * from './automerge/ammodeldb';
+export * from './wrapped/wrappedmodeldb';
+export * from './yjs/ymodeldb';
 export * from './modeldb';
 export * from './observablejson';
 export * from './observablelist';

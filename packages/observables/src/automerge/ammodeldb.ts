@@ -96,10 +96,8 @@ export function waitForModelInit(modelDB: AutomergeModelDB, callback: any) {
   }
   else setTimeout(function () {
     if (modelDB.isInitialized) {
-//      console.log('--- ModelDB is now initialized.')
       callback();
     } else {
-//      console.log('--- Waiting on ModelDB initialisation....')
       waitForModelInit(modelDB, callback);
     }
   }, 10); // Wait 10 miliseconds for model initialization...
@@ -240,9 +238,9 @@ export class AutomergeModelDB implements IModelDB {
     });
 
     // @ts-ignore
-    //    window.docs = window.docs || [];
+    // window.modeldb = window.modeldb || {};
     // @ts-ignore
-    //    window.docs.push(this._amDoc);
+    // window.modeldb[options.localPath] = this._amDoc;
 
     this._isInitialized = false;
 

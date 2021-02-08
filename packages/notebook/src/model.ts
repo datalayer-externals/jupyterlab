@@ -26,7 +26,7 @@ import {
   IObservableNotebook
 } from '@jupyterlab/observables';
 
-import { CellList } from './celllist2';
+import { CellList } from './celllist';
 
 import { showDialog, Dialog } from '@jupyterlab/apputils';
 

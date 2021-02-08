@@ -163,7 +163,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
                 }
               );
               break;
-            } 
+            }
           }
         });
       });
