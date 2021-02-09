@@ -50,7 +50,7 @@ export class ObservableJSON extends ObservableMap<ReadonlyPartialJSONValue> {
   }
 
   public initObservables() {
-    /* no-op */
+    super.initObservables();
   }
 
   /**

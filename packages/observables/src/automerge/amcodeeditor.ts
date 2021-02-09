@@ -3,21 +3,23 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-// import Automerge, { Text } from 'automerge';
-
-import { AutomergeModelDB } from './ammodeldb';
+import { amDocPath, AutomergeModelDB } from './ammodeldb';
 
 import { IObservableCodeEditor } from './../observablecodeeditor';
 
-import { IObservableValue, ObservableValue } from './../observablevalue';
+import { IObservableValue } from './../observablevalue';
 
 import { IObservableString } from './../observablestring';
 
 import { AutomergeString } from './amstring';
 
-import { IObservableJSON, ObservableJSON } from './../observablejson';
+import { IObservableJSON } from './../observablejson';
 
 import { IObservableMap } from './../observablemap';
+
+import { AutomergeValue } from './amvalue';
+
+import { AutomergeJSON } from './amjson';
 
 export class AutomergeCodeEditor implements IObservableCodeEditor {
   constructor(
@@ -34,18 +36,25 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     );
     this._value.changed.connect(this._onValueChanged, this);
 
-    this._mimeType = new ObservableValue('');
+    this._mimeType = new AutomergeValue(
+      this._path.concat('mimeType'),
+      this._modelDB,
+      ''
+     );
     this._mimeType.changed.connect(this._onMimeTypeChanged, this);
 
-    this._selections = new ObservableJSON();
+    this._selections = new AutomergeJSON(
+      this._path.concat('selections'),
+      this._modelDB,
+    );
     this._selections.changed.connect(this._onSelectionsChanged, this);
     /*
     if (options.values) {
       for (const key in options.values) {
-        this._modelDB.amDocPath(this._path)[key] = options.values[key];
+        amDocPath(this._path)[key] = options.values[key];
       }
     }
-*/
+    */
   }
 
   public initObservables() {
@@ -161,7 +170,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
 
   private _onMimeTypeChanged(
     value: IObservableValue,
-    args: ObservableValue.IChangedArgs
+    args: AutomergeValue.IChangedArgs
   ): void {
     // TODO(ECH) Implement this.
   }
@@ -249,8 +258,8 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    if (this._modelDB.amDocPath(this._path)) {
-      this._modelDB.amDocPath(this._path).clear();
+    if (amDocPath(this._modelDB.amDoc, this._path)) {
+      amDocPath(this._modelDB.amDoc, this._path).clear();
     }
   }
 

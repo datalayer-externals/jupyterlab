@@ -8,6 +8,7 @@ import { IObservableString } from '../observablestring';
 import Automerge, { Text } from 'automerge';
 
 import {
+  amDocPath,
   setNested,
   extractNested,
   waitForModelDBIInit,
@@ -28,13 +29,14 @@ export class AutomergeString implements IObservableString {
   }
 
   public initObservables() {
-    const value = this._modelDB.amDocPath(this._path).toString();
+    const value = amDocPath(this._modelDB.amDoc, this._path);
     if (value) {
+      const s = value.toString()
       this._changed.emit({
         type: 'set',
         start: 0,
-        end: value.length,
-        value: value
+        end: s.length,
+        value: s
       });
     } else {
       this._modelDB.amDoc = Automerge.change(
@@ -47,7 +49,7 @@ export class AutomergeString implements IObservableString {
     }
     // Observe and Handle Remote Changes.
     this._modelDB.observable.observe(
-      this._modelDB.amDocPath(this._path),
+      amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
         if (!local && diff.edits && diff.props) {
           const edits = diff.edits;
@@ -106,13 +108,13 @@ export class AutomergeString implements IObservableString {
   set text(value: string) {
     // TODO(ECH) Check this condition !this...
     waitForModelDBIInit(this._modelDB, () => {
-      if (this._modelDB.amDocPath(this._path)) {
+      if (amDocPath(this._modelDB.amDoc, this._path)) {
         return;
       }
-      if (this._modelDB.amDocPath(this._path)) {
+      if (amDocPath(this._modelDB.amDoc, this._path)) {
         if (
-          value.length === this._modelDB.amDocPath(this._path).length &&
-          value === this._modelDB.amDocPath(this._path)
+          value.length === amDocPath(this._modelDB.amDoc, this._path).length &&
+          value === amDocPath(this._modelDB.amDoc, this._path)
         ) {
           return;
         }
@@ -139,8 +141,8 @@ export class AutomergeString implements IObservableString {
    * Get the value of the string.
    */
   get text(): string {
-    return this._modelDB.amDocPath(this._path)
-      ? (this._modelDB.amDocPath(this._path) as Text).toString()
+    return amDocPath(this._modelDB.amDoc, this._path)
+      ? (amDocPath(this._modelDB.amDoc, this._path) as Text).toString()
       : '';
   }
 
@@ -180,8 +182,7 @@ export class AutomergeString implements IObservableString {
    */
   remove(start: number, end: number): void {
     waitForModelDBIInit(this._modelDB, () => {
-      const oldValue = this._modelDB
-        .amDocPath(this._path)
+      const oldValue = amDocPath(this._modelDB.amDoc, this._path)
         .toString()
         .slice(start, end);
       this._modelDB.withLock(() => {

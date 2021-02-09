@@ -9,7 +9,7 @@ import Automerge from 'automerge';
 
 import { IObservableValue } from './../observablevalue';
 
-import { setNested, waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
+import { amDocPath, setNested, waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
 
 /**
  * A concrete implementation of an `IObservableValue`.
@@ -27,23 +27,31 @@ export class AutomergeValue implements IObservableValue {
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    waitForModelDBIInit(this._modelDB, () => {
+  }
+
+  public initObservables() {
+    const value = amDocPath(this._modelDB.amDoc, this._path);
+    if (value) {
+      this._changed.emit({
+        oldValue: undefined,
+        newValue: value
+      });
+    } else {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `value init`,
         doc => {
-          setNested(doc, this._path, initialValue || '');
+          setNested(doc, this._path, '');
         }
       );
-    });
-  }
-
-  public initObservables() {
+    }
+    console.log('--- am value', this._modelDB.amDoc),
+    console.log('--- am value', amDocPath(this._modelDB.amDoc, this._path)),
     // Observe and Handle Remote Changes.
     this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
-        console.log('---', after, path);
+//        console.log('---', after, path);
       }
     );
   }
@@ -73,14 +81,14 @@ export class AutomergeValue implements IObservableValue {
    * Get the current value, or `undefined` if it has not been set.
    */
   get(): JSONValue {
-    return this._modelDB.amDocPath(this._path);
+    return amDocPath(this._modelDB.amDoc, this._path);
   }
 
   /**
    * Set the current value.
    */
   set(value: JSONValue): void {
-    const oldValue = this._modelDB.amDocPath(this._path);
+    const oldValue = amDocPath(this._modelDB.amDoc, this._path);
     if (JSONExt.deepEqual(oldValue, value)) {
       return;
     }

@@ -142,6 +142,17 @@ export const setNested = (doc: any, path: string[], value: any) => {
   leaf[path[path.length - 1]] = value;
 };
 
+export const amDocPath = (doc: any, path: string[]) => {
+  let leaf: any = doc;
+  for (let i = 0; i < path.length; i++) {
+    leaf = leaf[path[i]];
+    if (!leaf) {
+      return undefined;
+    }
+  }
+  return leaf;
+}
+
 const createLock = () => {
   let lock = true;
   return (a: any, b: any) => {
@@ -324,17 +335,6 @@ export class AutomergeModelDB implements IModelDB {
 
   set amDoc(amDoc: AmDoc) {
     this._amDoc = amDoc;
-  }
-
-  amDocPath(path: string[]) {
-    let leaf: any = this._amDoc;
-    for (let i = 0; i < path.length; i++) {
-      leaf = leaf[path[i]];
-      if (!leaf) {
-        return undefined;
-      }
-    }
-    return leaf;
   }
 
   /**
