@@ -3,7 +3,7 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import Automerge, { Text } from 'automerge';
+// import Automerge, { Text } from 'automerge';
 
 import { waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
 
@@ -13,18 +13,27 @@ import { IObservableValue, ObservableValue } from './../observablevalue';
 
 import { IObservableString, ObservableString } from './../observablestring';
 
+import { AutomergeString } from './amstring';
+
 import { IObservableJSON, ObservableJSON } from './../observablejson';
 
 import { IObservableMap } from './../observablemap';
 
 export class AutomergeCodeEditor implements IObservableCodeEditor {
   constructor(
-    path: string,
+    path: string[],
     modelDB: AutomergeModelDB,
     options: AutomergeCodeEditor.IOptions = {}
   ) {
     this._path = path;
     this._modelDB = modelDB;
+
+    const s = new AutomergeString(this._path.concat('hello'), this._modelDB);
+    s.insert(0, 'hello');
+    console.log('--- before init', s.text)
+    waitForModelDBIInit(this._modelDB, () => {
+      console.log('--- after init', s.text)
+    });
 
     this._value = new ObservableString();
     this._value.changed.connect(this._onValueChanged, this);
@@ -34,35 +43,20 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
 
     this._selections = new ObservableJSON();
     this._selections.changed.connect(this._onSelectionsChanged, this);
-
+/*
     if (options.values) {
       for (const key in options.values) {
-        this._modelDB.amDoc[this._path][key] = options.values[key];
+        this._modelDB.amDocPath(this._path)[key] = options.values[key];
       }
     }
+*/
   }
 
   public initObservables() {
-    this._modelDB.withLock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `codeeditor init ${this._path}`,
-        doc => {
-          doc[this._path] = {};
-          doc[this._path].value = new Text(this._value.text);
-          doc[this._path].mimeType = this.mimeType.get();
-          doc[this._path].selections = this.selections.toJSON();
-        }
-      );
-    });
-    this._observeRemote();
-  }
-
-  // Observe and Handle Remote Changes.
-  private _observeRemote() {
     this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
+        /*
         if (!local && diff.props && diff.props[this._path]) {
           const codeEditor = diff.props[this._path]
           Object.values(codeEditor).map(val => {
@@ -104,11 +98,9 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
               if (props.selections) {
                 Object.keys(after[this._path]['selections']).map(uuid => {
                   if (before[this._path]['selections']) {
-                    /*
-                    const oldVal = before[this._path]['selections']
-                      ? before[this._path]['selections'][uuid]
-                      : undefined;
-                    */
+//                    const oldVal = before[this._path]['selections']
+//                      ? before[this._path]['selections'][uuid]
+//                      : undefined;
                     const newVal = after[this._path]['selections']
                       ? after[this._path]['selections'][uuid]
                       : undefined;
@@ -119,6 +111,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
             }
           });
         }
+*/
       }
     );
   }
@@ -127,6 +120,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
+/*
       waitForModelDBIInit(this._modelDB, () => {
         this._modelDB.withLock(() => {
           switch(args.type) {
@@ -163,6 +157,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
           }
         });
       });
+*/
     }
 
   private _onMimeTypeChanged(
@@ -176,6 +171,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     value: IObservableMap<any>,
     args: IObservableMap.IChangedArgs<any>
   ): void {
+/*
     waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         switch(args.type) {
@@ -212,6 +208,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
         }
       });
     });
+*/
   }
 
   /**
@@ -253,12 +250,12 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    if (this._modelDB.amDoc[this._path]) {
-      this._modelDB.amDoc[this._path].clear();
+    if (this._modelDB.amDocPath(this._path)) {
+      this._modelDB.amDocPath(this._path).clear();
     }
   }
 
-  private _path: string;
+  private _path: string[];
   private _modelDB: AutomergeModelDB;
   private _value: IObservableString;
   private _mimeType: IObservableValue;

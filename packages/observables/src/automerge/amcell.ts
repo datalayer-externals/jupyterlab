@@ -9,7 +9,7 @@ import { AutomergeModelDB } from './ammodeldb';
 
 import { AutomergeJSON } from './amjson';
 
-import { AutomergeValue } from './amvalue';
+// import { AutomergeValue } from './amvalue';
 
 import { IObservableJSON } from './../observablejson';
 
@@ -27,7 +27,7 @@ export class AutomergeCell extends AutomergeJSON {
    * Construct a new observable JSON object.
    */
   constructor(
-    path: string,
+    path: string[],
     modelDB: AutomergeModelDB,
     id: string,
     codeEditor: IObservableCodeEditor,
@@ -40,11 +40,13 @@ export class AutomergeCell extends AutomergeJSON {
     });
     this._id = id;
     this._codeEditor = codeEditor;
+    /*
     const idPath = modelDB.idPath(path);
     this._metadata = new AutomergeJSON(idPath, modelDB);
     this._cellType = new AutomergeValue(idPath, modelDB, '');
     this._trusted = new AutomergeValue(idPath, modelDB, '');
     this._executionCount =  new AutomergeValue(idPath, modelDB, '');
+    */
   }
 
   public initObservables() {

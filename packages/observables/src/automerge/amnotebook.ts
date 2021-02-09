@@ -21,7 +21,7 @@ import { IObservableMap } from '../observablemap';
 
 export class AutomergeNotebook implements IObservableNotebook {
   constructor(
-    path: string,
+    path: string[],
     modelDB: AutomergeModelDB,
     options: AutomergeNotebook.IOptions = {}
   ) {
@@ -39,9 +39,9 @@ export class AutomergeNotebook implements IObservableNotebook {
         this._modelDB.amDoc,
         `notebook init ${this._path}`,
         doc => {
-          doc[this._path] = {};
-          doc[this._path].metadata = this.metadata.toJSON();
-          doc[this._path].cells = new Array<any>();
+          doc[this._path[0]] = {};
+          doc[this._path[0]].metadata = this.metadata.toJSON();
+          doc[this._path[0]].cells = new Array<any>();
         }
       );
     });
@@ -52,7 +52,7 @@ export class AutomergeNotebook implements IObservableNotebook {
           this._modelDB.amDoc,
           `notebook init ${this._path}`,
           doc => {
-            doc[this._path] = {};
+            doc[this._path[0]] = {};
           }
         );
       });
@@ -62,10 +62,10 @@ export class AutomergeNotebook implements IObservableNotebook {
 
   public initObservables() {
     this._modelDB.observable.observe(
-      this._modelDB.amDoc[this._path],
+      this._modelDB.amDoc[this._path[0]],
       (diff, before, after, local, changes, path) => {
 //        console.log('--- diff notebook', diff, after, path)
-        if (!local && diff.props && diff.props[this._path]) {
+        if (!local && diff.props && diff.props[this._path[0]]) {
         }
       }
     );
@@ -83,7 +83,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `notebook metadata add ${this._path} ${args.key}`,
               doc => {
-                doc[this._path].metadata[args.key] = args.newValue;
+                doc[this._path[0]].metadata[args.key] = args.newValue;
               }
             );
             break;
@@ -93,7 +93,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `notebook metadata delete ${this._path} ${args.key}`,
               doc => {
-                delete doc[this._path].metadata[args.key];
+                delete doc[this._path[0]].metadata[args.key];
               }
             );
             break;
@@ -103,7 +103,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `notebook metadata change ${this._path} ${args.key}`,
               doc => {
-                doc[this._path].metadata[args.key] = args.newValue;
+                doc[this._path[0]].metadata[args.key] = args.newValue;
               }
             );
             break;
@@ -147,12 +147,12 @@ export class AutomergeNotebook implements IObservableNotebook {
                 this._modelDB.amDoc,
                 `cells add ${this._path} ${index}`,
                 doc => {
-                  (doc[this._path].cells as List<any>).insertAt!(index, cell);
+                  (doc[this._path[0]].cells as List<any>).insertAt!(index, cell);
               });
               observableCell.codeEditor.value.changed.connect(this._onValueChanged, this);
-              console.log('---', this._modelDB.amDoc[this._path])
+              console.log('---', this._modelDB.amDoc[this._path[0]])
               this._modelDB.observable.observe(
-                this._modelDB.amDoc[this._path].cells[index].source,
+                this._modelDB.amDoc[this._path[0]].cells[index].source,
                 (diff, before, after, local, changes, path) => {
                   console.log('--- diff after', after)
                   console.log('--- diff source', diff, path)
@@ -188,7 +188,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `string set ${this._path} ${args.value}`,
               doc => {
-                (doc[this._path].cells as List<any>)[0].source = new Text(args.value);
+                (doc[this._path[0]].cells as List<any>)[0].source = new Text(args.value);
               }
             );
             break;
@@ -198,7 +198,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `string insert ${this._path} ${args.start} ${args.value}`,
               doc => {
-                ((doc[this._path].cells as List<any>)[0].source as Text).insertAt!(args.start, ...args.value);
+                ((doc[this._path[0]].cells as List<any>)[0].source as Text).insertAt!(args.start, ...args.value);
               }
             );
             break;
@@ -208,7 +208,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `string remove ${this._path} ${args.start} ${args.end}`,
               doc => {
-                ((doc[this._path].cells as List<any>)[0].source as Text).deleteAt!(args.start, args.end - args.start);
+                ((doc[this._path[0]].cells as List<any>)[0].source as Text).deleteAt!(args.start, args.end - args.start);
               }
             );
             break;
@@ -244,14 +244,14 @@ export class AutomergeNotebook implements IObservableNotebook {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    if (this._modelDB.amDoc[this._path]) {
-      this._modelDB.amDoc[this._path].clear();
+    if (this._modelDB.amDoc[this._path[0]]) {
+      this._modelDB.amDoc[this._path[0]].clear();
     }
   }
 
   private _metadata: IObservableJSON;
   private _cells: IObservableList<IObservableCell>;
-  private _path: string;
+  private _path: string[];
   private _modelDB: AutomergeModelDB;
   private _changed = new Signal<this, IObservableList.IChangedArgs<IObservableCell>>(this);
   private _isDisposed = false;

@@ -26,7 +26,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    * Construct a new observable map.
    */
   constructor(
-    path: string,
+    path: string[],
     modelDB: AutomergeModelDB,
     options: AutomergeList.IOptions<T> = {}
   ) {
@@ -40,8 +40,8 @@ export class AutomergeList<T> implements IObservableList<T> {
             this._modelDB.amDoc,
             `list init ${this._path} ${value}`,
             doc => {
-              doc[this._path] = [];
-              (doc[this._path] as List<T>).push(value);
+              doc[this._path[0]] = [];
+              (doc[this._path[0]] as List<T>).push(value);
             }
           );
         });
@@ -50,7 +50,7 @@ export class AutomergeList<T> implements IObservableList<T> {
           this._modelDB.amDoc,
           `list init ${this._path}`,
           doc => {
-            doc[this._path] = [];
+            doc[this._path[0]] = [];
           }
         );
       }
@@ -64,10 +64,10 @@ export class AutomergeList<T> implements IObservableList<T> {
     this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
-        if (!local && diff.props && diff.props && diff.props[this._path]) {
+        if (!local && diff.props && diff.props && diff.props[this._path[0]]) {
           /*
-          console.log('---', diff.props[this._path]);
-          Object.keys(after[this._path]).map(uuid => {
+          console.log('---', diff.props[this._path[0]]);
+          Object.keys(after[this._path[0]]).map(uuid => {
             console.log('uuid');
           });
           */
@@ -94,8 +94,8 @@ export class AutomergeList<T> implements IObservableList<T> {
    * The length of the list.
    */
   get length(): number {
-    return this._modelDB.amDoc[this._path]
-      ? (this._modelDB.amDoc[this._path] as List<T>).length
+    return this._modelDB.amDoc[this._path[0]]
+      ? (this._modelDB.amDoc[this._path[0]] as List<T>).length
       : 0;
   }
 
@@ -130,7 +130,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    * No changes.
    */
   iter(): IIterator<T> {
-    return new ArrayIterator(this._modelDB.amDoc[this._path] as List<T>);
+    return new ArrayIterator(this._modelDB.amDoc[this._path[0]] as List<T>);
   }
 
   /**
@@ -144,7 +144,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    * An `index` which is non-integral or out of range.
    */
   get(index: number): T {
-    return (this._modelDB.amDoc[this._path] as List<T>)[index];
+    return (this._modelDB.amDoc[this._path[0]] as List<T>)[index];
   }
 
   /**
@@ -164,7 +164,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    * An `index` which is non-integral or out of range.
    */
   set(index: number, value: T): void {
-    const oldValue = (this._modelDB.amDoc[this._path] as List<T>)[index];
+    const oldValue = (this._modelDB.amDoc[this._path[0]] as List<T>)[index];
     if (value === undefined) {
       throw new Error('Cannot set an undefined item');
     }
@@ -179,7 +179,7 @@ export class AutomergeList<T> implements IObservableList<T> {
           this._modelDB.amDoc,
           `list set ${this._path} ${index} ${value}`,
           doc => {
-            (doc[this._path] as List<T>)[index] = value;
+            (doc[this._path[0]] as List<T>)[index] = value;
           }
         );
       });
@@ -213,11 +213,11 @@ export class AutomergeList<T> implements IObservableList<T> {
         this._modelDB.amDoc,
         `list push ${this._path} ${value}`,
         doc => {
-          (doc[this._path] as List<T>).push(value);
+          (doc[this._path[0]] as List<T>).push(value);
         });
       });
     });
-    const num = (this._modelDB.amDoc[this._path] as List<T>).length;
+    const num = (this._modelDB.amDoc[this._path[0]] as List<T>).length;
     this._changed.emit({
       type: 'add',
       oldIndex: -1,
@@ -254,7 +254,7 @@ export class AutomergeList<T> implements IObservableList<T> {
         this._modelDB.amDoc,
         `list insert ${this._path} ${index} ${value}`,
         doc => {
-          ArrayExt.insert(doc[this._path] as List<T>, index, value);
+          ArrayExt.insert(doc[this._path[0]] as List<T>, index, value);
         });
       });
     });
@@ -284,7 +284,7 @@ export class AutomergeList<T> implements IObservableList<T> {
   removeValue(value: T): number {
     const itemCmp = this._itemCmp;
     const index = ArrayExt.findFirstIndex(
-      this._modelDB.amDoc[this._path] as List<T>,
+      this._modelDB.amDoc[this._path[0]] as List<T>,
       item => {
         return itemCmp(item, value);
       }
@@ -318,7 +318,7 @@ export class AutomergeList<T> implements IObservableList<T> {
           this._modelDB.amDoc,
           `list remove ${this._path} ${index}`,
           doc => {
-            value = ArrayExt.removeAt(doc[this._path] as List<T>, index);
+            value = ArrayExt.removeAt(doc[this._path[0]] as List<T>, index);
           }
         );
       });
@@ -346,15 +346,15 @@ export class AutomergeList<T> implements IObservableList<T> {
    * All current iterators are invalidated.
    */
   clear(): void {
-    if (this._modelDB.amDoc[this._path]) {
-      const copy = (this._modelDB.amDoc[this._path] as List<T>).slice();
+    if (this._modelDB.amDoc[this._path[0]]) {
+      const copy = (this._modelDB.amDoc[this._path[0]] as List<T>).slice();
       waitForModelDBIInit(this._modelDB, () => {
         this._modelDB.withLock(() => {
           this._modelDB.amDoc = Automerge.change(
             this._modelDB.amDoc,
             `list clear ${this._path}`,
             doc => {
-              doc[this._path] = new Array<T>();
+              doc[this._path[0]] = new Array<T>();
             }
           );
         });
@@ -397,8 +397,8 @@ export class AutomergeList<T> implements IObservableList<T> {
           this._modelDB.amDoc,
           `list move ${this._path} ${fromIndex} ${toIndex}`,
           doc => {
-            values = [(doc[this._path] as List<T>)[fromIndex]];
-            ArrayExt.move(doc[this._path] as List<T>, fromIndex, toIndex);
+            values = [(doc[this._path[0]] as List<T>)[fromIndex]];
+            ArrayExt.move(doc[this._path[0]] as List<T>, fromIndex, toIndex);
           }
         );
       });
@@ -434,7 +434,7 @@ export class AutomergeList<T> implements IObservableList<T> {
           `list pushAll ${this._path} ${values}`,
           doc => {
             each(values, value => {
-              (doc[this._path] as List<T>).push(value);
+              (doc[this._path[0]] as List<T>).push(value);
             });
           }
         );
@@ -478,7 +478,7 @@ export class AutomergeList<T> implements IObservableList<T> {
           `list insertAll ${this._path} ${index} ${values}`,
           doc => {
             each(values, value => {
-              ArrayExt.insert(doc[this._path] as List<T>, index++, value);
+              ArrayExt.insert(doc[this._path[0]] as List<T>, index++, value);
             });
           }
         );
@@ -512,7 +512,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    * A `startIndex` or `endIndex` which is non-integral.
    */
   removeRange(startIndex: number, endIndex: number): number {
-    const oldValues = (this._modelDB.amDoc[this._path] as List<T>).slice(
+    const oldValues = (this._modelDB.amDoc[this._path[0]] as List<T>).slice(
       startIndex,
       endIndex
     );
@@ -523,7 +523,7 @@ export class AutomergeList<T> implements IObservableList<T> {
           `list removeRange ${this._path} ${startIndex} ${endIndex}`,
           doc => {
             for (let i = startIndex; i < endIndex; i++) {
-              ArrayExt.removeAt(doc[this._path] as List<T>, startIndex);
+              ArrayExt.removeAt(doc[this._path[0]] as List<T>, startIndex);
             }
           }
         );
@@ -539,7 +539,7 @@ export class AutomergeList<T> implements IObservableList<T> {
     return this.length;
   }
 
-  private _path: string;
+  private _path: string[];
   private _modelDB: AutomergeModelDB;
   private _isDisposed = false;
   private _itemCmp: (first: T, second: T) => boolean;

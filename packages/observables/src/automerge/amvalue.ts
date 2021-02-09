@@ -5,11 +5,11 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { JSONExt, JSONValue } from '@lumino/coreutils';
 
-import { IObservableValue } from './../observablevalue';
-
 import Automerge from 'automerge';
 
-import { waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
+import { IObservableValue } from './../observablevalue';
+
+import { setNested, waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
 
  /**
  * A concrete implementation of an `IObservableValue`.
@@ -21,16 +21,22 @@ export class AutomergeValue implements IObservableValue {
    * @param initialValue: the starting value for the `ObservableValue`.
    */
   constructor(
-    path: string,
+    path: string[],
     modelDB: AutomergeModelDB,
     initialValue: JSONValue = null
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    // TODO(ECH) Revisit this...
-    if (initialValue || initialValue === '') {
-      this.set(initialValue);
-    }
+    waitForModelDBIInit(this._modelDB, () => {
+      this._modelDB.amDoc = Automerge.change(
+        this._modelDB.amDoc,
+        `value init`,
+        doc => {
+          setNested(doc, this._path, initialValue || '');
+        }
+      );
+      this.initObservables();
+    });
   }
 
   public initObservables() {
@@ -38,7 +44,7 @@ export class AutomergeValue implements IObservableValue {
     this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
-//        console.log('---', diff.props);
+        console.log('---', after, path);
       }
     );
   }
@@ -68,14 +74,14 @@ export class AutomergeValue implements IObservableValue {
    * Get the current value, or `undefined` if it has not been set.
    */
   get(): JSONValue {
-    return this._modelDB.amDoc[this._path];
+    return this._modelDB.amDocPath(this._path);
   }
 
   /**
    * Set the current value.
    */
   set(value: JSONValue): void {
-    const oldValue = this._modelDB.amDoc[this._path];
+    const oldValue = this._modelDB.amDocPath(this._path);
     if (JSONExt.deepEqual(oldValue, value)) {
       return;
     }
@@ -84,7 +90,7 @@ export class AutomergeValue implements IObservableValue {
         this._modelDB.amDoc,
         `value set ${this._path} ${value}`,
         doc => {
-          doc[this._path] = value;
+          setNested(doc, this._path, value);
         }
       );
     });
@@ -109,14 +115,14 @@ export class AutomergeValue implements IObservableValue {
           this._modelDB.amDoc,
           `value delete ${this._path}`,
           doc => {
-            delete doc[this._path];
+            setNested(doc, this._path, undefined);
           }
         );
       });
     });
   }
 
-  private _path: string;
+  private _path: string[];
   private _modelDB: AutomergeModelDB;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, AutomergeValue.IChangedArgs>(this);

@@ -20,7 +20,7 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
    * Construct a new automerge JSON object.
    */
   constructor(
-    path: string,
+    path: string[],
     modelDB: AutomergeModelDB,
     options: AutomergeJSON.IOptions = {}
   ) {

@@ -126,6 +126,26 @@ export const combineChanges = (changes: Uint8Array[]) => {
   return combinedChanges;
 };
 
+export const extractNested = (doc: any, path: string[]) => {
+  const out = [doc]
+  for (let i = 0; i < path.length; i++) {
+    let { [path[i]]: name } = out[i];
+    out.push(name);
+  }
+  return out[out.length - 1];
+}
+
+export const setNested = (doc: any, path: string[], value: any) => {
+  let leaf = doc;
+  for (let i = 0; i < path.length - 1; i++) {
+    if (!leaf[path[i]]) {
+      leaf[path[i]] = {};
+    }
+    leaf = leaf[path[i]];
+  }
+  leaf[path[path.length - 1]] = value;
+}
+
 const createLock = () => {
   let lock = true;
   return (a: any, b: any) => {
@@ -217,13 +237,14 @@ export class AutomergeModelDB implements IModelDB {
     this._ws.addEventListener('message', (message: MessageEvent) => {
       if (message.data) {
         // Initalize for Remotes if not yet the case.
+        /*
         if (!this.isInitialized) {
           (this._db as ObservableMap<any>).values().map(value => {
             value.initObservables();
           });
-          this._isInitialized = true;
         }
-        this._lock(() => {
+        */
+        this.withLock(() => {
           // Check Owner ID.
           if (this._amDoc['ownerId']) {
             Automerge.Frontend.setActorId(this._amDoc, this._amDoc['ownerId']);
@@ -260,6 +281,9 @@ export class AutomergeModelDB implements IModelDB {
               this.collaborators.set(uuid, collaborator);
             }
           });
+          if (!this._isInitialized) {
+            this._isInitialized = true;
+          }
         });
       }
     });
@@ -312,6 +336,17 @@ export class AutomergeModelDB implements IModelDB {
     this._amDoc = amDoc;
   }
 
+  amDocPath(path: string[]) {
+    let leaf: any = this._amDoc;
+    for (let i=0; i < path.length; i++) {
+      leaf = leaf[path[i]];
+      if (!leaf) {
+        return undefined;
+      }
+    }
+    return leaf;
+  }
+
   /**
    * Whether the model has been populated with
    * any model values.
@@ -343,11 +378,11 @@ export class AutomergeModelDB implements IModelDB {
    */
   createString(path: string): IObservableString {
     let str: IObservableString = new AutomergeString(
-      this.idPath(path),
+      [this.idPath(path)],
       this,
     );
     if (this._isInitialized) {
-      str.initObservables();
+//      str.initObservables();
     }
     this._disposables.add(str);
     this.set(path, str);
@@ -356,11 +391,11 @@ export class AutomergeModelDB implements IModelDB {
 
   createList<T extends any>(path: string): IObservableList<T> {
     const list = new AutomergeList<T>(
-      this.idPath(path),
+      [this.idPath(path)],
       this
     );
     if (this._isInitialized) {
-      list.initObservables();
+//      list.initObservables();
     }
     this._disposables.add(list);
     this.set(path, list);
@@ -382,12 +417,12 @@ export class AutomergeModelDB implements IModelDB {
     path: string
   ): IObservableUndoableList<T> {
     const list = new AutomergeUndoableList<T>(
-      this.idPath(path),
+      [this.idPath(path)],
       this,
       new ObservableUndoableList.IdentitySerializer<T>()
     );
     if (this._isInitialized) {
-      list.initObservables();
+//      list.initObservables();
     }
     this._disposables.add(list);
     this.set(path, list);
@@ -403,9 +438,12 @@ export class AutomergeModelDB implements IModelDB {
    *
    */
   createMap(path: string): IObservableMap<any> {
-    const map = new AutomergeMap(this.idPath(path), this);
+    const map = new AutomergeMap(
+      [this.idPath(path)], 
+      this
+    );
     if (this._isInitialized) {
-      map.initObservables();
+//      map.initObservables();
     }
     this._disposables.add(map);
     this.set(path, map);
@@ -424,9 +462,12 @@ export class AutomergeModelDB implements IModelDB {
    * JSON Objects and primitives.
    */
   createJSON(path: string): IObservableJSON {
-    const json = new AutomergeJSON(this.idPath(path), this);
+    const json = new AutomergeJSON(
+      [this.idPath(path)],
+      this
+    );
     if (this._isInitialized) {
-      json.initObservables();
+//      json.initObservables();
     }
     this._disposables.add(json);
     this.set(path, json);
@@ -434,9 +475,12 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   public createCodeEditor(path: string): IObservableCodeEditor {
-    const codeEditor = new AutomergeCodeEditor(this.idPath(path), this);
+    const codeEditor = new AutomergeCodeEditor(
+      [this.idPath(path)],
+      this
+    );
     if (this._isInitialized) {
-      codeEditor.initObservables();
+//      codeEditor.initObservables();
     }
     this._disposables.add(codeEditor);
     this.set(path, codeEditor);
@@ -444,9 +488,12 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   public createNotebook(path: string): IObservableNotebook {
-    const notebook = new AutomergeNotebook(this.idPath(path), this);
+    const notebook = new AutomergeNotebook(
+      [this.idPath(path)],
+      this
+    );
     if (this._isInitialized) {
-      notebook.initObservables();
+//      notebook.initObservables();
     }
     this._disposables.add(notebook);
     this.set(path, notebook);
@@ -454,7 +501,12 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   public createCell(path: string, id: string, codeEditor: IObservableCodeEditor): IObservableCell {
-    const cell = new AutomergeCell(this.idPath(path), this, id, codeEditor);
+    const cell = new AutomergeCell(
+      [this.idPath(path)], 
+      this, 
+      id, 
+      codeEditor
+    );
     this._disposables.add(cell);
     this.set(path, cell);
     return cell;
@@ -468,9 +520,12 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the value that was created.
    */
   createValue(path: string): IObservableValue {
-    const val = new AutomergeValue(this.idPath(path), this);
+    const val = new AutomergeValue(
+      [this.idPath(path)],
+      this
+    );
     if (this._isInitialized) {
-      val.initObservables();
+//      val.initObservables();
     }
     this._disposables.add(val);
     this.set(path, val);

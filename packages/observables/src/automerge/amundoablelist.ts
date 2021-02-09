@@ -23,7 +23,7 @@ export class AutomergeUndoableList<T>
    * Construct a new undoable observable list.
    */
   constructor(
-    path: string,
+    path: string[],
     modelDB: AutomergeModelDB,
     serializer: ISerializer<T>
   ) {
