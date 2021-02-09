@@ -11,7 +11,7 @@ import { IObservableValue } from './../observablevalue';
 
 import { setNested, waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
 
- /**
+/**
  * A concrete implementation of an `IObservableValue`.
  */
 export class AutomergeValue implements IObservableValue {
@@ -35,7 +35,6 @@ export class AutomergeValue implements IObservableValue {
           setNested(doc, this._path, initialValue || '');
         }
       );
-      this.initObservables();
     });
   }
 

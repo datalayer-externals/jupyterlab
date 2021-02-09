@@ -5,13 +5,13 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 // import Automerge, { Text } from 'automerge';
 
-import { waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
+import { AutomergeModelDB } from './ammodeldb';
 
 import { IObservableCodeEditor } from './../observablecodeeditor';
 
 import { IObservableValue, ObservableValue } from './../observablevalue';
 
-import { IObservableString, ObservableString } from './../observablestring';
+import { IObservableString } from './../observablestring';
 
 import { AutomergeString } from './amstring';
 
@@ -28,14 +28,10 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     this._path = path;
     this._modelDB = modelDB;
 
-    const s = new AutomergeString(this._path.concat('hello'), this._modelDB);
-    s.insert(0, 'hello');
-    console.log('--- before init', s.text)
-    waitForModelDBIInit(this._modelDB, () => {
-      console.log('--- after init', s.text)
-    });
-
-    this._value = new ObservableString();
+    this._value = new AutomergeString(
+      this._path.concat('value'),
+      this._modelDB
+    );
     this._value.changed.connect(this._onValueChanged, this);
 
     this._mimeType = new ObservableValue('');
@@ -43,7 +39,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
 
     this._selections = new ObservableJSON();
     this._selections.changed.connect(this._onSelectionsChanged, this);
-/*
+    /*
     if (options.values) {
       for (const key in options.values) {
         this._modelDB.amDocPath(this._path)[key] = options.values[key];
@@ -53,6 +49,9 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
   }
 
   public initObservables() {
+    this._value.initObservables();
+    this._mimeType.initObservables();
+    this._selections.initObservables();
     this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
@@ -120,7 +119,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
-/*
+    /*
       waitForModelDBIInit(this._modelDB, () => {
         this._modelDB.withLock(() => {
           switch(args.type) {
@@ -158,7 +157,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
         });
       });
 */
-    }
+  }
 
   private _onMimeTypeChanged(
     value: IObservableValue,
@@ -171,7 +170,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     value: IObservableMap<any>,
     args: IObservableMap.IChangedArgs<any>
   ): void {
-/*
+    /*
     waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         switch(args.type) {

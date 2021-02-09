@@ -46,17 +46,13 @@ import {
   ObservableUndoableList
 } from '../undoablelist';
 
-import {
-  IModelDB,
-  ModelDB,
-  IObservable,
-} from '../modeldb';
+import { IModelDB, ModelDB, IObservable } from '../modeldb';
 
-import { 
-  ICollaboratorMap, 
-  CollaboratorMap, 
-  Collaborator 
-} from './../collaborator'
+import {
+  ICollaboratorMap,
+  CollaboratorMap,
+  Collaborator
+} from './../collaborator';
 
 import { IObservableCodeEditor } from '../observablecodeeditor';
 
@@ -86,28 +82,28 @@ const WS_READY_STATE_OPEN = 1;
 function waitForSocketReady(socket: WebSocket, callback: any) {
   if (socket.readyState === WS_READY_STATE_OPEN) {
     callback();
-  }
-  else setTimeout(function () {
-    if (socket.readyState === WS_READY_STATE_OPEN) {
-      callback();
-    } else {
-      waitForSocketReady(socket, callback);
-    }
-  }, 10); // Wait 10 miliseconds for the websocket...
+  } else
+    setTimeout(function () {
+      if (socket.readyState === WS_READY_STATE_OPEN) {
+        callback();
+      } else {
+        waitForSocketReady(socket, callback);
+      }
+    }, 10); // Wait 10 miliseconds for the websocket...
 }
 
 // Make the function wait until the mode is initialized...
 export function waitForModelDBIInit(modelDB: AutomergeModelDB, callback: any) {
   if (modelDB.isInitialized) {
     callback();
-  }
-  else setTimeout(function () {
-    if (modelDB.isInitialized) {
-      callback();
-    } else {
-      waitForModelDBIInit(modelDB, callback);
-    }
-  }, 10); // Wait 10 miliseconds for model initialization...
+  } else
+    setTimeout(function () {
+      if (modelDB.isInitialized) {
+        callback();
+      } else {
+        waitForModelDBIInit(modelDB, callback);
+      }
+    }, 10); // Wait 10 miliseconds for model initialization...
 }
 
 export const combineChanges = (changes: Uint8Array[]) => {
@@ -127,13 +123,13 @@ export const combineChanges = (changes: Uint8Array[]) => {
 };
 
 export const extractNested = (doc: any, path: string[]) => {
-  const out = [doc]
+  const out = [doc];
   for (let i = 0; i < path.length; i++) {
     let { [path[i]]: name } = out[i];
     out.push(name);
   }
   return out[out.length - 1];
-}
+};
 
 export const setNested = (doc: any, path: string[], value: any) => {
   let leaf = doc;
@@ -144,7 +140,7 @@ export const setNested = (doc: any, path: string[], value: any) => {
     leaf = leaf[path[i]];
   }
   leaf[path[path.length - 1]] = value;
-}
+};
 
 const createLock = () => {
   let lock = true;
@@ -214,36 +210,26 @@ export class AutomergeModelDB implements IModelDB {
       observable: this._observable
     });
 
-    // @ts-ignore
-    // window.modeldb = window.modeldb || {};
-    // @ts-ignore
-    // window.modeldb[options.localPath] = this._amDoc;
-
     this._isInitialized = false;
 
     /**
      * Observe Local Changes.
      */
-    this._observable.observe(this._amDoc, (diff, before, after, local, changes, path) => {
-      if (local) {
-        const combinedChanges = combineChanges(changes);
-        waitForSocketReady(this._ws, () => {
-          this._ws.send(combinedChanges);
-        });
+    this._observable.observe(
+      this._amDoc,
+      (diff, before, after, local, changes, path) => {
+        if (local) {
+          const combinedChanges = combineChanges(changes);
+          waitForSocketReady(this._ws, () => {
+            this._ws.send(combinedChanges);
+          });
+        }
       }
-    });
+    );
 
     // Listen to Remote Changes.
     this._ws.addEventListener('message', (message: MessageEvent) => {
       if (message.data) {
-        // Initalize for Remotes if not yet the case.
-        /*
-        if (!this.isInitialized) {
-          (this._db as ObservableMap<any>).values().map(value => {
-            value.initObservables();
-          });
-        }
-        */
         this.withLock(() => {
           // Check Owner ID.
           if (this._amDoc['ownerId']) {
@@ -281,7 +267,11 @@ export class AutomergeModelDB implements IModelDB {
               this.collaborators.set(uuid, collaborator);
             }
           });
-          if (!this._isInitialized) {
+          // Initalize for Observables if not yet the case.
+          if (!this.isInitialized) {
+            (this._db as ObservableMap<any>).values().map(value => {
+              value.initObservables();
+            });
             this._isInitialized = true;
           }
         });
@@ -338,7 +328,7 @@ export class AutomergeModelDB implements IModelDB {
 
   amDocPath(path: string[]) {
     let leaf: any = this._amDoc;
-    for (let i=0; i < path.length; i++) {
+    for (let i = 0; i < path.length; i++) {
       leaf = leaf[path[i]];
       if (!leaf) {
         return undefined;
@@ -377,12 +367,9 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the string that was created.
    */
   createString(path: string): IObservableString {
-    let str: IObservableString = new AutomergeString(
-      [this.idPath(path)],
-      this,
-    );
+    let str: IObservableString = new AutomergeString([this.idPath(path)], this);
     if (this._isInitialized) {
-//      str.initObservables();
+      str.initObservables();
     }
     this._disposables.add(str);
     this.set(path, str);
@@ -390,12 +377,9 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   createList<T extends any>(path: string): IObservableList<T> {
-    const list = new AutomergeList<T>(
-      [this.idPath(path)],
-      this
-    );
+    const list = new AutomergeList<T>([this.idPath(path)], this);
     if (this._isInitialized) {
-//      list.initObservables();
+      list.initObservables();
     }
     this._disposables.add(list);
     this.set(path, list);
@@ -422,7 +406,7 @@ export class AutomergeModelDB implements IModelDB {
       new ObservableUndoableList.IdentitySerializer<T>()
     );
     if (this._isInitialized) {
-//      list.initObservables();
+      list.initObservables();
     }
     this._disposables.add(list);
     this.set(path, list);
@@ -438,12 +422,9 @@ export class AutomergeModelDB implements IModelDB {
    *
    */
   createMap(path: string): IObservableMap<any> {
-    const map = new AutomergeMap(
-      [this.idPath(path)], 
-      this
-    );
+    const map = new AutomergeMap([this.idPath(path)], this);
     if (this._isInitialized) {
-//      map.initObservables();
+      map.initObservables();
     }
     this._disposables.add(map);
     this.set(path, map);
@@ -462,12 +443,9 @@ export class AutomergeModelDB implements IModelDB {
    * JSON Objects and primitives.
    */
   createJSON(path: string): IObservableJSON {
-    const json = new AutomergeJSON(
-      [this.idPath(path)],
-      this
-    );
+    const json = new AutomergeJSON([this.idPath(path)], this);
     if (this._isInitialized) {
-//      json.initObservables();
+      json.initObservables();
     }
     this._disposables.add(json);
     this.set(path, json);
@@ -475,12 +453,9 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   public createCodeEditor(path: string): IObservableCodeEditor {
-    const codeEditor = new AutomergeCodeEditor(
-      [this.idPath(path)],
-      this
-    );
+    const codeEditor = new AutomergeCodeEditor([this.idPath(path)], this);
     if (this._isInitialized) {
-//      codeEditor.initObservables();
+      codeEditor.initObservables();
     }
     this._disposables.add(codeEditor);
     this.set(path, codeEditor);
@@ -488,25 +463,21 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   public createNotebook(path: string): IObservableNotebook {
-    const notebook = new AutomergeNotebook(
-      [this.idPath(path)],
-      this
-    );
+    const notebook = new AutomergeNotebook([this.idPath(path)], this);
     if (this._isInitialized) {
-//      notebook.initObservables();
+      notebook.initObservables();
     }
     this._disposables.add(notebook);
     this.set(path, notebook);
     return notebook;
   }
 
-  public createCell(path: string, id: string, codeEditor: IObservableCodeEditor): IObservableCell {
-    const cell = new AutomergeCell(
-      [this.idPath(path)], 
-      this, 
-      id, 
-      codeEditor
-    );
+  public createCell(
+    path: string,
+    id: string,
+    codeEditor: IObservableCodeEditor
+  ): IObservableCell {
+    const cell = new AutomergeCell([this.idPath(path)], this, id, codeEditor);
     this._disposables.add(cell);
     this.set(path, cell);
     return cell;
@@ -520,12 +491,9 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the value that was created.
    */
   createValue(path: string): IObservableValue {
-    const val = new AutomergeValue(
-      [this.idPath(path)],
-      this
-    );
+    const val = new AutomergeValue([this.idPath(path)], this);
     if (this._isInitialized) {
-//      val.initObservables();
+      val.initObservables();
     }
     this._disposables.add(val);
     this.set(path, val);
@@ -636,9 +604,7 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   public idPath(path: string) {
-    return this._id === '' ?
-      path:
-      this._id + '_' + path;
+    return this._id === '' ? path : this._id + '_' + path;
   }
 
   private _id: string;

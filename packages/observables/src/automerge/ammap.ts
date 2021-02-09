@@ -24,25 +24,24 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     this._path = path;
     this._modelDB = modelDB;
     this._itemCmp = options.itemCmp || Private.itemCmp;
+  }
+
+  public initObservables() {
+    // Observe and Handle Remote Changes.
     waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `map init`,
         doc => {
-          setNested(doc, this._path, options.values || {});
+          setNested(doc, this._path, {});
         }
       );
-      this.initObservables();
     });
-  }
-
-  public initObservables() {
-    // Observe and Handle Remote Changes.
     this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
         console.log('---', after, path);
-/*
+        /*
         if (!local && diff.props && diff.props && diff.props[this._path]) {
           Object.keys(after[this._path]).map(uuid => {
             if (before[this._path]) {
@@ -129,7 +128,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
           this._modelDB.amDoc,
           `map set ${this._path} ${key} ${value}`,
           doc => {
-            const path = this._path.concat([key])
+            const path = this._path.concat([key]);
             setNested(doc, path, value);
           }
         );
@@ -220,7 +219,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * This is a no-op if the value does not change.
    */
   delete(key: string): T | undefined {
-    const old = this._modelDB.amDocPath(this._path)
+    const old = this._modelDB.amDocPath(this._path);
     if (!old) {
       return;
     }
@@ -234,7 +233,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
           this._modelDB.amDoc,
           `map delete ${this._path} ${key}`,
           doc => {
-            const path = this._path.concat([key])
+            const path = this._path.concat([key]);
             setNested(doc, path, undefined);
           }
         );

@@ -7,7 +7,13 @@ import { IObservableString } from '../observablestring';
 
 import Automerge, { Text } from 'automerge';
 
-import { setNested, extractNested, waitForModelDBIInit, AutomergeModelDB, AmDoc } from './ammodeldb';
+import {
+  setNested,
+  extractNested,
+  waitForModelDBIInit,
+  AutomergeModelDB,
+  AmDoc
+} from './ammodeldb';
 
 /**
  * A concrete implementation of [[IObservableString]]
@@ -16,73 +22,66 @@ export class AutomergeString implements IObservableString {
   /**
    * Construct a new observable string.
    */
-  constructor(
-    path: string[],
-    modelDB: AutomergeModelDB,
-  ) {
+  constructor(path: string[], modelDB: AutomergeModelDB) {
     this._path = path;
     this._modelDB = modelDB;
-    waitForModelDBIInit(this._modelDB, () => {
-      if (!this._modelDB.amDocPath(this._path)) {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
-          `string init`,
-          doc => {
-            setNested(doc, this._path, new Text());
-          }
-        );
-      }
-      this.initObservables();
-    });
   }
 
   public initObservables() {
+    const value = this._modelDB.amDocPath(this._path).toString();
+    if (value) {
+      this._changed.emit({
+        type: 'set',
+        start: 0,
+        end: value.length,
+        value: value
+      });
+    } else {
+      this._modelDB.amDoc = Automerge.change(
+        this._modelDB.amDoc,
+        `string init`,
+        doc => {
+          setNested(doc, this._path, new Text());
+        }
+      );
+    }
     // Observe and Handle Remote Changes.
     this._modelDB.observable.observe(
       this._modelDB.amDocPath(this._path),
       (diff, before, after, local, changes, path) => {
-        console.log('---', after, path);
-/*
-        if (!local && diff.props && diff.props[this._path]) {
-          const opId = Object.keys(diff.props[this._path] as any)[0];
-          const ad = diff.props[this._path][opId] as Automerge.ObjectDiff;
-          const edits = ad.edits;
-          if (edits) {
-            const props = ad.props;
-            if (props) {
-              let propsMap = new Map<any, string>();
-              Object.keys(props).map(key => {
-                const s = props[key];
-                const t = Object.keys(s)[0];
-                propsMap.set(t, (s[t] as any).value as string);
-              });
-              for (let i = 0; i < edits.length; i++) {
-                const edit = edits[i];
-                let value = propsMap.get(edit.elemId);
-                if (edit.action === 'insert') {
-                  if (value) {
-                    this._changed.emit({
-                      type: 'insert',
-                      start: edit.index,
-                      end: edit.index + value.length,
-                      value: value
-                    });
-                  }
-                }
-                if (edit.action === 'remove') {
-                  if (!value) value = ' ';
-                  this._changed.emit({
-                    type: 'remove',
-                    start: edit.index,
-                    end: edit.index + value.length,
-                    value: value
-                  });
-                }
+        if (!local && diff.edits && diff.props) {
+          const edits = diff.edits;
+          const props = diff.props;
+          let propsMap = new Map<any, string>();
+          Object.keys(props).map(key => {
+            const s = props[key];
+            const t = Object.keys(s)[0];
+            propsMap.set(t, (s[t] as any).value as string);
+          });
+          for (let i = 0; i < edits.length; i++) {
+            const edit = edits[i];
+            let value = propsMap.get(edit.elemId);
+            if (edit.action === 'insert') {
+              if (value) {
+                this._changed.emit({
+                  type: 'insert',
+                  start: edit.index,
+                  end: edit.index + value.length,
+                  value: value
+                });
               }
+            }
+            if (edit.action === 'remove') {
+              if (!value) value = ' ';
+              this._changed.emit({
+                type: 'remove',
+                start: edit.index,
+                end: edit.index + value.length,
+                value: value
+              });
             }
           }
         }
-*/
       }
     );
   }
@@ -105,12 +104,12 @@ export class AutomergeString implements IObservableString {
    * Set the value of the string.
    */
   set text(value: string) {
-      // TODO(ECH) Check this condition !this...
+    // TODO(ECH) Check this condition !this...
     waitForModelDBIInit(this._modelDB, () => {
-       if (this._modelDB.amDocPath(this._path)) {
-          return;
-       }
-       if (this._modelDB.amDocPath(this._path)) {
+      if (this._modelDB.amDocPath(this._path)) {
+        return;
+      }
+      if (this._modelDB.amDocPath(this._path)) {
         if (
           value.length === this._modelDB.amDocPath(this._path).length &&
           value === this._modelDB.amDocPath(this._path)
@@ -181,7 +180,8 @@ export class AutomergeString implements IObservableString {
    */
   remove(start: number, end: number): void {
     waitForModelDBIInit(this._modelDB, () => {
-      const oldValue = this._modelDB.amDocPath(this._path)
+      const oldValue = this._modelDB
+        .amDocPath(this._path)
         .toString()
         .slice(start, end);
       this._modelDB.withLock(() => {
@@ -189,7 +189,10 @@ export class AutomergeString implements IObservableString {
           this._modelDB.amDoc,
           `string remove ${this._path} ${start} ${end}`,
           doc => {
-            (extractNested(doc, this._path) as Text).deleteAt!(start, end - start);
+            (extractNested(doc, this._path) as Text).deleteAt!(
+              start,
+              end - start
+            );
           }
         );
       });
