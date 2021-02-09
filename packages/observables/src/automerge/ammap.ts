@@ -19,12 +19,10 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
-    observable: Observable,
     options: AutomergeMap.IOptions<T> = {}
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    this._observable = observable;
 
     // TODO(ECH) Do we need this?
 //    this._modelDB.amDoc[this._path] = {};
@@ -40,7 +38,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
 
   public initObservables() {
     // Observe and Handle Remote Changes.
-    this._observable.observe(
+    this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
         if (!local && diff.props && diff.props && diff.props[this._path]) {
@@ -287,7 +285,6 @@ export class AutomergeMap<T> implements IObservableMap<T> {
 
   private _path: string;
   private _modelDB: AutomergeModelDB;
-  private _observable: Observable;
   private _itemCmp: (first: T, second: T) => boolean;
   private _changed = new Signal<this, IObservableMap.IChangedArgs<T>>(this);
   private _isDisposed = false;

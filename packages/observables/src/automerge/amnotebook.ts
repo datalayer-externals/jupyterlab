@@ -23,12 +23,10 @@ export class AutomergeNotebook implements IObservableNotebook {
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
-    observable: Observable,
     options: AutomergeNotebook.IOptions = {}
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    this._observable = observable;
 
     this._metadata = new ObservableJSON();
     this._metadata.changed.connect(this._onMetadataChanged, this);
@@ -63,7 +61,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   public initObservables() {
-    this._observable.observe(
+    this._modelDB.observable.observe(
       this._modelDB.amDoc[this._path],
       (diff, before, after, local, changes, path) => {
 //        console.log('--- diff notebook', diff, after, path)
@@ -153,7 +151,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               });
               observableCell.codeEditor.value.changed.connect(this._onValueChanged, this);
               console.log('---', this._modelDB.amDoc[this._path])
-              this._observable.observe(
+              this._modelDB.observable.observe(
                 this._modelDB.amDoc[this._path].cells[index].source,
                 (diff, before, after, local, changes, path) => {
                   console.log('--- diff after', after)
@@ -255,7 +253,6 @@ export class AutomergeNotebook implements IObservableNotebook {
   private _cells: IObservableList<IObservableCell>;
   private _path: string;
   private _modelDB: AutomergeModelDB;
-  private _observable: Observable;
   private _changed = new Signal<this, IObservableList.IChangedArgs<IObservableCell>>(this);
   private _isDisposed = false;
 }

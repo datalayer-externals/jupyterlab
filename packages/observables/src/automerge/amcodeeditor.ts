@@ -3,7 +3,7 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import Automerge, { Observable, Text } from 'automerge';
+import Automerge, { Text } from 'automerge';
 
 import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
 
@@ -21,12 +21,10 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
-    observable: Observable,
     options: AutomergeCodeEditor.IOptions = {}
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    this._observable = observable;
 
     this._value = new ObservableString();
     this._value.changed.connect(this._onValueChanged, this);
@@ -62,7 +60,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
 
   // Observe and Handle Remote Changes.
   private _observeRemote() {
-    this._observable.observe(
+    this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
         if (!local && diff.props && diff.props[this._path]) {
@@ -262,7 +260,6 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
 
   private _path: string;
   private _modelDB: AutomergeModelDB;
-  private _observable: Observable;
   private _value: IObservableString;
   private _mimeType: IObservableValue;
   private _selections: IObservableJSON;

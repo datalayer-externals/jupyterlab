@@ -27,7 +27,6 @@ export class AutomergeUndoableList<T>
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
-    observable: Observable,
     serializer: ISerializer<T>
   ) {
     super(path, modelDB, observable);

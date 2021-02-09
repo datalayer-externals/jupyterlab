@@ -23,12 +23,10 @@ export class AutomergeValue implements IObservableValue {
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
-    observable: Observable,
     initialValue: JSONValue = null
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    this._observable = observable;
     // TODO(ECH) Revisit this...
     if (initialValue || initialValue === '') {
       this.set(initialValue);
@@ -37,7 +35,7 @@ export class AutomergeValue implements IObservableValue {
 
   public initObservables() {
     // Observe and Handle Remote Changes.
-    this._observable.observe(
+    this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
 //        console.log('---', diff.props);
@@ -120,7 +118,6 @@ export class AutomergeValue implements IObservableValue {
 
   private _path: string;
   private _modelDB: AutomergeModelDB;
-  private _observable: Observable;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, AutomergeValue.IChangedArgs>(this);
 }

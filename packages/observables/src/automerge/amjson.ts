@@ -24,7 +24,6 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
-    observable: Observable,
     options: AutomergeJSON.IOptions = {}
   ) {
     super(path, modelDB, observable, {

@@ -5,8 +5,6 @@ import { JSONObject } from '@lumino/coreutils';
 
 import { Message } from '@lumino/messaging';
 
-import { Observable } from 'automerge';
-
 import { AutomergeModelDB } from './ammodeldb';
 
 import { AutomergeJSON } from './amjson';
@@ -31,23 +29,22 @@ export class AutomergeCell extends AutomergeJSON {
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
-    observable: Observable,
     id: string,
     codeEditor: IObservableCodeEditor,
     options: AutomergeJSON.IOptions = {}
   ) {
     super(
-      path, modelDB, observable,
+      path, modelDB,
       {
       values: options.values
     });
     this._id = id;
     this._codeEditor = codeEditor;
     const idPath = modelDB.idPath(path);
-    this._metadata = new AutomergeJSON(idPath, modelDB, observable);
-    this._cellType = new AutomergeValue(idPath, modelDB, observable, '');
-    this._trusted = new AutomergeValue(idPath, modelDB, observable, '');
-    this._executionCount =  new AutomergeValue(idPath, modelDB, observable, '');
+    this._metadata = new AutomergeJSON(idPath, modelDB);
+    this._cellType = new AutomergeValue(idPath, modelDB, '');
+    this._trusted = new AutomergeValue(idPath, modelDB, '');
+    this._executionCount =  new AutomergeValue(idPath, modelDB, '');
   }
 
   public initObservables() {

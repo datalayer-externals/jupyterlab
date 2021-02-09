@@ -19,18 +19,16 @@ export class AutomergeString implements IObservableString {
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
-    observable: Observable,
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    this._observable = observable;
     // TODO(ECH) Do we need this?
     // this._modelDB.amDoc[this._path] = new Text();
   }
 
   public initObservables() {
     // Observe and Handle Remote Changes.
-    this._observable.observe(
+    this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
         if (!local && diff.props && diff.props[this._path]) {
@@ -225,7 +223,6 @@ export class AutomergeString implements IObservableString {
 
   private _path: string;
   private _modelDB: AutomergeModelDB;
-  private _observable: Observable;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, IObservableString.IChangedArgs>(this);
 }

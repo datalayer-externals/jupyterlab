@@ -28,12 +28,10 @@ export class AutomergeList<T> implements IObservableList<T> {
   constructor(
     path: string,
     modelDB: AutomergeModelDB,
-    observable: Observable,
     options: AutomergeList.IOptions<T> = {}
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    this._observable = observable;
 
     this._modelDB.withLock(() => {
       if (options.values !== void 0) {
@@ -63,7 +61,7 @@ export class AutomergeList<T> implements IObservableList<T> {
 
   public initObservables() {
     // Observe and Handle Remote Changes.
-    this._observable.observe(
+    this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
         if (!local && diff.props && diff.props && diff.props[this._path]) {
@@ -543,7 +541,6 @@ export class AutomergeList<T> implements IObservableList<T> {
 
   private _path: string;
   private _modelDB: AutomergeModelDB;
-  private _observable: Observable;
   private _isDisposed = false;
   private _itemCmp: (first: T, second: T) => boolean;
   private _changed = new Signal<this, IObservableList.IChangedArgs<T>>(this);
