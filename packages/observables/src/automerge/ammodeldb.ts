@@ -110,20 +110,20 @@ export function waitForModelDBIInit(modelDB: AutomergeModelDB, callback: any) {
   }, 10); // Wait 10 miliseconds for model initialization...
 }
 
-export const combine = (changes: Uint8Array[]) => {
+export const combineChanges = (changes: Uint8Array[]) => {
   // Get the total length of all arrays.
   let length = 0;
   changes.forEach(item => {
     length += item.length;
   });
   // Create a new array with total length and merge all source arrays.
-  let combined = new Uint8Array(length);
+  let combinedChanges = new Uint8Array(length);
   let offset = 0;
   changes.forEach(change => {
-    combined.set(change, offset);
+    combinedChanges.set(change, offset);
     offset += change.length;
   });
-  return combined;
+  return combinedChanges;
 };
 
 const createLock = () => {
@@ -206,11 +206,9 @@ export class AutomergeModelDB implements IModelDB {
      */
     this._observable.observe(this._amDoc, (diff, before, after, local, changes, path) => {
       if (local) {
-        // const changes = Automerge.Frontend.getLastLocalChange(after);
-        // const changes = Automerge.getChanges(before, after);
-        const combined = combine(changes);
+        const combinedChanges = combineChanges(changes);
         waitForSocketReady(this._ws, () => {
-          this._ws.send(combined);
+          this._ws.send(combinedChanges);
         });
       }
     });
@@ -344,9 +342,8 @@ export class AutomergeModelDB implements IModelDB {
    * @returns the string that was created.
    */
   createString(path: string): IObservableString {
-    const idPath = this.idPath(path);
     let str: IObservableString = new AutomergeString(
-      idPath,
+      this.idPath(path),
       this,
     );
     if (this._isInitialized) {
@@ -358,9 +355,8 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   createList<T extends any>(path: string): IObservableList<T> {
-    const idPath = this.idPath(path);
     const list = new AutomergeList<T>(
-      idPath,
+      this.idPath(path),
       this
     );
     if (this._isInitialized) {
@@ -385,9 +381,8 @@ export class AutomergeModelDB implements IModelDB {
   createUndoableList<T extends JSONValue>(
     path: string
   ): IObservableUndoableList<T> {
-    const idPath = this.idPath(path);
     const list = new AutomergeUndoableList<T>(
-      idPath,
+      this.idPath(path),
       this,
       new ObservableUndoableList.IdentitySerializer<T>()
     );
