@@ -52,7 +52,11 @@ import {
   IObservable,
 } from '../modeldb';
 
-import { ICollaboratorMap, ICollaborator } from './../collaborator'
+import { 
+  ICollaboratorMap, 
+  CollaboratorMap, 
+  Collaborator 
+} from './../collaborator'
 
 import { IObservableCodeEditor } from '../observablecodeeditor';
 
@@ -122,57 +126,7 @@ export const combine = (changes: Uint8Array[]) => {
   return combined;
 };
 
-export class Collaborator implements ICollaborator {
-  constructor(
-    userId: string,
-    sessionId: string,
-    displayName: string,
-    color: string,
-    shortName: string
-  ) {
-    this._userId = userId;
-    this._sessionId = sessionId;
-    this._displayName = displayName;
-    this._color = color;
-    this._shortName = shortName;
-  }
-  get userId(): string {
-    return this._userId;
-  }
-  get sessionId(): string {
-    return this._sessionId;
-  }
-  get displayName(): string {
-    return this._displayName;
-  }
-  get color(): string {
-    return this._color;
-  }
-  get shortName(): string {
-    return this._shortName;
-  }
-  private _userId: string;
-  private _sessionId: string;
-  private _displayName: string;
-  private _color: string;
-  private _shortName: string;
-}
-
-export class CollaboratorMap extends ObservableMap<ICollaborator> {
-  constructor(localCollaborator: ICollaborator) {
-    super();
-    this._localCollaborator = localCollaborator;
-    this.set(this.localCollaborator.userId, this.localCollaborator);
-  }
-
-  get localCollaborator(): ICollaborator {
-    return this._localCollaborator;
-  }
-
-  private _localCollaborator: ICollaborator;
-}
-
-export const createLock = () => {
+const createLock = () => {
   let lock = true;
   return (a: any, b: any) => {
     if (lock) {
@@ -250,11 +204,10 @@ export class AutomergeModelDB implements IModelDB {
     /**
      * Observe Local Changes.
      */
-    this._observable.observe(this._amDoc, (diff, before, after, local) => {
+    this._observable.observe(this._amDoc, (diff, before, after, local, changes, path) => {
       if (local) {
-        // this._amDoc = after;
         // const changes = Automerge.Frontend.getLastLocalChange(after);
-        const changes = Automerge.getChanges(before, after);
+        // const changes = Automerge.getChanges(before, after);
         const combined = combine(changes);
         waitForSocketReady(this._ws, () => {
           this._ws.send(combined);
@@ -312,6 +265,10 @@ export class AutomergeModelDB implements IModelDB {
         });
       }
     });
+  }
+
+  withLock(callback: any) {
+    this._lock(() => callback());
   }
 
   /**
@@ -387,8 +344,7 @@ export class AutomergeModelDB implements IModelDB {
     let str: IObservableString = new AutomergeString(
       idPath,
       this,
-      this._observable,
-      this._lock
+      this._observable
     );
     if (this._isInitialized) {
       str.initObservables();
@@ -433,7 +389,6 @@ export class AutomergeModelDB implements IModelDB {
       idPath,
       this,
       this._observable,
-      this._lock,
       new ObservableUndoableList.IdentitySerializer<T>()
     );
     if (this._isInitialized) {
@@ -454,7 +409,7 @@ export class AutomergeModelDB implements IModelDB {
    */
   createMap(path: string): IObservableMap<any> {
     const idPath = this.idPath(path);
-    const map = new AutomergeMap(idPath, this, this._observable, this._lock);
+    const map = new AutomergeMap(idPath, this, this._observable);
     if (this._isInitialized) {
       map.initObservables();
     }
@@ -476,7 +431,7 @@ export class AutomergeModelDB implements IModelDB {
    */
   createJSON(path: string): IObservableJSON {
     const idPath = this.idPath(path);
-    const json = new AutomergeJSON(idPath, this, this._observable, this._lock);
+    const json = new AutomergeJSON(idPath, this, this._observable);
     if (this._isInitialized) {
       json.initObservables();
     }
@@ -487,7 +442,7 @@ export class AutomergeModelDB implements IModelDB {
 
   public createCodeEditor(path: string): IObservableCodeEditor {
     const idPath = this.idPath(path);
-    const codeEditor = new AutomergeCodeEditor(idPath, this, this._observable, this._lock);
+    const codeEditor = new AutomergeCodeEditor(idPath, this, this._observable);
     if (this._isInitialized) {
       codeEditor.initObservables();
     }
@@ -498,7 +453,7 @@ export class AutomergeModelDB implements IModelDB {
 
   public createNotebook(path: string): IObservableNotebook {
     const idPath = this.idPath(path);
-    const notebook = new AutomergeNotebook(idPath, this, this._observable, this._lock);
+    const notebook = new AutomergeNotebook(idPath, this, this._observable);
     if (this._isInitialized) {
       notebook.initObservables();
     }
@@ -509,7 +464,7 @@ export class AutomergeModelDB implements IModelDB {
 
   public createCell(path: string, id: string, codeEditor: IObservableCodeEditor): IObservableCell {
     const idPath = this.idPath(path);
-    const cell = new AutomergeCell(idPath, this, this._observable, this._lock, id, codeEditor);
+    const cell = new AutomergeCell(idPath, this, this._observable, id, codeEditor);
     this._disposables.add(cell);
     this.set(path, cell);
     return cell;
@@ -524,7 +479,7 @@ export class AutomergeModelDB implements IModelDB {
    */
   createValue(path: string): IObservableValue {
     const idPath = this.idPath(path);
-    const val = new AutomergeValue(idPath, this, this._observable, this._lock);
+    const val = new AutomergeValue(idPath, this, this._observable);
     if (this._isInitialized) {
       val.initObservables();
     }
@@ -640,7 +595,9 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   public idPath(path: string) {
-    return this._id + '_' + path;
+    return this._id === '' ?
+      path:
+      this._id + '_' + path;
   }
 
   private _id: string;

@@ -20,12 +20,10 @@ export class AutomergeString implements IObservableString {
     path: string,
     modelDB: AutomergeModelDB,
     observable: Observable,
-    lock: any
   ) {
     this._path = path;
     this._modelDB = modelDB;
     this._observable = observable;
-    this._lock = lock;
     // TODO(ECH) Do we need this?
     // this._modelDB.amDoc[this._path] = new Text();
   }
@@ -34,7 +32,7 @@ export class AutomergeString implements IObservableString {
     // Observe and Handle Remote Changes.
     this._observable.observe(
       this._modelDB.amDoc,
-      (diff, before, after, local) => {
+      (diff, before, after, local, changes, path) => {
         if (!local && diff.props && diff.props[this._path]) {
           const opId = Object.keys(diff.props[this._path] as any)[0];
           const ad = diff.props[this._path][opId] as Automerge.ObjectDiff;
@@ -110,8 +108,8 @@ export class AutomergeString implements IObservableString {
         }
       }
       // TODO(ECH) Check this condition !this...
-      if (this._modelDB.isInitialized) {
-        this._lock(() => {
+      waitForModelInit(this._modelDB, () => {
+        this._modelDB.withLock(() => {
           this._modelDB.amDoc = Automerge.change(
             this._modelDB.amDoc,
             `string set ${this._path} ${value}`,
@@ -120,7 +118,7 @@ export class AutomergeString implements IObservableString {
             }
           );
         });
-      };
+      });
       this._changed.emit({
         type: 'set',
         start: 0,
@@ -148,7 +146,7 @@ export class AutomergeString implements IObservableString {
    */
   insert(index: number, text: string): void {
     waitForModelInit(this._modelDB, () => {
-      this._lock(() => {
+      this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `string insert ${this._path} ${index} ${text}`,
@@ -178,7 +176,7 @@ export class AutomergeString implements IObservableString {
       const oldValue = this._modelDB.amDoc[this._path]
         .toString()
         .slice(start, end);
-      this._lock(() => {
+      this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `string remove ${this._path} ${start} ${end}`,
@@ -228,7 +226,6 @@ export class AutomergeString implements IObservableString {
   private _path: string;
   private _modelDB: AutomergeModelDB;
   private _observable: Observable;
-  private _lock: any;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, IObservableString.IChangedArgs>(this);
 }

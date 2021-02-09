@@ -119,7 +119,9 @@ export class AutomergeModelDBView implements IModelDB {
   }
 
   private _viewedPath(path: string) {
-    return this._basePath + '_' + path;
+    return this._basePath === '' ?
+      path:
+      this._basePath + '_' + path;
   }
 
   private _basePath: string;

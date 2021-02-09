@@ -1,11 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  JSONExt,
-  PartialJSONObject,
-  JSONObject
-} from '@lumino/coreutils';
+import { JSONObject } from '@lumino/coreutils';
 
 import { Message } from '@lumino/messaging';
 
@@ -36,23 +32,22 @@ export class AutomergeCell extends AutomergeJSON {
     path: string,
     modelDB: AutomergeModelDB,
     observable: Observable,
-    lock: any,
     id: string,
     codeEditor: IObservableCodeEditor,
     options: AutomergeJSON.IOptions = {}
   ) {
     super(
-      path, modelDB, observable, lock,
+      path, modelDB, observable,
       {
       values: options.values
     });
     this._id = id;
     this._codeEditor = codeEditor;
     const idPath = modelDB.idPath(path);
-    this._metadata = new AutomergeJSON(idPath, modelDB, observable, lock);
-    this._cellType = new AutomergeValue(idPath, modelDB, observable, lock, '');
-    this._trusted = new AutomergeValue(idPath, modelDB, observable, lock, '');
-    this._executionCount =  new AutomergeValue(idPath, modelDB, observable, lock, '');
+    this._metadata = new AutomergeJSON(idPath, modelDB, observable);
+    this._cellType = new AutomergeValue(idPath, modelDB, observable, '');
+    this._trusted = new AutomergeValue(idPath, modelDB, observable, '');
+    this._executionCount =  new AutomergeValue(idPath, modelDB, observable, '');
   }
 
   public initObservables() {
@@ -81,27 +76,6 @@ export class AutomergeCell extends AutomergeJSON {
 
   get executionCount(): IObservableValue {
     return this._executionCount;
-  }
-
-  /**
-   * Serialize the model to JSON.
-   */
-  toJSON(): PartialJSONObject {
-    const out: PartialJSONObject = Object.create(null);
-    const keys = this.keys();
-    for (const key of keys) {
-      const value = this.get(key);
-      if (value !== undefined) {
-        out[key] = JSONExt.deepCopy(value) as PartialJSONObject;
-      }
-    }
-    out['source'] = this._codeEditor.value.text;
-    out['mimeType'] = this._codeEditor.mimeType.get();
-    out['metadata'] = this._metadata.toJSON();
-    out['cellType'] = this._cellType.get();
-    out['trusted'] = this._trusted.get();
-    out['executionCount'] = this._executionCount.get();
-    return out;
   }
 
   private _id: string;

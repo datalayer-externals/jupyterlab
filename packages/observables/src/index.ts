@@ -8,7 +8,6 @@
  */
 
 export * from './automerge/ammodeldb';
-export * from './wrapped/wrappedmodeldb';
 export * from './yjs/ymodeldb';
 export * from './collaborator';
 export * from './modeldb';

@@ -24,13 +24,11 @@ export class AutomergeNotebook implements IObservableNotebook {
     path: string,
     modelDB: AutomergeModelDB,
     observable: Observable,
-    lock: any,
     options: AutomergeNotebook.IOptions = {}
   ) {
     this._path = path;
     this._modelDB = modelDB;
     this._observable = observable;
-    this._lock = lock;
 
     this._metadata = new ObservableJSON();
     this._metadata.changed.connect(this._onMetadataChanged, this);
@@ -38,7 +36,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     this._cells = new ObservableList();
     this._cells.changed.connect(this._onCellsChanged, this);
 
-    this._lock(() => {
+    this._modelDB.withLock(() => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `notebook init ${this._path}`,
@@ -51,7 +49,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     });
     /*
     waitForModelInit(this._modelDB, () => {
-      this._lock(() => {
+      this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `notebook init ${this._path}`,
@@ -61,24 +59,14 @@ export class AutomergeNotebook implements IObservableNotebook {
         );
       });
     });
-*/
+    */
   }
 
   public initObservables() {
     this._observable.observe(
-      this._modelDB.amDoc[this._path].cells,
-      (diff, before, after, local) => {
-        console.log(`--- diff cells`, after, local);
-    });
-    this._observeRemote();
-  }
-
-  // Observe and Handle Remote Changes.
-  private _observeRemote() {
-    this._observable.observe(
       this._modelDB.amDoc[this._path],
-      (diff, before, after, local) => {
-//        console.log('--- diff', diff, after)
+      (diff, before, after, local, changes, path) => {
+//        console.log('--- diff notebook', diff, after, path)
         if (!local && diff.props && diff.props[this._path]) {
         }
       }
@@ -90,7 +78,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     args: IObservableMap.IChangedArgs<any>
   ): void {
     waitForModelInit(this._modelDB, () => {
-      this._lock(() => {
+      this._modelDB.withLock(() => {
         switch (args.type) {
           case 'add': {
             this._modelDB.amDoc = Automerge.change(
@@ -142,9 +130,17 @@ export class AutomergeNotebook implements IObservableNotebook {
     value: IObservableList<IObservableCell>,
     args: IObservableList.IChangedArgs<IObservableCell>
   ): void {
+
     waitForModelInit(this._modelDB, () => {
-      this._lock(() => {
+      this._modelDB.withLock(() => {
+
         switch (args.type) {
+          
+          // Set Cells.
+          case 'set':
+            break;
+
+          // Add Cells.
           case 'add':
             args.newValues.map(observableCell => {
               const cell = this._asCell(observableCell);
@@ -153,19 +149,31 @@ export class AutomergeNotebook implements IObservableNotebook {
                 this._modelDB.amDoc,
                 `cells add ${this._path} ${index}`,
                 doc => {
-                  (doc[this._path].cells as List<any>).insertAt!(args.newIndex, cell);
+                  (doc[this._path].cells as List<any>).insertAt!(index, cell);
               });
               observableCell.codeEditor.value.changed.connect(this._onValueChanged, this);
-            });
-//            this._changed.emit(args);
-            break;
+              console.log('---', this._modelDB.amDoc[this._path])
+              this._observable.observe(
+                this._modelDB.amDoc[this._path].cells[index].source,
+                (diff, before, after, local, changes, path) => {
+                  console.log('--- diff after', after)
+                  console.log('--- diff source', diff, path)
+                }
+              );
+             });
+             // this._changed.emit(args);
+             break;
+
+          // Move Cells.
           case 'move':
             break;
-         case 'remove':
+
+          // Remove Cells.
+          case 'remove':
             break;
-          case 'set':
-            break;
+
         }
+
       });
     });
   }
@@ -174,43 +182,43 @@ export class AutomergeNotebook implements IObservableNotebook {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
-      waitForModelInit(this._modelDB, () => {
-        this._lock(() => {
-          switch(args.type) {
-            case 'set': {
-              this._modelDB.amDoc = Automerge.change(
-                this._modelDB.amDoc,
-                `string set ${this._path} ${args.value}`,
-                doc => {
-                  (doc[this._path].cells as List<any>)[0].source = new Text(args.value);
-                }
-              );
-              break;
-            }
-            case 'insert': { 
-              this._modelDB.amDoc = Automerge.change(
-                this._modelDB.amDoc,
-                `string insert ${this._path} ${args.start} ${args.value}`,
-                doc => {
-                  ((doc[this._path].cells as List<any>)[0].source as Text).insertAt!(args.start, ...args.value);
-                }
-              );
-              break;
-            }
-            case 'remove': {
-              this._modelDB.amDoc = Automerge.change(
-                this._modelDB.amDoc,
-                `string remove ${this._path} ${args.start} ${args.end}`,
-                doc => {
-                  ((doc[this._path].cells as List<any>)[0].source as Text).deleteAt!(args.start, args.end - args.start);
-                }
-              );
-              break;
-            }
+    waitForModelInit(this._modelDB, () => {
+      this._modelDB.withLock(() => {
+        switch(args.type) {
+          case 'set': {
+            this._modelDB.amDoc = Automerge.change(
+              this._modelDB.amDoc,
+              `string set ${this._path} ${args.value}`,
+              doc => {
+                (doc[this._path].cells as List<any>)[0].source = new Text(args.value);
+              }
+            );
+            break;
           }
-        });
+          case 'insert': { 
+            this._modelDB.amDoc = Automerge.change(
+              this._modelDB.amDoc,
+              `string insert ${this._path} ${args.start} ${args.value}`,
+              doc => {
+                ((doc[this._path].cells as List<any>)[0].source as Text).insertAt!(args.start, ...args.value);
+              }
+            );
+            break;
+          }
+          case 'remove': {
+            this._modelDB.amDoc = Automerge.change(
+              this._modelDB.amDoc,
+              `string remove ${this._path} ${args.start} ${args.end}`,
+              doc => {
+                ((doc[this._path].cells as List<any>)[0].source as Text).deleteAt!(args.start, args.end - args.start);
+              }
+            );
+            break;
+          }
+        }
       });
-    }
+    });
+  }
 
   get type(): 'Notebook' {
     return 'Notebook';
@@ -248,7 +256,6 @@ export class AutomergeNotebook implements IObservableNotebook {
   private _path: string;
   private _modelDB: AutomergeModelDB;
   private _observable: Observable;
-  private _lock: any;
   private _changed = new Signal<this, IObservableList.IChangedArgs<IObservableCell>>(this);
   private _isDisposed = false;
 }

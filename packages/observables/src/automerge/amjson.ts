@@ -25,10 +25,9 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
     path: string,
     modelDB: AutomergeModelDB,
     observable: Observable,
-    lock: any,
     options: AutomergeJSON.IOptions = {}
   ) {
-    super(path, modelDB, observable, lock, {
+    super(path, modelDB, observable, {
       itemCmp: JSONExt.deepEqual,
       values: options.values
     });

@@ -22,13 +22,11 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     path: string,
     modelDB: AutomergeModelDB,
     observable: Observable,
-    lock: any,
     options: AutomergeCodeEditor.IOptions = {}
   ) {
     this._path = path;
     this._modelDB = modelDB;
     this._observable = observable;
-    this._lock = lock;
 
     this._value = new ObservableString();
     this._value.changed.connect(this._onValueChanged, this);
@@ -47,7 +45,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
   }
 
   public initObservables() {
-    this._lock(() => {
+    this._modelDB.withLock(() => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `codeeditor init ${this._path}`,
@@ -66,7 +64,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
   private _observeRemote() {
     this._observable.observe(
       this._modelDB.amDoc,
-      (diff, before, after, local) => {
+      (diff, before, after, local, changes, path) => {
         if (!local && diff.props && diff.props[this._path]) {
           const codeEditor = diff.props[this._path]
           Object.values(codeEditor).map(val => {
@@ -132,7 +130,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     args: IObservableString.IChangedArgs
   ): void {
       waitForModelInit(this._modelDB, () => {
-        this._lock(() => {
+        this._modelDB.withLock(() => {
           switch(args.type) {
             case 'set': {
               this._modelDB.amDoc = Automerge.change(
@@ -181,7 +179,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     args: IObservableMap.IChangedArgs<any>
   ): void {
     waitForModelInit(this._modelDB, () => {
-      this._lock(() => {
+      this._modelDB.withLock(() => {
         switch(args.type) {
           case 'add': {
             this._modelDB.amDoc = Automerge.change(
@@ -265,7 +263,6 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
   private _path: string;
   private _modelDB: AutomergeModelDB;
   private _observable: Observable;
-  private _lock: any;
   private _value: IObservableString;
   private _mimeType: IObservableValue;
   private _selections: IObservableJSON;

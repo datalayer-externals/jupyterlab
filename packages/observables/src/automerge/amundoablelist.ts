@@ -28,10 +28,9 @@ export class AutomergeUndoableList<T>
     path: string,
     modelDB: AutomergeModelDB,
     observable: Observable,
-    lock: any,
     serializer: ISerializer<T>
   ) {
-    super(path, modelDB, observable, lock);
+    super(path, modelDB, observable);
     this._serializer = serializer;
     this.changed.connect(this._onListChanged, this);
   }

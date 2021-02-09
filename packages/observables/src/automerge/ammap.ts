@@ -7,7 +7,7 @@ import Automerge, { Observable } from 'automerge';
 
 import { IObservableMap } from '../observablemap';
 
-import { AutomergeModelDB } from './ammodeldb';
+import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
 
 /**
  * A concrete implementation of IObservbleMap<T>.
@@ -20,13 +20,11 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     path: string,
     modelDB: AutomergeModelDB,
     observable: Observable,
-    lock: any,
     options: AutomergeMap.IOptions<T> = {}
   ) {
     this._path = path;
     this._modelDB = modelDB;
     this._observable = observable;
-    this._lock = lock;
 
     // TODO(ECH) Do we need this?
 //    this._modelDB.amDoc[this._path] = {};
@@ -44,7 +42,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     // Observe and Handle Remote Changes.
     this._observable.observe(
       this._modelDB.amDoc,
-      (diff, before, after, local) => {
+      (diff, before, after, local, changes, path) => {
         if (!local && diff.props && diff.props && diff.props[this._path]) {
           Object.keys(after[this._path]).map(uuid => {
             if (before[this._path]) {
@@ -125,7 +123,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
       return oldVal;
     }
     if (!this._modelDB.amDoc[key]) {
-      this._lock(() => {
+      this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `map set ${this._path} ${key}`,
@@ -135,8 +133,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
         );
       });
     }
-    if (this._modelDB.isInitialized) {
-      this._lock(() => {
+    waitForModelInit(this._modelDB, () => {
+      this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `map set ${this._path} ${key} ${value}`,
@@ -145,7 +143,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
           }
         );
       });
-    }
+    });
     this._changed.emit({
       type: oldVal ? 'change' : 'add',
       key: key,
@@ -239,8 +237,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     if (!oldVal) {
       return oldVal;
     }
-    if (this._modelDB.isInitialized) {
-      this._lock(() => {
+    waitForModelInit(this._modelDB, () => {
+      this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `map delete ${this._path} ${key}`,
@@ -249,7 +247,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
           }
         );
       });
-    }
+    });
     const removed = true;
     if (removed) {
       this._changed.emit({
@@ -290,7 +288,6 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   private _path: string;
   private _modelDB: AutomergeModelDB;
   private _observable: Observable;
-  private _lock: any;
   private _itemCmp: (first: T, second: T) => boolean;
   private _changed = new Signal<this, IObservableMap.IChangedArgs<T>>(this);
   private _isDisposed = false;
