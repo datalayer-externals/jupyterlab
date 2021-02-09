@@ -3,11 +3,11 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import Automerge, { Observable } from 'automerge';
+import Automerge from 'automerge';
 
 import { IObservableMap } from '../observablemap';
 
-import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
+import { waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
 
 /**
  * A concrete implementation of IObservbleMap<T>.
@@ -131,7 +131,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
         );
       });
     }
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
@@ -235,7 +235,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     if (!oldVal) {
       return oldVal;
     }
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,

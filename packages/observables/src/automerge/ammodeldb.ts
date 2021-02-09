@@ -97,7 +97,7 @@ function waitForSocketReady(socket: WebSocket, callback: any) {
 }
 
 // Make the function wait until the mode is initialized...
-export function waitForModelInit(modelDB: AutomergeModelDB, callback: any) {
+export function waitForModelDBIInit(modelDB: AutomergeModelDB, callback: any) {
   if (modelDB.isInitialized) {
     callback();
   }
@@ -105,7 +105,7 @@ export function waitForModelInit(modelDB: AutomergeModelDB, callback: any) {
     if (modelDB.isInitialized) {
       callback();
     } else {
-      waitForModelInit(modelDB, callback);
+      waitForModelDBIInit(modelDB, callback);
     }
   }, 10); // Wait 10 miliseconds for model initialization...
 }

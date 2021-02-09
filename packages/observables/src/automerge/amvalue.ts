@@ -7,9 +7,9 @@ import { JSONExt, JSONValue } from '@lumino/coreutils';
 
 import { IObservableValue } from './../observablevalue';
 
-import Automerge, { Observable } from 'automerge';
+import Automerge from 'automerge';
 
-import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
+import { waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
 
  /**
  * A concrete implementation of an `IObservableValue`.
@@ -79,7 +79,7 @@ export class AutomergeValue implements IObservableValue {
     if (JSONExt.deepEqual(oldValue, value)) {
       return;
     }
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `value set ${this._path} ${value}`,
@@ -103,7 +103,7 @@ export class AutomergeValue implements IObservableValue {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,

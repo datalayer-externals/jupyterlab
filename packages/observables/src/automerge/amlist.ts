@@ -12,11 +12,11 @@ import {
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import Automerge, { Observable, List } from 'automerge';
+import Automerge, { List } from 'automerge';
 
 import { IObservableList } from '../observablelist';
 
-import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
+import { waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
 
 /**
  * A concrete implementation of [[IObservableList]].
@@ -173,7 +173,7 @@ export class AutomergeList<T> implements IObservableList<T> {
     if (itemCmp(oldValue, value)) {
       return;
     }
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
@@ -207,7 +207,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    * No changes.
    */
   push(value: T): number {
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
@@ -248,7 +248,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    * An `index` which is non-integral.
    */
   insert(index: number, value: T): void {
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
@@ -312,7 +312,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   remove(index: number): T | undefined {
     let value = undefined;
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
@@ -348,7 +348,7 @@ export class AutomergeList<T> implements IObservableList<T> {
   clear(): void {
     if (this._modelDB.amDoc[this._path]) {
       const copy = (this._modelDB.amDoc[this._path] as List<T>).slice();
-      waitForModelInit(this._modelDB, () => {
+      waitForModelDBIInit(this._modelDB, () => {
         this._modelDB.withLock(() => {
           this._modelDB.amDoc = Automerge.change(
             this._modelDB.amDoc,
@@ -391,7 +391,7 @@ export class AutomergeList<T> implements IObservableList<T> {
       return;
     }
     let values = Array<T>();
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
@@ -427,7 +427,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   pushAll(values: IterableOrArrayLike<T>): number {
     const newIndex = this.length;
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
@@ -471,7 +471,7 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   insertAll(index: number, values: IterableOrArrayLike<T>): void {
     const newIndex = index;
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
@@ -516,7 +516,7 @@ export class AutomergeList<T> implements IObservableList<T> {
       startIndex,
       endIndex
     );
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,

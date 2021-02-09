@@ -3,9 +3,9 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import Automerge, { Observable, List, Text } from 'automerge';
+import Automerge, { List, Text } from 'automerge';
 
-import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
+import { waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
 
 import { IObservableNotebook } from '../observablenotebook';
 
@@ -46,7 +46,7 @@ export class AutomergeNotebook implements IObservableNotebook {
       );
     });
     /*
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
@@ -75,7 +75,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     value: IObservableMap<any>,
     args: IObservableMap.IChangedArgs<any>
   ): void {
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         switch (args.type) {
           case 'add': {
@@ -129,7 +129,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     args: IObservableList.IChangedArgs<IObservableCell>
   ): void {
 
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
 
         switch (args.type) {
@@ -180,7 +180,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         switch(args.type) {
           case 'set': {

@@ -5,8 +5,6 @@ import { JSONValue } from '@lumino/coreutils';
 
 import { each } from '@lumino/algorithm';
 
-import { Observable } from 'automerge';
-
 import { IObservableList } from '../observablelist';
 
 import { ISerializer, IObservableUndoableList } from '../undoablelist';
@@ -29,7 +27,7 @@ export class AutomergeUndoableList<T>
     modelDB: AutomergeModelDB,
     serializer: ISerializer<T>
   ) {
-    super(path, modelDB, observable);
+    super(path, modelDB);
     this._serializer = serializer;
     this.changed.connect(this._onListChanged, this);
   }

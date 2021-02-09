@@ -8,8 +8,6 @@ import {
   ReadonlyPartialJSONValue
 } from '@lumino/coreutils';
 
-import { Observable } from 'automerge';
-
 import { AutomergeMap } from './ammap';
 
 import { AutomergeModelDB } from './ammodeldb';
@@ -26,7 +24,7 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
     modelDB: AutomergeModelDB,
     options: AutomergeJSON.IOptions = {}
   ) {
-    super(path, modelDB, observable, {
+    super(path, modelDB, {
       itemCmp: JSONExt.deepEqual,
       values: options.values
     });

@@ -5,7 +5,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import Automerge, { Text } from 'automerge';
 
-import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
+import { waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
 
 import { IObservableCodeEditor } from './../observablecodeeditor';
 
@@ -127,7 +127,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
-      waitForModelInit(this._modelDB, () => {
+      waitForModelDBIInit(this._modelDB, () => {
         this._modelDB.withLock(() => {
           switch(args.type) {
             case 'set': {
@@ -176,7 +176,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     value: IObservableMap<any>,
     args: IObservableMap.IChangedArgs<any>
   ): void {
-    waitForModelInit(this._modelDB, () => {
+    waitForModelDBIInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         switch(args.type) {
           case 'add': {
