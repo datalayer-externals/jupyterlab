@@ -65,6 +65,11 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   public initObservables() {
+    this._observable.observe(
+      this._modelDB.amDoc[this._path].cells,
+      (diff, before, after, local) => {
+        console.log(`--- diff cells`, after, local);
+    });
     this._observeRemote();
   }
 
@@ -73,7 +78,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     this._observable.observe(
       this._modelDB.amDoc[this._path],
       (diff, before, after, local) => {
-        console.log('--- diff', diff, after)
+//        console.log('--- diff', diff, after)
         if (!local && diff.props && diff.props[this._path]) {
         }
       }
@@ -122,11 +127,15 @@ export class AutomergeNotebook implements IObservableNotebook {
     });
   }
 
-  private _obsCellToCell(obsCell: IObservableCell) {
-    const cell = {
-      source: new Text(obsCell.codeEditor.value.text)
+  private _asCell(observableCell: IObservableCell) {
+    return {
+      id: observableCell.id,
+      cell_type: observableCell.cellType.get() || 'code',
+      execution_count: observableCell.executionCount.get() || '',
+      metadata: observableCell.metadata.toJSON(),
+      outputs: [],
+      source: new Text(observableCell.codeEditor.value.text),
     };
-    return cell;
   }
 
   private _onCellsChanged(
@@ -135,54 +144,26 @@ export class AutomergeNotebook implements IObservableNotebook {
   ): void {
     waitForModelInit(this._modelDB, () => {
       this._lock(() => {
-        /*
-        const valueJson = new Array();
-        const iter = value.iter();
-        let elem = undefined;
-        while ((elem = iter.next())) {
-          valueJson.push(elem.toJSON());
-        }
-        const iter2 = value.iter();
-        while ((elem = iter2.next())) {
-          elem.codeEditor.value.changed.connect(this._onValueChanged, this);
-        }
-        */
-        console.log('------', this._modelDB.amDoc[this._path])
-        this._observable.observe(
-          this._modelDB.amDoc[this._path].cells,
-          (diff, before, after, local) => {
-            console.log(`--- diff cells`, diff);
-          });
         switch (args.type) {
           case 'add':
-            console.log('--- amnotebook add', value, args)
-            args.newValues.map(obsCell => {
-              const cell = this._obsCellToCell(obsCell);
+            args.newValues.map(observableCell => {
+              const cell = this._asCell(observableCell);
+              const index = args.newIndex;
               this._modelDB.amDoc = Automerge.change(
-                  this._modelDB.amDoc,
-                  `cells add ${this._path} ${args.newIndex}`,
-                  doc => {
-                    args.newValues.map(obsCell => {
-                      (doc[this._path].cells as List<any>).insertAt!(args.newIndex, cell);
-                    });
-                  });
-                  obsCell.codeEditor.value.changed.connect(this._onValueChanged, this);
-                  this._observable.observe(
-                    this._modelDB.amDoc[this._path].cells[args.newIndex].source,
-                    (diff, before, after, local) => {
-                      console.log(`--- diff cell source index ${args.newIndex}`, diff);
-                  });
-                }
-              );
+                this._modelDB.amDoc,
+                `cells add ${this._path} ${index}`,
+                doc => {
+                  (doc[this._path].cells as List<any>).insertAt!(args.newIndex, cell);
+              });
+              observableCell.codeEditor.value.changed.connect(this._onValueChanged, this);
+            });
+//            this._changed.emit(args);
             break;
           case 'move':
-            console.log('--- amnotebook move', value, args)
             break;
          case 'remove':
-            console.log('--- amnotebook remove', value, args)
             break;
           case 'set':
-            console.log('--- amnotebook set', value, args)
             break;
         }
       });
@@ -235,7 +216,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     return 'Notebook';
   }
 
-  get changed(): ISignal<this, IObservableNotebook.IChangedArgs> {
+  get changed(): ISignal<this, IObservableList.IChangedArgs<IObservableCell>> {
     return this._changed;
   }
 
@@ -268,7 +249,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   private _modelDB: AutomergeModelDB;
   private _observable: Observable;
   private _lock: any;
-  private _changed = new Signal<this, IObservableNotebook.IChangedArgs>(this);
+  private _changed = new Signal<this, IObservableList.IChangedArgs<IObservableCell>>(this);
   private _isDisposed = false;
 }
 

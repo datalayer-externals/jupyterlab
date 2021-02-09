@@ -36,10 +36,12 @@ export class CellList implements IObservableList<ICellModel> {
     this._factory = factory;
 
     this._notebook = modelDB.get('notebook') as IObservableNotebook;
+//    this._notebook.changed.connect(this._onNotebookChanged, this);
+
     this._cells = this._notebook.cells;
     this._cellMap = new ObservableMap<ICellModel>();
 
-    this._cells.changed.connect(this._onOrderChanged, this);
+    this._cells.changed.connect(this._onCellsChanged, this);
   }
 
   type: 'List';
@@ -470,11 +472,22 @@ export class CellList implements IObservableList<ICellModel> {
     this._cells.clearUndo();
     */
   }
-
-  private _onOrderChanged(
+/*
+  private _onNotebookChanged(
+    value: IObservableNotebook,
+    change: IObservableList.IChangedArgs<IObservableCell>
+  ): void {
+    this._updateCells(change);
+  }
+*/
+  private _onCellsChanged(
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
   ): void {
+    this._updateCells(change);
+  }
+
+  private _updateCells(change: IObservableList.IChangedArgs<IObservableCell>) {
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, c => {
         if (!this._cellMap.has(c.id)) {

@@ -26,7 +26,6 @@ export class AutomergeString implements IObservableString {
     this._modelDB = modelDB;
     this._observable = observable;
     this._lock = lock;
-
     // TODO(ECH) Do we need this?
     // this._modelDB.amDoc[this._path] = new Text();
   }

@@ -5,7 +5,9 @@ import { DisposableSet } from '@lumino/disposable';
 
 import { JSONValue } from '@lumino/coreutils';
 
-import { IModelDB, IObservable, IObservableValue, ObservableValue } from './../modeldb';
+import { IModelDB, IObservable } from './../modeldb';
+
+import { IObservableValue, ObservableValue } from './../observablevalue';
 
 import { ObservableMap, IObservableMap } from './../observablemap';
 

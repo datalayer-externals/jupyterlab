@@ -5,11 +5,11 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { JSONExt, JSONValue } from '@lumino/coreutils';
 
-import { IObservableValue } from '../modeldb';
+import { IObservableValue } from './../observablevalue';
 
 import Automerge, { Observable } from 'automerge';
 
-import { AutomergeModelDB } from './ammodeldb';
+import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
 
  /**
  * A concrete implementation of an `IObservableValue`.
@@ -25,15 +25,16 @@ export class AutomergeValue implements IObservableValue {
     modelDB: AutomergeModelDB,
     observable: Observable,
     lock: any,
-    initialValue: JSONValue = null) {
-      this._path = path;
-      this._modelDB = modelDB;
-      this._observable = observable;
-      this._lock = lock;
-
-    // TODO(ECH) Do we need this?
-    // this._modelDB.amDoc[this._path] = {}
-
+    initialValue: JSONValue = null
+  ) {
+    this._path = path;
+    this._modelDB = modelDB;
+    this._observable = observable;
+    this._lock = lock;
+    // TODO(ECH) Revisit this...
+    if (initialValue || initialValue === '') {
+      this.set(initialValue);
+    }
   }
 
   public initObservables() {
@@ -82,17 +83,15 @@ export class AutomergeValue implements IObservableValue {
     if (JSONExt.deepEqual(oldValue, value)) {
       return;
     }
-    if (this._modelDB.isInitialized) {
-      this._lock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
-          `value set ${this._path} ${value}`,
-          doc => {
-            doc[this._path] = value;
-          }
-        );
-      });
-    }
+    waitForModelInit(this._modelDB, () => {
+      this._modelDB.amDoc = Automerge.change(
+        this._modelDB.amDoc,
+        `value set ${this._path} ${value}`,
+        doc => {
+          doc[this._path] = value;
+        }
+      );
+    });
     this._changed.emit({
       oldValue: oldValue,
       newValue: value

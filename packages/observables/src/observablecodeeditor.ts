@@ -7,7 +7,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { IObservable } from './modeldb';
 
-import { IObservableValue, ObservableValue } from './modeldb';
+import { IObservableValue, ObservableValue } from './observablevalue';
 
 import { IObservableString, ObservableString } from './observablestring';
 
@@ -93,6 +93,10 @@ export class ObservableCodeEditor implements IObservableCodeEditor {
     this._value = new ObservableString();
     this._mimeType = new ObservableValue('');
     this._selections = new ObservableJSON();
+  }
+
+  public initObservables() {
+    /* no-op */
   }
 
   /**

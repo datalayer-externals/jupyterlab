@@ -49,6 +49,10 @@ export class ObservableJSON extends ObservableMap<ReadonlyPartialJSONValue> {
     });
   }
 
+  public initObservables() {
+    /* no-op */
+  }
+
   /**
    * Serialize the model to JSON.
    */

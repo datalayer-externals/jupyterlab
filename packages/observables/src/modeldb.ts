@@ -3,11 +3,13 @@
 
 import { IDisposable, DisposableSet } from '@lumino/disposable';
 
-import { ISignal, Signal } from '@lumino/signaling';
+import { JSONValue } from '@lumino/coreutils';
 
-import { JSONExt, JSONValue, PartialJSONValue } from '@lumino/coreutils';
+import { ICollaboratorMap } from './collaborator';
 
 import { ObservableMap, IObservableMap } from './observablemap';
+
+import { ObservableValue, IObservableValue } from './observablevalue';
 
 import { IObservableJSON, ObservableJSON } from './observablejson';
 
@@ -40,79 +42,11 @@ export interface IObservable extends IDisposable {
    * The type of this object.
    */
   readonly type: ObservableType;
-}
-
-/**
- * Interface for an Observable object that represents
- * an opaque JSON value.
- */
-export interface IObservableValue extends IObservable {
-  /**
-   * The type of this object.
-   */
-  readonly type: 'Value';
 
   /**
-   * The changed signal.
+   * TODO(ECH)
    */
-  readonly changed: ISignal<IObservableValue, ObservableValue.IChangedArgs>;
-
-  /**
-   * Get the current value, or `undefined` if it has not been set.
-   */
-  get(): PartialJSONValue | undefined;
-
-  /**
-   * Set the value.
-   */
-  set(value: PartialJSONValue): void;
-}
-
-/**
- * Interface for an object representing a single collaborator
- * on a realtime model.
- */
-export interface ICollaborator {
-  /**
-   * A user id for the collaborator.
-   * This might not be unique, if the user has more than
-   * one editing session at a time.
-   */
-  readonly userId: string;
-
-  /**
-   * A session id, which should be unique to a
-   * particular view on a collaborative model.
-   */
-  readonly sessionId: string;
-
-  /**
-   * A human-readable display name for a collaborator.
-   */
-  readonly displayName: string;
-
-  /**
-   * A color to be used to identify the collaborator in
-   * UI elements.
-   */
-  readonly color: string;
-
-  /**
-   * A human-readable short name for a collaborator, for
-   * use in places where the full `displayName` would take
-   * too much space.
-   */
-  readonly shortName: string;
-}
-
-/**
- * Interface for an IObservableMap that tracks collaborators.
- */
-export interface ICollaboratorMap extends IObservableMap<ICollaborator> {
-  /**
-   * The local collaborator on a model.
-   */
-  readonly localCollaborator: ICollaborator;
+  initObservables(): void;
 }
 
 /**
@@ -292,99 +226,6 @@ export interface IModelDB extends IDisposable {
    * Dispose of the resources held by the database.
    */
   dispose(): void;
-}
-
-/**
- * A concrete implementation of an `IObservableValue`.
- */
-export class ObservableValue implements IObservableValue {
-  /**
-   * Constructor for the value.
-   *
-   * @param initialValue: the starting value for the `ObservableValue`.
-   */
-  constructor(initialValue: JSONValue = null) {
-    this._value = initialValue;
-  }
-
-  /**
-   * The observable type.
-   */
-  get type(): 'Value' {
-    return 'Value';
-  }
-
-  /**
-   * Whether the value has been disposed.
-   */
-  get isDisposed(): boolean {
-    return this._isDisposed;
-  }
-
-  /**
-   * The changed signal.
-   */
-  get changed(): ISignal<this, ObservableValue.IChangedArgs> {
-    return this._changed;
-  }
-
-  /**
-   * Get the current value, or `undefined` if it has not been set.
-   */
-  get(): JSONValue {
-    return this._value;
-  }
-
-  /**
-   * Set the current value.
-   */
-  set(value: JSONValue): void {
-    const oldValue = this._value;
-    if (JSONExt.deepEqual(oldValue, value)) {
-      return;
-    }
-    this._value = value;
-    this._changed.emit({
-      oldValue: oldValue,
-      newValue: value
-    });
-  }
-
-  /**
-   * Dispose of the resources held by the value.
-   */
-  dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    this._isDisposed = true;
-    Signal.clearData(this);
-    this._value = null;
-  }
-
-  private _value: JSONValue = null;
-  private _changed = new Signal<this, ObservableValue.IChangedArgs>(this);
-  private _isDisposed = false;
-}
-
-/**
- * The namespace for the `ObservableValue` class statics.
- */
-export namespace ObservableValue {
-  /**
-   * The changed args object emitted by the `IObservableValue`.
-   */
-  export class IChangedArgs {
-    /**
-     * The old value.
-     */
-    oldValue: JSONValue | undefined;
-
-    /**
-     * The new value.
-     */
-    newValue: JSONValue | undefined;
-  }
 }
 
 /**

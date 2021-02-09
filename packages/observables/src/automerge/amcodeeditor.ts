@@ -9,7 +9,7 @@ import { waitForModelInit, AutomergeModelDB } from './ammodeldb';
 
 import { IObservableCodeEditor } from './../observablecodeeditor';
 
-import { IObservableValue, ObservableValue } from './../modeldb';
+import { IObservableValue, ObservableValue } from './../observablevalue';
 
 import { IObservableString, ObservableString } from './../observablestring';
 

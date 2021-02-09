@@ -316,10 +316,13 @@ close the notebook without saving it.`,
    */
   initialize(): void {
     super.initialize();
+    // TODO(ECH) Revisit this...
+    /*
     if (!this.cells.length) {
       const factory = this.contentFactory;
       this.cells.push(factory.createCodeCell({}));
     }
+    */
     this.cells.clearUndo();
   }
 

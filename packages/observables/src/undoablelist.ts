@@ -81,6 +81,10 @@ export class ObservableUndoableList<T>
     this.changed.connect(this._onListChanged, this);
   }
 
+  public initObservables() {
+    /* no-op */
+  }
+
   /**
    * Whether the object can redo changes.
    */

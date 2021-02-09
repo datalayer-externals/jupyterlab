@@ -318,6 +318,10 @@ export class ObservableList<T> implements IObservableList<T> {
     this._itemCmp = options.itemCmp || Private.itemCmp;
   }
 
+  public initObservables() {
+    /* no-op */
+  }
+
   /**
    * The type of this object.
    */

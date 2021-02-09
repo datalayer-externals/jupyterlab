@@ -18,7 +18,7 @@ import { IObservableCell } from './observablecell';
  */
 export interface IObservableNotebook extends IDisposable, IObservable {
   type: 'Notebook';
-  readonly changed: ISignal<this, IObservableNotebook.IChangedArgs>;
+  readonly changed: ISignal<this, IObservableList.IChangedArgs<IObservableCell>>;
   readonly metadata: IObservableJSON;
   readonly cells: IObservableList<IObservableCell>;
   dispose(): void;
@@ -56,19 +56,8 @@ export namespace IObservableNotebook {
      */
     type: ChangeType;
 
-    /**
-     * The key of the change.
-     */
-    key: string;
+    index: number;
 
-    /**
-     * The old value of the change.
-     */
-    oldValue: any | undefined;
-
-    /**
-     * The new value of the change.
-     */
-    newValue: any | undefined;
+    cell: IObservableCell | undefined;
   }
 }

@@ -125,6 +125,10 @@ export class ObservableString implements IObservableString {
     this._text = initialText;
   }
 
+  public initObservables() {
+    /* no-op */
+  }
+
   /**
    * The type of the Observable.
    */

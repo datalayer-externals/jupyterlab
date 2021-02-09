@@ -24,7 +24,6 @@ import {
   ObservableValue,
   IObservableMap,
   IObservableCell,
-  ModelDB
 } from '@jupyterlab/observables';
 
 import { IOutputAreaModel, OutputAreaModel } from '@jupyterlab/outputarea';
@@ -169,8 +168,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
    * Construct a cell model from optional cell content.
    */
   constructor(options: CellModel.IOptions) {
-//    super({ modelDB: options.modelDB });
-    super({ modelDB: new ModelDB() });
+    super({ modelDB: options.modelDB });
 
     this.id = options.id || UUID.uuid4();
 

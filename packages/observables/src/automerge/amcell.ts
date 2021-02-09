@@ -4,62 +4,55 @@
 import {
   JSONExt,
   PartialJSONObject,
-  JSONObject,
-  ReadonlyPartialJSONValue
+  JSONObject
 } from '@lumino/coreutils';
 
 import { Message } from '@lumino/messaging';
 
-import { IObservableMap } from './observablemap';
+import { Observable } from 'automerge';
 
-import { IObservableJSON, ObservableJSON } from './observablejson';
+import { AutomergeModelDB } from './ammodeldb';
 
-import { IObservableCodeEditor } from './observablecodeeditor';
+import { AutomergeJSON } from './amjson';
 
-import { IObservableValue, ObservableValue } from './observablevalue';
+import { AutomergeValue } from './amvalue';
 
-/**
- * An observable Cell value.
- */
-export interface IObservableCell
-  extends IObservableJSON {
-  readonly id: string;
-  readonly codeEditor: IObservableCodeEditor;
-  readonly metadata: IObservableJSON;
-  readonly cellType: IObservableValue;
-  readonly trusted: IObservableValue;
-  readonly executionCount: IObservableValue;
-}
+import { IObservableJSON } from './../observablejson';
 
-/**
- * The namespace for IObservableCell related interfaces.
- */
-export namespace IObservableCell {
-  /**
-   * A type alias for observable JSON changed args.
-   */
-  export type IChangedArgs = IObservableMap.IChangedArgs<
-    ReadonlyPartialJSONValue
-  >;
-}
+import { IObservableCell } from './../observablecell';
+
+import { IObservableCodeEditor } from './../observablecodeeditor';
+
+import { IObservableValue } from './../observablevalue';
 
 /**
  * A concrete Observable map for JSON data.
  */
-export class ObservableCell extends ObservableJSON {
+export class AutomergeCell extends AutomergeJSON {
   /**
    * Construct a new observable JSON object.
    */
-  constructor(id: string, codeEditor: IObservableCodeEditor, options: ObservableCell.IOptions = {}) {
-    super({
+  constructor(
+    path: string,
+    modelDB: AutomergeModelDB,
+    observable: Observable,
+    lock: any,
+    id: string,
+    codeEditor: IObservableCodeEditor,
+    options: AutomergeJSON.IOptions = {}
+  ) {
+    super(
+      path, modelDB, observable, lock,
+      {
       values: options.values
     });
     this._id = id;
     this._codeEditor = codeEditor;
-    this._metadata = new ObservableJSON();
-    this._cellType = new ObservableValue('');
-    this._trusted = new ObservableValue('');
-    this._executionCount =  new ObservableValue('');
+    const idPath = modelDB.idPath(path);
+    this._metadata = new AutomergeJSON(idPath, modelDB, observable, lock);
+    this._cellType = new AutomergeValue(idPath, modelDB, observable, lock, '');
+    this._trusted = new AutomergeValue(idPath, modelDB, observable, lock, '');
+    this._executionCount =  new AutomergeValue(idPath, modelDB, observable, lock, '');
   }
 
   public initObservables() {
@@ -122,7 +115,7 @@ export class ObservableCell extends ObservableJSON {
 /**
  * The namespace for ObservableCell static data.
  */
-export namespace ObservableCell {
+export namespace AutomergeCell {
   /**
    * The options use to initialize an observable JSON object.
    */
