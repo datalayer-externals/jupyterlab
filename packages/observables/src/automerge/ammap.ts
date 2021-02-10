@@ -5,7 +5,12 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import Automerge from 'automerge';
 
-import { amDocPath, setNested, waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
+import {
+  amDocPath, 
+  setNested, 
+  waitOnAmDocInit, 
+  AutomergeModelDB
+} from './ammodeldb';
 
 import { IObservableMap } from '../observablemap';
 
@@ -14,7 +19,7 @@ import { IObservableMap } from '../observablemap';
  */
 export class AutomergeMap<T> implements IObservableMap<T> {
   /**
-   * Construct a new observable map.
+   * Construct a new automerge map.
    */
   constructor(
     path: string[],
@@ -120,14 +125,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     if (oldVal !== undefined && itemCmp(oldVal, value)) {
       return oldVal;
     }
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `map set ${this._path} ${key} ${value}`,
           doc => {
-            const path = this._path.concat([key]);
-            setNested(doc, path, value);
+            setNested(doc, this._path.concat([key]), value);
           }
         );
       });
@@ -226,7 +230,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
       return oldVal;
     }
     // TODO(ECH) Fix this. We need to remove the key...
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,

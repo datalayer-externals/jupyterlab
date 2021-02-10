@@ -387,11 +387,13 @@ export class StaticNotebook extends Widget {
     this._updateMimetype();
     const cells = newValue.cells;
     // TODO(ECH) Revisit this...
+    /*
     if (!cells.length) {
       cells.push(
         newValue.contentFactory.createCell(this.notebookConfig.defaultCell, {})
       );
     }
+    */
     each(cells, (cell: ICellModel, i: number) => {
       this._insertCell(i, cell);
     });
@@ -407,6 +409,7 @@ export class StaticNotebook extends Widget {
     sender: IObservableList<ICellModel>,
     args: IObservableList.IChangedArgs<ICellModel>
   ) {
+    console.log('--- widget on cells changed', args)
     let index = 0;
     switch (args.type) {
       case 'add':

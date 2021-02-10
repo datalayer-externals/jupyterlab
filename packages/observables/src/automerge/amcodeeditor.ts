@@ -58,9 +58,11 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
   }
 
   public initObservables() {
+
     this._value.initObservables();
     this._mimeType.initObservables();
     this._selections.initObservables();
+
     this._modelDB.observable.observe(
       this._modelDB.amDoc,
       (diff, before, after, local, changes, path) => {
@@ -129,7 +131,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     args: IObservableString.IChangedArgs
   ): void {
     /*
-      waitForModelDBIInit(this._modelDB, () => {
+      waitOnAmDocInit(this._modelDB, () => {
         this._modelDB.withLock(() => {
           switch(args.type) {
             case 'set': {
@@ -180,7 +182,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     args: IObservableMap.IChangedArgs<any>
   ): void {
     /*
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         switch(args.type) {
           case 'add': {

@@ -3,19 +3,29 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import Automerge, { List, Text } from 'automerge';
+import Automerge from 'automerge';
 
-import { waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
+import { 
+  amDocPath,
+  getNested,
+//  setNested,
+  waitOnAmDocInit,
+  AutomergeModelDB
+} from './ammodeldb';
 
 import { IObservableNotebook } from '../observablenotebook';
 
-import { IObservableJSON, ObservableJSON } from '../observablejson';
+import { IObservableJSON } from '../observablejson';
+
+import { AutomergeJSON } from './amjson';
+
+import { AutomergeList } from './amlist';
 
 import { IObservableCell } from '../observablecell';
 
-import { IObservableList, ObservableList } from '../observablelist';
+import { IObservableList } from '../observablelist';
 
-import { IObservableString } from '../observablestring';
+// import { IObservableString } from '../observablestring';
 
 import { IObservableMap } from '../observablemap';
 
@@ -27,45 +37,29 @@ export class AutomergeNotebook implements IObservableNotebook {
   ) {
     this._path = path;
     this._modelDB = modelDB;
-
-    this._metadata = new ObservableJSON();
+    this._metadata = new AutomergeJSON(
+      this._path.concat('metadata'),
+      this._modelDB,
+    );
     this._metadata.changed.connect(this._onMetadataChanged, this);
-
-    this._cells = new ObservableList();
+    this._cells = new AutomergeList(
+      this._path.concat('cells'),
+      this._modelDB,
+    );
     this._cells.changed.connect(this._onCellsChanged, this);
-
-    this._modelDB.withLock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `notebook init ${this._path}`,
-        doc => {
-          doc[this._path[0]] = {};
-          doc[this._path[0]].metadata = this.metadata.toJSON();
-          doc[this._path[0]].cells = new Array<any>();
-        }
-      );
-    });
-    /*
-    waitForModelDBIInit(this._modelDB, () => {
-      this._modelDB.withLock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
-          `notebook init ${this._path}`,
-          doc => {
-            doc[this._path[0]] = {};
-          }
-        );
-      });
-    });
-    */
   }
 
   public initObservables() {
+
+    this._metadata.initObservables();
+    this._cells.initObservables();
+
+    console.log('--- cells', amDocPath(this._modelDB.amDoc, this._path).cells, this._cells);
+
     this._modelDB.observable.observe(
-      this._modelDB.amDoc[this._path[0]],
+      amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
-//        console.log('--- diff notebook', diff, after, path)
-        if (!local && diff.props && diff.props[this._path[0]]) {
+        if (!local) {
         }
       }
     );
@@ -75,7 +69,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     value: IObservableMap<any>,
     args: IObservableMap.IChangedArgs<any>
   ): void {
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         switch (args.type) {
           case 'add': {
@@ -83,7 +77,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `notebook metadata add ${this._path} ${args.key}`,
               doc => {
-                doc[this._path[0]].metadata[args.key] = args.newValue;
+                getNested(doc, this._path).metadata[args.key] = args.newValue;
               }
             );
             break;
@@ -93,7 +87,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `notebook metadata delete ${this._path} ${args.key}`,
               doc => {
-                delete doc[this._path[0]].metadata[args.key];
+                delete getNested(doc, this._path).metadata[args.key];
               }
             );
             break;
@@ -103,7 +97,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `notebook metadata change ${this._path} ${args.key}`,
               doc => {
-                doc[this._path[0]].metadata[args.key] = args.newValue;
+                getNested(doc, this._path).metadata[args.key] = args.newValue;
               }
             );
             break;
@@ -112,7 +106,7 @@ export class AutomergeNotebook implements IObservableNotebook {
       });
     });
   }
-
+/*
   private _asCell(observableCell: IObservableCell) {
     return {
       id: observableCell.id,
@@ -123,21 +117,19 @@ export class AutomergeNotebook implements IObservableNotebook {
       source: new Text(observableCell.codeEditor.value.text),
     };
   }
-
+*/
   private _onCellsChanged(
     value: IObservableList<IObservableCell>,
     args: IObservableList.IChangedArgs<IObservableCell>
   ): void {
-
-    waitForModelDBIInit(this._modelDB, () => {
+    console.log('--- on cells changes', args);
+/*
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
-
-        switch (args.type) {
-          
+        switch (args.type) {          
           // Set Cells.
           case 'set':
             break;
-
           // Add Cells.
           case 'add':
             args.newValues.map(observableCell => {
@@ -147,40 +139,35 @@ export class AutomergeNotebook implements IObservableNotebook {
                 this._modelDB.amDoc,
                 `cells add ${this._path} ${index}`,
                 doc => {
-                  (doc[this._path[0]].cells as List<any>).insertAt!(index, cell);
+                  (getNested(doc, this._path).cells as List<any>).insertAt!(index, cell);
               });
               observableCell.codeEditor.value.changed.connect(this._onValueChanged, this);
-              console.log('---', this._modelDB.amDoc[this._path[0]])
               this._modelDB.observable.observe(
-                this._modelDB.amDoc[this._path[0]].cells[index].source,
+                this._modelDB.amgetNested(doc, this._path).cells[index].source,
                 (diff, before, after, local, changes, path) => {
-                  console.log('--- diff after', after)
-                  console.log('--- diff source', diff, path)
+//                  console.log('--- diff source', diff, after, path)
                 }
               );
              });
              // this._changed.emit(args);
              break;
-
           // Move Cells.
           case 'move':
             break;
-
           // Remove Cells.
           case 'remove':
             break;
-
         }
-
       });
     });
+*/
   }
-
+/*
   private _onValueChanged(
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         switch(args.type) {
           case 'set': {
@@ -188,7 +175,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `string set ${this._path} ${args.value}`,
               doc => {
-                (doc[this._path[0]].cells as List<any>)[0].source = new Text(args.value);
+                (getNested(doc, this._path).cells as List<any>)[0].source = new Text(args.value);
               }
             );
             break;
@@ -198,7 +185,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `string insert ${this._path} ${args.start} ${args.value}`,
               doc => {
-                ((doc[this._path[0]].cells as List<any>)[0].source as Text).insertAt!(args.start, ...args.value);
+                ((getNested(doc, this._path).cells as List<any>)[0].source as Text).insertAt!(args.start, ...args.value);
               }
             );
             break;
@@ -208,7 +195,7 @@ export class AutomergeNotebook implements IObservableNotebook {
               this._modelDB.amDoc,
               `string remove ${this._path} ${args.start} ${args.end}`,
               doc => {
-                ((doc[this._path[0]].cells as List<any>)[0].source as Text).deleteAt!(args.start, args.end - args.start);
+                ((getNested(doc, this._path).cells as List<any>)[0].source as Text).deleteAt!(args.start, args.end - args.start);
               }
             );
             break;
@@ -217,7 +204,7 @@ export class AutomergeNotebook implements IObservableNotebook {
       });
     });
   }
-
+*/
   get type(): 'Notebook' {
     return 'Notebook';
   }
@@ -244,9 +231,12 @@ export class AutomergeNotebook implements IObservableNotebook {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    if (this._modelDB.amDoc[this._path[0]]) {
-      this._modelDB.amDoc[this._path[0]].clear();
+    // TODO(ECH) Implement this.
+    /*
+    if (this._modelDB.amgetNested(doc, this._path)) {
+      this._modelDB.amgetNested(doc, this._path).clear();
     }
+    */
   }
 
   private _metadata: IObservableJSON;

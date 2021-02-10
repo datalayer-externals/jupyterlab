@@ -9,7 +9,7 @@ import Automerge from 'automerge';
 
 import { IObservableValue } from './../observablevalue';
 
-import { amDocPath, setNested, waitForModelDBIInit, AutomergeModelDB } from './ammodeldb';
+import { amDocPath, setNested, waitOnAmDocInit, AutomergeModelDB } from './ammodeldb';
 
 /**
  * A concrete implementation of an `IObservableValue`.
@@ -45,8 +45,6 @@ export class AutomergeValue implements IObservableValue {
         }
       );
     }
-    console.log('--- am value', this._modelDB.amDoc),
-    console.log('--- am value', amDocPath(this._modelDB.amDoc, this._path)),
     // Observe and Handle Remote Changes.
     this._modelDB.observable.observe(
       this._modelDB.amDoc,
@@ -92,7 +90,7 @@ export class AutomergeValue implements IObservableValue {
     if (JSONExt.deepEqual(oldValue, value)) {
       return;
     }
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `value set ${this._path} ${value}`,
@@ -116,7 +114,7 @@ export class AutomergeValue implements IObservableValue {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,

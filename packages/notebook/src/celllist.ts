@@ -46,6 +46,10 @@ export class CellList implements IObservableList<ICellModel> {
 
   type: 'List';
 
+  public initObservables() {
+    /* no-op */
+  }
+
   /**
    * A signal emitted when the cell list has changed.
    */
@@ -108,6 +112,9 @@ export class CellList implements IObservableList<ICellModel> {
    * No changes.
    */
   iter(): IIterator<ICellModel> {
+    if (this._cells.length === 0) {
+      return new ArrayIterator<ICellModel>([]);
+    }
     const arr: ICellModel[] = [];
     for (const cell of toArray(this._cells)) {
       arr.push(this._cellMap.get(cell.id)!);
@@ -484,6 +491,7 @@ export class CellList implements IObservableList<ICellModel> {
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
   ): void {
+    console.log('--- celllist on cells changed', change);
     this._updateCells(change);
   }
 

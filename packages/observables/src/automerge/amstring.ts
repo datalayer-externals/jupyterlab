@@ -10,8 +10,8 @@ import Automerge, { Text } from 'automerge';
 import {
   amDocPath,
   setNested,
-  extractNested,
-  waitForModelDBIInit,
+  getNested,
+  waitOnAmDocInit,
   AutomergeModelDB,
   AmDoc
 } from './ammodeldb';
@@ -107,7 +107,7 @@ export class AutomergeString implements IObservableString {
    */
   set text(value: string) {
     // TODO(ECH) Check this condition !this...
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       if (amDocPath(this._modelDB.amDoc, this._path)) {
         return;
       }
@@ -154,13 +154,13 @@ export class AutomergeString implements IObservableString {
    * @param text - The substring to insert.
    */
   insert(index: number, text: string): void {
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `string insert ${this._path} ${index} ${text}`,
           doc => {
-            (extractNested(doc, this._path) as Text).insertAt!(index, ...text);
+            (getNested(doc, this._path) as Text).insertAt!(index, ...text);
           }
         );
       });
@@ -181,7 +181,7 @@ export class AutomergeString implements IObservableString {
    * @param end - The ending index.
    */
   remove(start: number, end: number): void {
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       const oldValue = amDocPath(this._modelDB.amDoc, this._path)
         .toString()
         .slice(start, end);
@@ -190,7 +190,7 @@ export class AutomergeString implements IObservableString {
           this._modelDB.amDoc,
           `string remove ${this._path} ${start} ${end}`,
           doc => {
-            (extractNested(doc, this._path) as Text).deleteAt!(
+            (getNested(doc, this._path) as Text).deleteAt!(
               start,
               end - start
             );
@@ -210,7 +210,7 @@ export class AutomergeString implements IObservableString {
    * Set the ObservableString to an empty string.
    */
   clear(): void {
-    waitForModelDBIInit(this._modelDB, () => {
+    waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.amDoc = Automerge.init<AmDoc>();
       this.text = '';
     });

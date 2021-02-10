@@ -7,9 +7,17 @@ import { JSONValue, UUID } from '@lumino/coreutils';
 
 import Automerge, { Observable } from 'automerge';
 
+import { IModelDB, ModelDB, IObservable } from '../modeldb';
+
+import {
+  ICollaboratorMap,
+  CollaboratorMap,
+  Collaborator
+} from './../collaborator';
+
 import { AutomergeList } from './amlist';
 
-import { AutomergeModelDBView } from './ammodeldbview';
+// import { AutomergeModelDBView } from './ammodeldbview';
 
 import { AutomergeUndoableList } from './amundoablelist';
 
@@ -45,14 +53,6 @@ import {
   IObservableUndoableList,
   ObservableUndoableList
 } from '../undoablelist';
-
-import { IModelDB, ModelDB, IObservable } from '../modeldb';
-
-import {
-  ICollaboratorMap,
-  CollaboratorMap,
-  Collaborator
-} from './../collaborator';
 
 import { IObservableCodeEditor } from '../observablecodeeditor';
 
@@ -93,7 +93,7 @@ function waitForSocketReady(socket: WebSocket, callback: any) {
 }
 
 // Make the function wait until the mode is initialized...
-export function waitForModelDBIInit(modelDB: AutomergeModelDB, callback: any) {
+export function waitOnAmDocInit(modelDB: AutomergeModelDB, callback: any) {
   if (modelDB.isInitialized) {
     callback();
   } else
@@ -101,7 +101,7 @@ export function waitForModelDBIInit(modelDB: AutomergeModelDB, callback: any) {
       if (modelDB.isInitialized) {
         callback();
       } else {
-        waitForModelDBIInit(modelDB, callback);
+        waitOnAmDocInit(modelDB, callback);
       }
     }, 10); // Wait 10 miliseconds for model initialization...
 }
@@ -122,7 +122,7 @@ export const combineChanges = (changes: Uint8Array[]) => {
   return combinedChanges;
 };
 
-export const extractNested = (doc: any, path: string[]) => {
+export const getNested = (doc: any, path: string[]) => {
   const out = [doc];
   for (let i = 0; i < path.length; i++) {
     let { [path[i]]: name } = out[i];
@@ -135,7 +135,12 @@ export const setNested = (doc: any, path: string[], value: any) => {
   let leaf = doc;
   for (let i = 0; i < path.length - 1; i++) {
     if (!leaf[path[i]]) {
-      leaf[path[i]] = {};
+      // TODO(ECH) Revisit this...
+      if (path[i] === 'cells') {
+        leaf[path[i]] = [];
+      } else {
+        leaf[path[i]] = {};
+      }
     }
     leaf = leaf[path[i]];
   }
@@ -539,7 +544,8 @@ export class AutomergeModelDB implements IModelDB {
    *   `IModelDB`, with `basePath` prepended to all paths.
    */
   view(basePath: string): IModelDB {
-    const view = new AutomergeModelDBView(basePath, this);
+//    const view = new AutomergeModelDBView(basePath, this);
+    const view = new ModelDB({ basePath, baseDB: this });
     this._disposables.add(view);
     return view;
   }

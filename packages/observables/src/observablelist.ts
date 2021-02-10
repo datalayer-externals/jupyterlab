@@ -14,10 +14,11 @@ import { IDisposable } from '@lumino/disposable';
 
 import { ISignal, Signal } from '@lumino/signaling';
 
+import { IObservable } from './modeldb';
 /**
  * A list which can be observed for changes.
  */
-export interface IObservableList<T> extends IDisposable {
+export interface IObservableList<T> extends IObservable, IDisposable {
   /**
    * A signal emitted when the list has changed.
    */
