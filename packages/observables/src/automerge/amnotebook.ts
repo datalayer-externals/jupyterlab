@@ -8,7 +8,6 @@ import Automerge from 'automerge';
 import { 
   amDocPath,
   getNested,
-//  setNested,
   waitOnAmDocInit,
   AutomergeModelDB
 } from './ammodeldb';
@@ -21,15 +20,9 @@ import { IObservableJSON } from '../observablejson';
 
 import { AutomergeJSON } from './amjson';
 
-// import { AutomergeList } from './amlist';
-
-import { ObservableList } from './../observablelist';
-
-// import { AutomergeCodeEditor } from './amcodeeditor';
+import { AutomergeList } from './amlist';
 
 import { IObservableList } from '../observablelist';
-
-// import { IObservableString } from '../observablestring';
 
 import { IObservableMap } from '../observablemap';
 
@@ -46,13 +39,10 @@ export class AutomergeNotebook implements IObservableNotebook {
       this._modelDB,
     );
     this._metadata.changed.connect(this._onMetadataChanged, this);
-    /*
     this._cells = new AutomergeList(
       this._path.concat('cells'),
       this._modelDB,
     );
-    */
-    this._cells = new ObservableList();
     this._cells.changed.connect(this._onCellsChanged, this);
   }
 
@@ -111,18 +101,7 @@ export class AutomergeNotebook implements IObservableNotebook {
       });
     });
   }
-/*
-  private _asCell(observableCell: IObservableCell) {
-    return {
-      id: observableCell.id,
-      cell_type: observableCell.cellType.get() || 'code',
-      execution_count: observableCell.executionCount.get() || '',
-      metadata: observableCell.metadata.toJSON(),
-      outputs: [],
-      source: new Text(observableCell.codeEditor.value.text),
-    };
-  }
-*/
+
   private _onCellsChanged(
     value: IObservableList<IObservableCell>,
     args: IObservableList.IChangedArgs<IObservableCell>

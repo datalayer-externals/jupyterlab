@@ -242,14 +242,20 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
   insert(index: number, value: T): void {
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
-//        const v = value.toJSON();
-//        console.log('--- v json', v);
-        console.log('--- insert', value)
+        const v = this._asCell(value);
+        console.log('--- amlist insert', index, v)
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `list insert ${this._path} ${index} ${value}`,
           doc => {
-            ArrayExt.insert(getNested(doc, this._path), index, value);
+            const d1 = getNested(doc, this._path);
+            if (!d1) {
+              setNested(doc, this._path, []);
+            }
+            const d2 = getNested(doc, this._path) as List<any>
+            console.log('---', d2);
+//            ArrayExt.insert(d, index, value);
+            d2.insertAt!(index, [v]);
           });
         this._changed.emit({
           type: 'add',
@@ -532,6 +538,17 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
       newValues: []
     });
     return this.length;
+  }
+
+  private _asCell(observableCell: IObservableCell) {
+    return {
+      id: observableCell.id,
+      cell_type: observableCell.cellType.get() || 'code',
+      execution_count: observableCell.executionCount.get() || '',
+      metadata: observableCell.metadata.toJSON(),
+      outputs: [],
+      source: new Text(observableCell.codeEditor.value.text),
+    };
   }
 
   private _path: string[];

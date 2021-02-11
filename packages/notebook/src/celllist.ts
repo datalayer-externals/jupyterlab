@@ -43,8 +43,9 @@ export class CellList implements IObservableList<ICellModel> {
     this._cells = this._notebook.cells;
     this._cells.changed.connect(this._onCellsChanged, this);
 
-    this._cells.insert(0, modelDB.createCell(['notebook', 'cells', 'init-cell-1'], 'init-cell-1'));
-
+    const cell = modelDB.createCell(['notebook', 'cells', 'init-cell-1'], 'init-cell-1');
+    console.log('--- celllist', cell);
+    this._cells.insert(0, cell);
   }
 
   type: 'List';
