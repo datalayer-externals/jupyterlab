@@ -20,7 +20,8 @@ import {
   IObservableList,
   IModelDB,
   IObservableCell,
-  IObservableNotebook
+  IObservableNotebook,
+  ObservableCell
 } from '@jupyterlab/observables';
 
 import { NotebookModel } from './model';
@@ -42,7 +43,7 @@ export class CellList implements IObservableList<ICellModel> {
     this._cells = this._notebook.cells;
     this._cells.changed.connect(this._onCellsChanged, this);
 
-    this._cells.insert(0, modelDB.createCell('', 'init-cell-1'));
+    this._cells.insert(0, modelDB.createCell(['notebook', 'cells', 'init-cell-1'], 'init-cell-1'));
 
   }
 
@@ -494,7 +495,9 @@ export class CellList implements IObservableList<ICellModel> {
 
   private _addToMap(id: string, cell: ICellModel) {
     console.log('--- celllist add to map', id, cell)
-    cell.cell = cell.cell;
+    if (cell.cell instanceof ObservableCell) {
+      cell.cell = cell.cell;
+    }
     this._cellMap.set(id, cell);
   }
 /*

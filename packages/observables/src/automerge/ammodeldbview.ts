@@ -92,8 +92,8 @@ export class AutomergeModelDBView implements IModelDB {
     return this._automergeModelDB.createNotebook(this._viewedPath(path));
   }
 
-  public createCell(path: string, id: string): IObservableCell {
-    return this._automergeModelDB.createCell(this._viewedPath(path), id);
+  public createCell(path: string[], id: string): IObservableCell {
+    return this._automergeModelDB.createCell(path, id);
   }
 
   public createValue(path: string) {

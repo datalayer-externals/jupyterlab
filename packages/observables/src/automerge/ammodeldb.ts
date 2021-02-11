@@ -472,12 +472,12 @@ export class AutomergeModelDB implements IModelDB {
   }
 
   public createCell(
-    path: string,
+    path: string[],
     id: string
   ): IObservableCell {
-    const cell = new AutomergeCell([this.idPath(path)], this, id);
+    const cell = new AutomergeCell(path, this, id);
     this._disposables.add(cell);
-    this.set(path, cell);
+    this.set(path[0], cell);
     return cell;
   }
 
