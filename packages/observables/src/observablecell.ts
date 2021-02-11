@@ -14,7 +14,7 @@ import { IObservableMap } from './observablemap';
 
 import { IObservableJSON, ObservableJSON } from './observablejson';
 
-import { IObservableCodeEditor } from './observablecodeeditor';
+import { IObservableCodeEditor, ObservableCodeEditor } from './observablecodeeditor';
 
 import { IObservableValue, ObservableValue } from './observablevalue';
 
@@ -49,12 +49,12 @@ export class ObservableCell extends ObservableJSON {
   /**
    * Construct a new observable JSON object.
    */
-  constructor(id: string, codeEditor: IObservableCodeEditor, options: ObservableCell.IOptions = {}) {
+  constructor(id: string, options: ObservableCell.IOptions = {}) {
     super({
       values: options.values
     });
     this._id = id;
-    this._codeEditor = codeEditor;
+    this._codeEditor = new ObservableCodeEditor();
     this._metadata = new ObservableJSON();
     this._cellType = new ObservableValue('code');
     this._trusted = new ObservableValue('');

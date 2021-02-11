@@ -21,7 +21,6 @@ import {
   IModelDB,
   IObservableCell,
   ObservableCell,
-  ObservableCodeEditor,
   IObservableNotebook
 } from '@jupyterlab/observables';
 
@@ -45,9 +44,9 @@ export class CellList implements IObservableList<ICellModel> {
     this._cells.changed.connect(this._onCellsChanged, this);
 
     //
-    const codeEditor = new ObservableCodeEditor();
-    const cell = new ObservableCell('init-cell-1', codeEditor);
-    this._cells.insert(0, cell);
+    this._cells.insert(0, new ObservableCell('init-cell-1'));
+    this._cells.insert(0, modelDB.createCell('', 'init-cell-2'));
+    this._cells.insert(0, modelDB.createCell('', 'init-cell-3'));
 
   }
 
@@ -255,6 +254,7 @@ export class CellList implements IObservableList<ICellModel> {
    */
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
+    console.log('--- celllist insert', 0, cell);
     this._cellMap.set(cell.id, cell);
     this._cells.insert(index, cell.cell);
   }

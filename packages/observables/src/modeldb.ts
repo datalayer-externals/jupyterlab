@@ -180,7 +180,7 @@ export interface IModelDB extends IDisposable {
   /**
    * TODO(ECH)
    */
-  createCell(path: string, id: string, codeEditor: IObservableCodeEditor): IObservableCell;
+  createCell(path: string, id: string): IObservableCell;
 
   /**
    * Create an opaque value and insert it in the database.
@@ -396,8 +396,8 @@ export class ModelDB implements IModelDB {
   /**
    * TODO(ECH)
    */
-  createCell(path: string, id: string, codeEditor: IObservableCodeEditor): IObservableCell {
-    const cell = new ObservableCell(id, codeEditor);
+  createCell(path: string, id: string): IObservableCell {
+    const cell = new ObservableCell(id);
     this._disposables.add(cell);
     this.set(path, cell);
     return cell;

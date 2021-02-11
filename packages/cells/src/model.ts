@@ -38,11 +38,6 @@ export interface ICellModel extends CodeEditor.IModel {
   readonly type: nbformat.CellType;
 
   /**
-   * TODO(ECH)
-   */
-  readonly cell: IObservableCell;
-
-  /**
    * A unique identifier for the cell.
    */
   readonly id: string;
@@ -56,6 +51,11 @@ export interface ICellModel extends CodeEditor.IModel {
    * A signal emitted when a model state changes.
    */
   readonly stateChanged: ISignal<ICellModel, IChangedArgs<any>>;
+
+  /**
+   * TODO(ECH)
+   */
+  cell: IObservableCell;
 
   /**
    * Whether the cell is trusted.
@@ -172,11 +172,10 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
 
     this.id = options.id || UUID.uuid4();
 
-    this.value.changed.connect(this.onGenericChange, this);
-
-    this._cell = this.modelDB.createCell('cell', this.id, this.codeEditor);
+    this._cell = this.modelDB.createCell('cell', this.id);
 
     this._cell.cellType.set(this.type);
+    this._cell.codeEditor.value.changed.connect(this.onGenericChange, this);
     this._cell.metadata.changed.connect(this.onGenericChange, this);
     this._cell.trusted.changed.connect(this.onTrustedChanged, this);
 
@@ -228,6 +227,11 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
   readonly stateChanged = new Signal<this, IChangedArgs<any>>(this);
 
   /**
+   * The id for the cell.
+   */
+  readonly id: string;
+
+  /**
    * TODO(ECH)
    */
   get cell(): IObservableCell {
@@ -235,9 +239,15 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
   }
 
   /**
-   * The id for the cell.
+   * TODO(ECH)
    */
-  readonly id: string;
+  set cell(newValue: IObservableCell) {
+    const oldValue = this.cell;
+    if (oldValue === newValue) {
+      return;
+    }
+    this._cell = newValue;
+  }
 
   /**
    * The metadata associated with the cell.

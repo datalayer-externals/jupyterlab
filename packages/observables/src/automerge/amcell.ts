@@ -9,6 +9,8 @@ import { AutomergeModelDB } from './ammodeldb';
 
 import { AutomergeJSON } from './amjson';
 
+import { AutomergeCodeEditor } from './amcodeeditor';
+
 // import { AutomergeValue } from './amvalue';
 
 import { IObservableJSON } from './../observablejson';
@@ -30,7 +32,6 @@ export class AutomergeCell extends AutomergeJSON {
     path: string[],
     modelDB: AutomergeModelDB,
     id: string,
-    codeEditor: IObservableCodeEditor,
     options: AutomergeJSON.IOptions = {}
   ) {
     super(
@@ -39,7 +40,10 @@ export class AutomergeCell extends AutomergeJSON {
       values: options.values
     });
     this._id = id;
-    this._codeEditor = codeEditor;
+    this._codeEditor = new AutomergeCodeEditor(
+      path,
+      modelDB
+    );
     /*
     const idPath = modelDB.idPath(path);
     this._metadata = new AutomergeJSON(idPath, modelDB);

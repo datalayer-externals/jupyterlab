@@ -127,7 +127,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     value: IObservableList<IObservableCell>,
     args: IObservableList.IChangedArgs<IObservableCell>
   ): void {
-    console.log('--- on cells changed', args);
+    console.log('--- amnotebook oncellschanged', args);
     this._changed.emit(args);
 /*
     waitOnAmDocInit(this._modelDB, () => {

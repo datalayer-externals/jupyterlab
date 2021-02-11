@@ -473,10 +473,9 @@ export class AutomergeModelDB implements IModelDB {
 
   public createCell(
     path: string,
-    id: string,
-    codeEditor: IObservableCodeEditor
+    id: string
   ): IObservableCell {
-    const cell = new AutomergeCell([this.idPath(path)], this, id, codeEditor);
+    const cell = new AutomergeCell([this.idPath(path)], this, id);
     this._disposables.add(cell);
     this.set(path, cell);
     return cell;
