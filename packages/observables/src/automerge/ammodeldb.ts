@@ -19,8 +19,6 @@ import { AutomergeList } from './amlist';
 
 // import { AutomergeModelDBView } from './ammodeldbview';
 
-import { AutomergeUndoableList } from './amundoablelist';
-
 import { AutomergeString } from './amstring';
 
 import { AutomergeMap } from './ammap';
@@ -48,11 +46,6 @@ import { IObservableCell } from '../observablecell';
 import { IObservableString } from '../observablestring';
 
 import { IObservableValue, ObservableValue } from './../observablevalue';
-
-import {
-  IObservableUndoableList,
-  ObservableUndoableList
-} from '../undoablelist';
 
 import { IObservableCodeEditor } from '../observablecodeeditor';
 
@@ -381,7 +374,7 @@ export class AutomergeModelDB implements IModelDB {
     return str;
   }
 
-  createList<T extends any>(path: string): IObservableList<T> {
+  createList<T extends IObservableCell>(path: string): IObservableList<T> {
     const list = new AutomergeList<T>([this.idPath(path)], this);
     if (this._isInitialized) {
       list.initObservables();
@@ -402,6 +395,7 @@ export class AutomergeModelDB implements IModelDB {
    * The list can only store objects that are simple
    * JSON Objects and primitives.
    */
+  /*
   createUndoableList<T extends JSONValue>(
     path: string
   ): IObservableUndoableList<T> {
@@ -417,7 +411,7 @@ export class AutomergeModelDB implements IModelDB {
     this.set(path, list);
     return list;
   }
-
+  */
   /**
    * Create a map and insert it in the database.
    *

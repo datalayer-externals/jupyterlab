@@ -16,6 +16,8 @@ import Automerge, { List } from 'automerge';
 
 import { IObservableList } from '../observablelist';
 
+import { IObservableCell } from '../observablecell';
+
 import { 
   amDocPath, 
   getNested, 
@@ -27,7 +29,7 @@ import {
 /**
  * A concrete implementation of [[IObservableList]].
  */
-export class AutomergeList<T> implements IObservableList<T> {
+export class AutomergeList<T extends IObservableCell> implements IObservableList<T> {
   /**
    * Construct a new automerge list.
    */
@@ -49,7 +51,7 @@ export class AutomergeList<T> implements IObservableList<T> {
         this._modelDB.amDoc,
         `list init`,
         doc => {
-          setNested(doc, this._path, new Array<T>());
+          setNested(doc, this._path, new Array());
         }
       );
     }
@@ -152,17 +154,17 @@ export class AutomergeList<T> implements IObservableList<T> {
    * An `index` which is non-integral or out of range.
    */
   set(index: number, value: T): void {
-    const oldValue = (amDocPath(this._modelDB.amDoc, this._path) as List<T>)[index];
-    if (value === undefined) {
-      throw new Error('Cannot set an undefined item');
-    }
-    // Bail if the value does not change.
-    const itemCmp = this._itemCmp;
-    if (itemCmp(oldValue, value)) {
-      return;
-    }
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
+        const oldValue = (amDocPath(this._modelDB.amDoc, this._path) as List<T>)[index];
+        if (value === undefined) {
+          throw new Error('Cannot set an undefined item');
+        }
+        // Bail if the value does not change.
+        const itemCmp = this._itemCmp;
+        if (itemCmp(oldValue, value)) {
+          return;
+        }
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `list set ${this._path} ${index} ${value}`,
@@ -171,14 +173,14 @@ export class AutomergeList<T> implements IObservableList<T> {
             (getNested(doc, this._path) as List<T>)[index] = value;
           }
         );
+        this._changed.emit({
+          type: 'set',
+          oldIndex: index,
+          newIndex: index,
+          oldValues: [oldValue],
+          newValues: [value]
+        });
       });
-    });
-    this._changed.emit({
-      type: 'set',
-      oldIndex: index,
-      newIndex: index,
-      oldValues: [oldValue],
-      newValues: [value]
     });
   }
 
@@ -196,7 +198,6 @@ export class AutomergeList<T> implements IObservableList<T> {
    * No changes.
    */
   push(value: T): number {
-    console.log('--- amlist push', value);
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
@@ -241,20 +242,23 @@ export class AutomergeList<T> implements IObservableList<T> {
   insert(index: number, value: T): void {
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `list insert ${this._path} ${index} ${value}`,
-        doc => {
-          ArrayExt.insert(getNested(doc, this._path) as List<T>, index, value);
+//        const v = value.toJSON();
+//        console.log('--- v json', v);
+        console.log('--- insert', value)
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `list insert ${this._path} ${index} ${value}`,
+          doc => {
+            ArrayExt.insert(getNested(doc, this._path), index, value);
+          });
+        this._changed.emit({
+          type: 'add',
+          oldIndex: -1,
+          newIndex: index,
+          oldValues: [],
+          newValues: [value]
         });
       });
-    });
-    this._changed.emit({
-      type: 'add',
-      oldIndex: -1,
-      newIndex: index,
-      oldValues: [],
-      newValues: [value]
     });
   }
 
@@ -338,9 +342,9 @@ export class AutomergeList<T> implements IObservableList<T> {
    */
   clear(): void {
     if (amDocPath(this._modelDB.amDoc, this._path)) {
-      const copy = (amDocPath(this._modelDB.amDoc, this._path) as List<T>).slice();
       waitOnAmDocInit(this._modelDB, () => {
         this._modelDB.withLock(() => {
+          const copy = (amDocPath(this._modelDB.amDoc, this._path) as List<T>).slice();
           this._modelDB.amDoc = Automerge.change(
             this._modelDB.amDoc,
             `list clear ${this._path}`,
@@ -348,14 +352,14 @@ export class AutomergeList<T> implements IObservableList<T> {
               setNested(doc, this._path, new Array<T>());
             }
           );
+          this._changed.emit({
+            type: 'remove',
+            oldIndex: 0,
+            newIndex: 0,
+            newValues: [],
+            oldValues: copy
+          });
         });
-      });
-      this._changed.emit({
-        type: 'remove',
-        oldIndex: 0,
-        newIndex: 0,
-        newValues: [],
-        oldValues: copy
       });
     }
   }
@@ -392,14 +396,14 @@ export class AutomergeList<T> implements IObservableList<T> {
             ArrayExt.move(getNested(doc, this._path) as List<T>, fromIndex, toIndex);
           }
         );
+        this._changed.emit({
+          type: 'move',
+          oldIndex: fromIndex,
+          newIndex: toIndex,
+          oldValues: values,
+          newValues: values
+        });
       });
-    });
-    this._changed.emit({
-      type: 'move',
-      oldIndex: fromIndex,
-      newIndex: toIndex,
-      oldValues: values,
-      newValues: values
     });
   }
 

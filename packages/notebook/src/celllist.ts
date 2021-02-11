@@ -20,6 +20,8 @@ import {
   IObservableList,
   IModelDB,
   IObservableCell,
+  ObservableCell,
+  ObservableCodeEditor,
   IObservableNotebook
 } from '@jupyterlab/observables';
 
@@ -35,13 +37,18 @@ export class CellList implements IObservableList<ICellModel> {
   constructor(modelDB: IModelDB, factory: NotebookModel.IContentFactory) {
     this._factory = factory;
 
-    this._notebook = modelDB.get('notebook') as IObservableNotebook;
-//    this._notebook.changed.connect(this._onNotebookChanged, this);
-
-    this._cells = this._notebook.cells;
     this._cellMap = new ObservableMap<ICellModel>();
 
+    this._notebook = modelDB.get('notebook') as IObservableNotebook;
+//    this._notebook.changed.connect(this._onNotebookChanged, this);
+    this._cells = this._notebook.cells;
     this._cells.changed.connect(this._onCellsChanged, this);
+
+    //
+    const codeEditor = new ObservableCodeEditor();
+    const cell = new ObservableCell('init-cell-1', codeEditor);
+    this._cells.insert(0, cell);
+
   }
 
   type: 'List';
@@ -156,7 +163,16 @@ export class CellList implements IObservableList<ICellModel> {
    * An `index` which is non-integral or out of range.
    */
   get(index: number): ICellModel {
-    return this._cellMap.get(this._cells.get(index).id)!;
+    let cell = this._cellMap.get(this._cells.get(index).id)!;
+    if (!cell) {
+      const id = this._cells.get(index).id
+      cell = this._factory.createCodeCell({ id: id });
+      this._cellMap.set(id, cell);
+      console.log('--- celllist get', index, cell)
+      return cell;
+    }
+    console.log('--- celllist get', index, cell)
+    return cell;
   }
 
   /**
@@ -491,11 +507,11 @@ export class CellList implements IObservableList<ICellModel> {
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
   ): void {
-    console.log('--- celllist on cells changed', change);
     this._updateCells(change);
   }
 
   private _updateCells(change: IObservableList.IChangedArgs<IObservableCell>) {
+    console.log('--- celllist update cells', change);
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, c => {
         if (!this._cellMap.has(c.id)) {

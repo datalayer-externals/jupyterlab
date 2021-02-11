@@ -5,8 +5,6 @@ import { JSONValue } from '@lumino/coreutils';
 
 import { IObservableList } from '../observablelist';
 
-import { IObservableUndoableList } from '../undoablelist';
-
 import { IObservableCodeEditor } from '../observablecodeeditor';
 
 import { IObservableNotebook } from '../observablenotebook';
@@ -68,16 +66,16 @@ export class AutomergeModelDBView implements IModelDB {
     return this._automergeModelDB.createString(this._viewedPath(path));
   }
 
-  public createList<T extends any>(path: string): IObservableList<T>  {
+  public createList<T extends IObservableCell>(path: string): IObservableList<T>  {
     return this._automergeModelDB.createList(this._viewedPath(path));
   }
-
+  /*
   public createUndoableList<T extends JSONValue>(
     path: string
   ): IObservableUndoableList<T> {
     return this._automergeModelDB.createUndoableList(this._viewedPath(path));
   }
-
+  */
   public createMap(path: string) {
     return this._automergeModelDB.createMap(this._viewedPath(path));
   }

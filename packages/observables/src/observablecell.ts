@@ -5,7 +5,7 @@ import {
   JSONExt,
   PartialJSONObject,
   JSONObject,
-  ReadonlyPartialJSONValue
+  ReadonlyPartialJSONValue,
 } from '@lumino/coreutils';
 
 import { Message } from '@lumino/messaging';
@@ -21,8 +21,7 @@ import { IObservableValue, ObservableValue } from './observablevalue';
 /**
  * An observable Cell value.
  */
-export interface IObservableCell
-  extends IObservableJSON {
+export interface IObservableCell extends IObservableJSON {
   readonly id: string;
   readonly codeEditor: IObservableCodeEditor;
   readonly metadata: IObservableJSON;
@@ -57,7 +56,7 @@ export class ObservableCell extends ObservableJSON {
     this._id = id;
     this._codeEditor = codeEditor;
     this._metadata = new ObservableJSON();
-    this._cellType = new ObservableValue('');
+    this._cellType = new ObservableValue('code');
     this._trusted = new ObservableValue('');
     this._executionCount =  new ObservableValue('');
   }

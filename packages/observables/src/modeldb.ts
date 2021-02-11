@@ -23,11 +23,6 @@ import { IObservableCodeEditor, ObservableCodeEditor } from './observablecodeedi
 
 import { IObservableNotebook  } from './observablenotebook';
 
-import {
-  IObservableUndoableList,
-  ObservableUndoableList
-} from './undoablelist';
-
 /**
  * String type annotations for Observable objects that can be
  * created and placed in the IModelDB interface.
@@ -127,7 +122,7 @@ export interface IModelDB extends IDisposable {
   /**
    * TODO(ECH)
    */
-  createList<T>(path: string): IObservableList<T>;
+  createList<T extends IObservableCell>(path: string): IObservableList<T>;
 
   /**
    * Create an undoable list and insert it in the database.
@@ -140,9 +135,11 @@ export interface IModelDB extends IDisposable {
    * The list can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createUndoableList<T extends JSONValue>(
+  /*
+  createUndoableList<T extends IObservableCell>(
     path: string
   ): IObservableUndoableList<T>;
+  */
 
   /**
    * Create a map and insert it in the database.
@@ -316,7 +313,7 @@ export class ModelDB implements IModelDB {
     return str;
   }
 
-  createList<T extends any>(path: string): IObservableList<T> {
+  createList<T extends IObservableCell>(path: string): IObservableList<T> {
     const vec = new ObservableList<T>();
     this._disposables.add(vec);
     this.set(path, vec);
@@ -334,7 +331,8 @@ export class ModelDB implements IModelDB {
    * The list can only store objects that are simple
    * JSON Objects and primitives.
    */
-  createUndoableList<T extends JSONValue>(
+  /*
+  createUndoableList<T extends IObservableCell>(
     path: string
   ): IObservableUndoableList<T> {
     const vec = new ObservableUndoableList<T>(
@@ -344,6 +342,7 @@ export class ModelDB implements IModelDB {
     this.set(path, vec);
     return vec;
   }
+  */
 
   /**
    * Create a map and insert it in the database.

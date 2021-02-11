@@ -15,13 +15,17 @@ import {
 
 import { IObservableNotebook } from '../observablenotebook';
 
+import { IObservableCell } from '../observablecell';
+
 import { IObservableJSON } from '../observablejson';
 
 import { AutomergeJSON } from './amjson';
 
-import { AutomergeList } from './amlist';
+// import { AutomergeList } from './amlist';
 
-import { IObservableCell } from '../observablecell';
+import { ObservableList } from './../observablelist';
+
+// import { AutomergeCodeEditor } from './amcodeeditor';
 
 import { IObservableList } from '../observablelist';
 
@@ -42,10 +46,13 @@ export class AutomergeNotebook implements IObservableNotebook {
       this._modelDB,
     );
     this._metadata.changed.connect(this._onMetadataChanged, this);
+    /*
     this._cells = new AutomergeList(
       this._path.concat('cells'),
       this._modelDB,
     );
+    */
+    this._cells = new ObservableList();
     this._cells.changed.connect(this._onCellsChanged, this);
   }
 
@@ -53,8 +60,6 @@ export class AutomergeNotebook implements IObservableNotebook {
 
     this._metadata.initObservables();
     this._cells.initObservables();
-
-    console.log('--- cells', amDocPath(this._modelDB.amDoc, this._path).cells, this._cells);
 
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
@@ -122,11 +127,12 @@ export class AutomergeNotebook implements IObservableNotebook {
     value: IObservableList<IObservableCell>,
     args: IObservableList.IChangedArgs<IObservableCell>
   ): void {
-    console.log('--- on cells changes', args);
+    console.log('--- on cells changed', args);
+    this._changed.emit(args);
 /*
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
-        switch (args.type) {          
+        switch (args.type) {           
           // Set Cells.
           case 'set':
             break;
@@ -180,7 +186,7 @@ export class AutomergeNotebook implements IObservableNotebook {
             );
             break;
           }
-          case 'insert': { 
+          case 'insert': {
             this._modelDB.amDoc = Automerge.change(
               this._modelDB.amDoc,
               `string insert ${this._path} ${args.start} ${args.value}`,
