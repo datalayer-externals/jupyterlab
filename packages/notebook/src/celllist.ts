@@ -20,7 +20,6 @@ import {
   IObservableList,
   IModelDB,
   IObservableCell,
-  ObservableCell,
   IObservableNotebook
 } from '@jupyterlab/observables';
 
@@ -43,10 +42,7 @@ export class CellList implements IObservableList<ICellModel> {
     this._cells = this._notebook.cells;
     this._cells.changed.connect(this._onCellsChanged, this);
 
-    //
-    this._cells.insert(0, new ObservableCell('init-cell-1'));
-    this._cells.insert(0, modelDB.createCell('', 'init-cell-2'));
-    this._cells.insert(0, modelDB.createCell('', 'init-cell-3'));
+    this._cells.insert(0, modelDB.createCell('', 'init-cell-1'));
 
   }
 
@@ -166,7 +162,7 @@ export class CellList implements IObservableList<ICellModel> {
     if (!cell) {
       const id = this._cells.get(index).id
       cell = this._factory.createCodeCell({ id: id });
-      this._cellMap.set(id, cell);
+      this._addToMap(id, cell);
       console.log('--- celllist get', index, cell)
       return cell;
     }
@@ -197,7 +193,7 @@ export class CellList implements IObservableList<ICellModel> {
    */
   set(index: number, cell: ICellModel): void {
     // Set the internal data structures.
-    this._cellMap.set(cell.id, cell);
+    this._addToMap(cell.id, cell);
     this._cells.set(index, cell.cell);
   }
 
@@ -221,7 +217,7 @@ export class CellList implements IObservableList<ICellModel> {
    */
   push(cell: ICellModel): number {
     // Set the internal data structures.
-    this._cellMap.set(cell.id, cell);
+    this._addToMap(cell.id, cell);
     const num = this._cells.push(cell.cell);
     return num;
   }
@@ -255,7 +251,7 @@ export class CellList implements IObservableList<ICellModel> {
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
     console.log('--- celllist insert', 0, cell);
-    this._cellMap.set(cell.id, cell);
+    this._addToMap(cell.id, cell);
     this._cells.insert(index, cell.cell);
   }
 
@@ -362,7 +358,7 @@ export class CellList implements IObservableList<ICellModel> {
     const newValues = toArray(cells);
     each(newValues, cell => {
       // Set the internal data structures.
-      this._cellMap.set(cell.id, cell);
+      this._addToMap(cell.id, cell);
       this._cells.push(cell.cell);
     });
     return this.length;
@@ -397,7 +393,7 @@ export class CellList implements IObservableList<ICellModel> {
   insertAll(index: number, cells: IterableOrArrayLike<ICellModel>): number {
     const newValues = toArray(cells);
     each(newValues, cell => {
-      this._cellMap.set(cell.id, cell);
+      this._addToMap(cell.id, cell);
 //      this._cells.beginCompoundOperation();
       this._cells.insert(index++, cell.cell);
 //      this._cells.endCompoundOperation();
@@ -495,23 +491,29 @@ export class CellList implements IObservableList<ICellModel> {
     this._cells.clearUndo();
     */
   }
+
+  private _addToMap(id: string, cell: ICellModel) {
+    console.log('--- celllist add to map', id, cell)
+    cell.cell = cell.cell;
+    this._cellMap.set(id, cell);
+  }
 /*
   private _onNotebookChanged(
     value: IObservableNotebook,
     change: IObservableList.IChangedArgs<IObservableCell>
   ): void {
-    this._updateCells(change);
+    this._onCellsUpdate(change);
   }
 */
   private _onCellsChanged(
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
   ): void {
-    this._updateCells(change);
+    this._onCellsUpdate(change);
   }
 
-  private _updateCells(change: IObservableList.IChangedArgs<IObservableCell>) {
-    console.log('--- celllist update cells', change);
+  private _onCellsUpdate(change: IObservableList.IChangedArgs<IObservableCell>) {
+    console.log('--- celllist onupdatecells', change);
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, c => {
         if (!this._cellMap.has(c.id)) {
@@ -529,7 +531,7 @@ export class CellList implements IObservableList<ICellModel> {
               cell = this._factory.createRawCell({ id: c.id });
               break;
           }
-          this._cellMap.set(c.id, cell);
+          this._addToMap(c.id, cell);
         }
       });
     }
