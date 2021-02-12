@@ -144,8 +144,6 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
       }
     });
 
-    console.log('--- codemirror construct', model)
-
     // Connect to changes.
     model.value.changed.connect(this._onValueChanged, this);
     model.mimeTypeChanged.connect(this._onMimeTypeChanged, this);

@@ -267,7 +267,6 @@ export namespace CodeEditor {
      * Get the value of the model.
      */
     get value(): IObservableString {
-      console.log('--- codeeditor value', this)
       return this._codeEditor.value;
     }
 

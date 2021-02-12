@@ -5,15 +5,15 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { amDocPath, AutomergeModelDB } from './ammodeldb';
 
-import { IObservableCodeEditor } from './../observablecodeeditor';
+import { IObservableCodeEditor, ObservableCodeEditor } from './../observablecodeeditor';
 
 import { IObservableValue } from './../observablevalue';
 
 import { IObservableString } from './../observablestring';
 
-import { AutomergeString } from './amstring';
-
 import { IObservableJSON } from './../observablejson';
+
+import { AutomergeString } from './amstring';
 
 import { AutomergeValue } from './amvalue';
 
@@ -23,7 +23,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
   constructor(
     path: string[],
     modelDB: AutomergeModelDB,
-    options: AutomergeCodeEditor.IOptions = {}
+    options: ObservableCodeEditor.IOptions = {}
   ) {
     this._path = path;
     this._modelDB = modelDB;
@@ -101,19 +101,4 @@ What can I do for you?`);
   private _selections: IObservableJSON;
   private _changed = new Signal<this, IObservableCodeEditor.IChangedArgs>(this);
   private _isDisposed = false;
-}
-
-/**
- * The namespace for `ObservableCodeEditor` class statics.
- */
-export namespace AutomergeCodeEditor {
-  /**
-   * The options used to initialize an observable map.
-   */
-  export interface IOptions {
-    /**
-     * An optional initial set of values.
-     */
-    values?: { [key: string]: any };
-  }
 }

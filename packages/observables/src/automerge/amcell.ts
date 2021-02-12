@@ -1,13 +1,9 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { JSONObject } from '@lumino/coreutils';
-
-import { Message } from '@lumino/messaging';
-
 import { AutomergeModelDB } from './ammodeldb';
 
-import { IObservableJSON } from './../observablejson';
+import { IObservableJSON, ObservableJSON } from './../observablejson';
 
 import { IObservableCell } from './../observablecell';
 
@@ -32,7 +28,7 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     path: string[],
     modelDB: AutomergeModelDB,
     id: string,
-    options: AutomergeJSON.IOptions = {}
+    options: ObservableJSON.IOptions = {}
   ) {
     super(path, modelDB, { values: options.values });
     console.log('--- amcell new', path, this._id);
@@ -84,37 +80,4 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
   private _cellType: IObservableValue;
   private _trusted: IObservableValue;
   private _executionCount: IObservableValue;
-}
-
-/**
- * The namespace for ObservableCell static data.
- */
-export namespace AutomergeCell {
-  /**
-   * The options use to initialize an observable JSON object.
-   */
-  export interface IOptions {
-    /**
-     * The optional initial value for the object.
-     */
-    values?: JSONObject;
-  }
-
-  /**
-   * An observable JSON change message.
-   */
-  export class ChangeMessage extends Message {
-    /**
-     * Create a new metadata changed message.
-     */
-    constructor(type: string, args: IObservableCell.IChangedArgs) {
-      super(type);
-      this.args = args;
-    }
-
-    /**
-     * The arguments of the change.
-     */
-    readonly args: IObservableCell.IChangedArgs;
-  }
 }

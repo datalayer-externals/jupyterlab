@@ -154,9 +154,7 @@ export class CellList implements IObservableList<ICellModel> {
    * An `index` which is non-integral or out of range.
    */
   get(index: number): ICellModel {
-    let cell = this._cellMap.get((this._cells.get(index) as any).id as string)!;
-    console.log('--- celllist get', index, cell)
-    return cell;
+    return this._cellMap.get((this._cells.get(index) as any).id as string)!;
   }
 
   /**

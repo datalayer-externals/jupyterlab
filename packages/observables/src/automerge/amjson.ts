@@ -3,14 +3,15 @@
 
 import {
   JSONExt,
-  JSONObject,
   PartialJSONObject,
   ReadonlyPartialJSONValue
 } from '@lumino/coreutils';
 
+import { AutomergeModelDB } from './ammodeldb';
+
 import { AutomergeMap } from './ammap';
 
-import { AutomergeModelDB } from './ammodeldb';
+import { ObservableJSON } from './../observablejson';
 
 /**
  * A concrete Automerge map for JSON data.
@@ -22,7 +23,7 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
   constructor(
     path: string[],
     modelDB: AutomergeModelDB,
-    options: AutomergeJSON.IOptions = {}
+    options: ObservableJSON.IOptions = {}
   ) {
     super(path, modelDB, {
       itemCmp: JSONExt.deepEqual,
@@ -47,20 +48,5 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
       }
     }
     return out;
-  }
-}
-
-/**
- * The namespace for ObservableJSON static data.
- */
-export namespace AutomergeJSON {
-  /**
-   * The options use to initialize an observable JSON object.
-   */
-  export interface IOptions {
-    /**
-     * The optional initial value for the object.
-     */
-    values?: JSONObject;
   }
 }

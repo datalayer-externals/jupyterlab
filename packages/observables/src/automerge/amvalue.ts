@@ -7,7 +7,7 @@ import { JSONExt, JSONValue } from '@lumino/coreutils';
 
 import Automerge from 'automerge';
 
-import { IObservableValue } from './../observablevalue';
+import { IObservableValue, ObservableValue } from './../observablevalue';
 
 import { amDocPath, setForcedNested, waitOnAmDocInit, AutomergeModelDB } from './ammodeldb';
 
@@ -59,7 +59,7 @@ export class AutomergeValue implements IObservableValue {
   /**
    * The changed signal.
    */
-  get changed(): ISignal<this, AutomergeValue.IChangedArgs> {
+  get changed(): ISignal<this, ObservableValue.IChangedArgs> {
     return this._changed;
   }
 
@@ -119,25 +119,5 @@ export class AutomergeValue implements IObservableValue {
   private _modelDB: AutomergeModelDB;
   private _initialValue: JSONValue;
   private _isDisposed: boolean = false;
-  private _changed = new Signal<this, AutomergeValue.IChangedArgs>(this);
-}
-
-/**
- * The namespace for the `ObservableValue` class statics.
- */
-export namespace AutomergeValue {
-  /**
-   * The changed args object emitted by the `IObservableValue`.
-   */
-  export class IChangedArgs {
-    /**
-     * The old value.
-     */
-    oldValue: JSONValue | undefined;
-
-    /**
-     * The new value.
-     */
-    newValue: JSONValue | undefined;
-  }
+  private _changed = new Signal<this, ObservableValue.IChangedArgs>(this);
 }
