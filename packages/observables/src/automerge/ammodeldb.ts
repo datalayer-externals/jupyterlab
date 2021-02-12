@@ -82,7 +82,7 @@ function waitOnSocketReady(socket: WebSocket, callback: any) {
       } else {
         waitOnSocketReady(socket, callback);
       }
-    }, 10); // Wait 10 miliseconds for the websocket...
+    }, 10); // Wait 10 miliseconds for websocket to be ready...
 }
 
 // Make the function wait until the mode is initialized...
@@ -96,7 +96,7 @@ export function waitOnAmDocInit(modelDB: AutomergeModelDB, callback: any) {
       } else {
         waitOnAmDocInit(modelDB, callback);
       }
-    }, 10); // Wait 10 miliseconds for model initialization...
+    }, 10); // Wait 10 miliseconds for automerge document initialization...
 }
 
 export const combineChanges = (changes: Uint8Array[]) => {

@@ -8,7 +8,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 import { IObservable } from './modeldb';
 
 /**
- * A string which can be observed for changes.
+ * A string which can be seen for changes.
  */
 export interface IObservableString extends IDisposable, IObservable {
   /**

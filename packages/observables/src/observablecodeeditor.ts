@@ -14,7 +14,7 @@ import { IObservableString, ObservableString } from './observablestring';
 import { IObservableJSON, ObservableJSON } from './observablejson';
 
 /**
- * A map which can be observed for changes.
+ * A map which can be seen for changes.
  */
 export interface IObservableCodeEditor extends IDisposable, IObservable {
   /**

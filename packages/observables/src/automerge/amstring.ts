@@ -52,7 +52,7 @@ export class AutomergeString implements IObservableString {
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
-        console.log('---- amstring observed', this._path, after)
+        console.log('---- amstring seen', this._path, after)
         if (!local && diff.edits && diff.props) {
           const edits = diff.edits;
           const props = diff.props;
@@ -163,7 +163,6 @@ export class AutomergeString implements IObservableString {
           this._modelDB.amDoc,
           `string insert ${this._path} ${index} ${text}`,
           doc => {
-            console.log('--- amstring', getNested(doc, this._path));
             (getNested(doc, this._path) as Text).insertAt!(index, ...text);
           }
         );

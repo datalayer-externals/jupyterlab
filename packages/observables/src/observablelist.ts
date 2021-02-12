@@ -16,7 +16,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import { IObservable } from './modeldb';
 /**
- * A list which can be observed for changes.
+ * A list which can be seen for changes.
  */
 export interface IObservableList<T> extends IObservable, IDisposable {
   /**

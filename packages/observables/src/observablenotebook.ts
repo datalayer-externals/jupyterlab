@@ -14,7 +14,7 @@ import { IObservableList } from './observablelist';
 import { IObservableCell } from './observablecell';
 
 /**
- * A notebook which can be observed for changes.
+ * A notebook which can be seen for changes.
  */
 export interface IObservableNotebook extends IDisposable, IObservable {
   type: 'Notebook';

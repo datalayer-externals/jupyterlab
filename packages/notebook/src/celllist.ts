@@ -254,10 +254,10 @@ export class CellList implements IObservableList<ICellModel> {
    */
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
-    console.log('--- celllist insert', 0, cell);
+    console.log('--- celllist insert', index, cell);
     if (cell.cell instanceof ObservableCell) {
       const amCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
-      console.log('--- celllist amcell', amCell);
+      console.log('--- celllist to amcell', amCell);
       cell.cell = amCell;
     }
     this._addToMap(cell.id, cell);

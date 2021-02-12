@@ -172,12 +172,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
 
     this.id = options.id || UUID.uuid4();
 
-    this._cell = this.modelDB.createCell(['notebook', 'cells', '0'], this.id);
-
-    this._cell.cellType.set(this.type);
-    this._cell.codeEditor.value.changed.connect(this.onGenericChange, this);
-    this._cell.metadata.changed.connect(this.onGenericChange, this);
-    this._cell.trusted.changed.connect(this.onTrustedChanged, this);
+    this.cell = this.modelDB.createCell(['notebook', 'cells_tmp', this.id], this.id);
 
     const cell = options.cell;
 
@@ -241,12 +236,17 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
   /**
    * TODO(ECH)
    */
-  set cell(newValue: IObservableCell) {
-    const oldValue = this.cell;
-    if (oldValue === newValue) {
+  set cell(newCell: IObservableCell) {
+    console.log('--- cellmodel set cell', newCell)
+    const oldCell = this.cell;
+    if (oldCell === newCell) {
       return;
     }
-    this._cell = newValue;
+    this._cell = newCell;
+    this._cell.cellType.set(this.type);
+    this._cell.codeEditor.value.changed.connect(this.onGenericChange, this);
+    this._cell.metadata.changed.connect(this.onGenericChange, this);
+    this._cell.trusted.changed.connect(this.onTrustedChanged, this);
   }
 
   /**
@@ -488,11 +488,15 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
    */
   constructor(options: CodeCellModel.IOptions) {
     super(options);
+
     const factory =
       options.contentFactory || CodeCellModel.defaultContentFactory;
+
     const trusted = this.trusted;
     const cell = options.cell as nbformat.ICodeCell;
+
     let outputs: nbformat.IOutput[] = [];
+
     const executionCount = this.cell.executionCount;
     if (!executionCount.get()) {
       if (cell && cell.cell_type === 'code') {
@@ -533,6 +537,26 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
         });
       }
     }
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  get cell(): IObservableCell {
+    return super.cell;
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  set cell(newCell: IObservableCell) {
+    super.cell  = newCell;
+    // TODO(ECH) Review this...
+    const executionCount = super.cell.executionCount;
+    if (!executionCount.get()) {
+      executionCount.set(null);
+    }
+    executionCount.changed.connect(this._onExecutionCountChanged, this);
   }
 
   /**
