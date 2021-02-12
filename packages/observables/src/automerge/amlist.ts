@@ -44,9 +44,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
   }
 
   public initObservables() {
-    if (amDocPath(this._modelDB.amDoc, this._path)) {
-      /* no-op */
-    } else {
+    if (!amDocPath(this._modelDB.amDoc, this._path)) {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `list init`,
@@ -246,8 +244,10 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * An `index` which is non-integral.
    */
   insert(index: number, value: T): void {
+    console.log('--- amlist insert', index, value);
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
+        /*
         if (!getNested(this._modelDB.amDoc, this._path)) {
           this._modelDB.amDoc = Automerge.change(
             this._modelDB.amDoc,
@@ -266,6 +266,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
             cells.insertAt!(index, v);
           }
         );
+        */
         this._changed.emit({
           type: 'add',
           oldIndex: -1,

@@ -45,6 +45,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     this._cells.initObservables();
     const cellId = 'init-cell-1';
     const cell = new AutomergeCell(['notebook', 'cells', '0'], this._modelDB, cellId);
+    cell.initObservables();
     this._cells.insert(0, cell);
   }
 

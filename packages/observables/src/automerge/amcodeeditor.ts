@@ -15,8 +15,6 @@ import { AutomergeString } from './amstring';
 
 import { IObservableJSON } from './../observablejson';
 
-import { IObservableMap } from './../observablemap';
-
 import { AutomergeValue } from './amvalue';
 
 import { AutomergeJSON } from './amjson';
@@ -30,11 +28,8 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     this._path = path;
     this._modelDB = modelDB;
     this._value = new AutomergeString(this._path.concat('value'), this._modelDB);
-    this._value.changed.connect(this._onValueChanged, this);
     this._mimeType = new AutomergeValue(this._path.concat('mimeType'),this._modelDB, '');
-    this._mimeType.changed.connect(this._onMimeTypeChanged, this);
     this._selections = new AutomergeJSON(this._path.concat('selections'), this._modelDB);
-    this._selections.changed.connect(this._onSelectionsChanged, this);
     /*
     if (options.values) {
       for (const key in options.values) {
@@ -48,28 +43,11 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     this._value.initObservables();
     this._mimeType.initObservables();
     this._selections.initObservables();
-    this._value.insert(0, 'hello')
-  }
+    if (this._value.text.length === 0) {
+      this._value.insert(0, `Welcome to the Jupyter RTC Server 👍
 
-  private _onValueChanged(
-    value: IObservableString,
-    args: IObservableString.IChangedArgs
-  ): void {
-    // TODO(ECH) Implement this.
-  }
-
-  private _onMimeTypeChanged(
-    value: IObservableValue,
-    args: AutomergeValue.IChangedArgs
-  ): void {
-    // TODO(ECH) Implement this.
-  }
-
-  private _onSelectionsChanged(
-    value: IObservableMap<any>,
-    args: IObservableMap.IChangedArgs<any>
-  ): void {
-    // TODO(ECH) Implement this.
+What can I do for you?`);
+    }
   }
 
   /**
