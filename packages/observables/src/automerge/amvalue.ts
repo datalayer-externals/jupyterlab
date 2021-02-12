@@ -9,7 +9,7 @@ import Automerge from 'automerge';
 
 import { IObservableValue } from './../observablevalue';
 
-import { amDocPath, setNested, waitOnAmDocInit, AutomergeModelDB } from './ammodeldb';
+import { amDocPath, setForcedNested, waitOnAmDocInit, AutomergeModelDB } from './ammodeldb';
 
 /**
  * A concrete implementation of an `IObservableValue`.
@@ -41,17 +41,10 @@ export class AutomergeValue implements IObservableValue {
         this._modelDB.amDoc,
         `value init`,
         doc => {
-          setNested(doc, this._path, '');
+          setForcedNested(doc, this._path, '');
         }
       );
     }
-    // Observe and Handle Remote Changes.
-    this._modelDB.observable.observe(
-      this._modelDB.amDoc,
-      (diff, before, after, local, changes, path) => {
-//        console.log('---', after, path);
-      }
-    );
   }
 
   /**
@@ -95,13 +88,13 @@ export class AutomergeValue implements IObservableValue {
         this._modelDB.amDoc,
         `value set ${this._path} ${value}`,
         doc => {
-          setNested(doc, this._path, value);
+          setForcedNested(doc, this._path, value);
         }
       );
-    });
-    this._changed.emit({
-      oldValue: oldValue,
-      newValue: value
+      this._changed.emit({
+        oldValue: oldValue,
+        newValue: value
+      });
     });
   }
 
@@ -120,7 +113,7 @@ export class AutomergeValue implements IObservableValue {
           this._modelDB.amDoc,
           `value delete ${this._path}`,
           doc => {
-            setNested(doc, this._path, undefined);
+            setForcedNested(doc, this._path, undefined);
           }
         );
       });

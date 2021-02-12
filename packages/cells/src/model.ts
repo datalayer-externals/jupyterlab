@@ -172,7 +172,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
 
     this.id = options.id || UUID.uuid4();
 
-    this._cell = this.modelDB.createCell(['notebook', 'cells', this.id], this.id);
+    this._cell = this.modelDB.createCell(['notebook', 'cells', '0'], this.id);
 
     this._cell.cellType.set(this.type);
     this._cell.codeEditor.value.changed.connect(this.onGenericChange, this);

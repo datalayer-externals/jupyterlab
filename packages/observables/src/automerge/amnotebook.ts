@@ -6,7 +6,6 @@ import { ISignal, Signal } from '@lumino/signaling';
 import Automerge from 'automerge';
 
 import { 
-  amDocPath,
   getNested,
   waitOnAmDocInit,
   AutomergeModelDB
@@ -47,17 +46,8 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   public initObservables() {
-
     this._metadata.initObservables();
     this._cells.initObservables();
-
-    this._modelDB.observable.observe(
-      amDocPath(this._modelDB.amDoc, this._path),
-      (diff, before, after, local, changes, path) => {
-        if (!local) {
-        }
-      }
-    );
   }
 
   private _onMetadataChanged(
@@ -108,88 +98,8 @@ export class AutomergeNotebook implements IObservableNotebook {
   ): void {
     console.log('--- amnotebook oncellschanged', args);
     this._changed.emit(args);
-/*
-    waitOnAmDocInit(this._modelDB, () => {
-      this._modelDB.withLock(() => {
-        switch (args.type) {           
-          // Set Cells.
-          case 'set':
-            break;
-          // Add Cells.
-          case 'add':
-            args.newValues.map(observableCell => {
-              const cell = this._asCell(observableCell);
-              const index = args.newIndex;
-              this._modelDB.amDoc = Automerge.change(
-                this._modelDB.amDoc,
-                `cells add ${this._path} ${index}`,
-                doc => {
-                  (getNested(doc, this._path).cells as List<any>).insertAt!(index, cell);
-              });
-              observableCell.codeEditor.value.changed.connect(this._onValueChanged, this);
-              this._modelDB.observable.observe(
-                this._modelDB.amgetNested(doc, this._path).cells[index].source,
-                (diff, before, after, local, changes, path) => {
-//                  console.log('--- diff source', diff, after, path)
-                }
-              );
-             });
-             // this._changed.emit(args);
-             break;
-          // Move Cells.
-          case 'move':
-            break;
-          // Remove Cells.
-          case 'remove':
-            break;
-        }
-      });
-    });
-*/
   }
-/*
-  private _onValueChanged(
-    value: IObservableString,
-    args: IObservableString.IChangedArgs
-  ): void {
-    waitOnAmDocInit(this._modelDB, () => {
-      this._modelDB.withLock(() => {
-        switch(args.type) {
-          case 'set': {
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `string set ${this._path} ${args.value}`,
-              doc => {
-                (getNested(doc, this._path).cells as List<any>)[0].source = new Text(args.value);
-              }
-            );
-            break;
-          }
-          case 'insert': {
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `string insert ${this._path} ${args.start} ${args.value}`,
-              doc => {
-                ((getNested(doc, this._path).cells as List<any>)[0].source as Text).insertAt!(args.start, ...args.value);
-              }
-            );
-            break;
-          }
-          case 'remove': {
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `string remove ${this._path} ${args.start} ${args.end}`,
-              doc => {
-                ((getNested(doc, this._path).cells as List<any>)[0].source as Text).deleteAt!(args.start, args.end - args.start);
-              }
-            );
-            break;
-          }
-        }
-      });
-    });
-  }
-*/
+
   get type(): 'Notebook' {
     return 'Notebook';
   }

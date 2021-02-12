@@ -36,6 +36,8 @@ export class CellList implements IObservableList<ICellModel> {
   constructor(modelDB: IModelDB, factory: NotebookModel.IContentFactory) {
     this._factory = factory;
 
+    this._modelDB = modelDB;
+
     this._cellMap = new ObservableMap<ICellModel>();
 
     this._notebook = modelDB.get('notebook') as IObservableNotebook;
@@ -43,8 +45,8 @@ export class CellList implements IObservableList<ICellModel> {
     this._cells = this._notebook.cells;
     this._cells.changed.connect(this._onCellsChanged, this);
 
-    const cell = modelDB.createCell(['notebook', 'cells', 'init-cell-1'], 'init-cell-1');
-    console.log('--- celllist', cell);
+    const cellId = 'init-cell-1';
+    const cell = modelDB.createCell(['notebook', 'cells', '0'], cellId);
     this._cells.insert(0, cell);
   }
 
@@ -253,6 +255,11 @@ export class CellList implements IObservableList<ICellModel> {
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
     console.log('--- celllist insert', 0, cell);
+    if (cell.cell instanceof ObservableCell) {
+      const amCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
+      console.log('--- celllist amcell', amCell);
+      cell.cell = amCell;
+    }
     this._addToMap(cell.id, cell);
     this._cells.insert(index, cell.cell);
   }
@@ -495,10 +502,7 @@ export class CellList implements IObservableList<ICellModel> {
   }
 
   private _addToMap(id: string, cell: ICellModel) {
-    console.log('--- celllist add to map', id, cell)
-    if (cell.cell instanceof ObservableCell) {
-      cell.cell = cell.cell;
-    }
+    console.log('--- celllist addtomap', id, cell)
     this._cellMap.set(id, cell);
   }
 /*
@@ -563,5 +567,6 @@ export class CellList implements IObservableList<ICellModel> {
   private _changed = new Signal<this, IObservableList.IChangedArgs<ICellModel>>(
     this
   );
+  private _modelDB: IModelDB;
   private _factory: NotebookModel.IContentFactory;
 }

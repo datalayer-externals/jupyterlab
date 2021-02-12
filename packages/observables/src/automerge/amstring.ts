@@ -9,7 +9,7 @@ import Automerge, { Text } from 'automerge';
 
 import {
   amDocPath,
-  setNested,
+  setForcedNested,
   getNested,
   waitOnAmDocInit,
   AutomergeModelDB,
@@ -43,14 +43,16 @@ export class AutomergeString implements IObservableString {
         this._modelDB.amDoc,
         `string init`,
         doc => {
-          setNested(doc, this._path, new Text());
+          setForcedNested(doc, this._path, new Text());
         }
       );
     }
+    console.log('--- amstring observe ', this._path);
     // Observe and Handle Remote Changes.
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
+        console.log('---- amstring observed', this._path, after)
         if (!local && diff.edits && diff.props) {
           const edits = diff.edits;
           const props = diff.props;
@@ -106,8 +108,8 @@ export class AutomergeString implements IObservableString {
    * Set the value of the string.
    */
   set text(value: string) {
-    // TODO(ECH) Check this condition !this...
     waitOnAmDocInit(this._modelDB, () => {
+      // TODO(ECH) Check this condition
       if (amDocPath(this._modelDB.amDoc, this._path)) {
         return;
       }
@@ -127,12 +129,12 @@ export class AutomergeString implements IObservableString {
             doc.set(this._path, new Text(value));
           }
         );
-      });
-      this._changed.emit({
-        type: 'set',
-        start: 0,
-        end: value.length,
-        value: value
+        this._changed.emit({
+          type: 'set',
+          start: 0,
+          end: value.length,
+          value: value
+        });
       });
     });
   }
@@ -154,21 +156,23 @@ export class AutomergeString implements IObservableString {
    * @param text - The substring to insert.
    */
   insert(index: number, text: string): void {
+    console.log('--- amstring insert', this._path, index, text)
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `string insert ${this._path} ${index} ${text}`,
           doc => {
+            console.log('--- amstring', getNested(doc, this._path));
             (getNested(doc, this._path) as Text).insertAt!(index, ...text);
           }
         );
-      });
-      this._changed.emit({
-        type: 'insert',
-        start: index,
-        end: index + text.length,
-        value: text
+        this._changed.emit({
+          type: 'insert',
+          start: index,
+          end: index + text.length,
+          value: text
+        });
       });
     });
   }
@@ -196,12 +200,12 @@ export class AutomergeString implements IObservableString {
             );
           }
         );
-      });
-      this._changed.emit({
-        type: 'remove',
-        start: start,
-        end: end,
-        value: oldValue
+        this._changed.emit({
+          type: 'remove',
+          start: start,
+          end: end,
+          value: oldValue
+        });
       });
     });
   }

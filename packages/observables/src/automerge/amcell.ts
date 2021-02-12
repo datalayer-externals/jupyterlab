@@ -7,12 +7,6 @@ import { Message } from '@lumino/messaging';
 
 import { AutomergeModelDB } from './ammodeldb';
 
-import { AutomergeJSON } from './amjson';
-
-import { AutomergeCodeEditor } from './amcodeeditor';
-
-import { AutomergeValue } from './amvalue';
-
 import { IObservableJSON } from './../observablejson';
 
 import { IObservableCell } from './../observablecell';
@@ -21,12 +15,18 @@ import { IObservableCodeEditor } from './../observablecodeeditor';
 
 import { IObservableValue } from './../observablevalue';
 
+import { AutomergeJSON } from './amjson';
+
+import { AutomergeCodeEditor } from './amcodeeditor';
+
+import { AutomergeValue } from './amvalue';
+
 /**
- * A concrete Observable map for JSON data.
+ * A concrete Automerge map for Cell data.
  */
 export class AutomergeCell extends AutomergeJSON {
   /**
-   * Construct a new observable JSON object.
+   * Construct a new Automerge Cell object.
    */
   constructor(
     path: string[],
@@ -40,18 +40,21 @@ export class AutomergeCell extends AutomergeJSON {
       values: options.values
     });
     this._id = id;
-    this._codeEditor = new AutomergeCodeEditor(
-      path,
-      modelDB
-    );
-    this._metadata = new AutomergeJSON(path, modelDB);
-    this._cellType = new AutomergeValue(path, modelDB, 'code');
-    this._trusted = new AutomergeValue(path, modelDB, false);
-    this._executionCount =  new AutomergeValue(path, modelDB, '');
+    console.log('--- amcell new', path, this._id);
+    this._codeEditor = new AutomergeCodeEditor(path.concat('codeEditor'), modelDB);
+    this._metadata = new AutomergeJSON(path.concat('metadata'), modelDB);
+    this._cellType = new AutomergeValue(path.concat('cell_type'), modelDB, 'code');
+    this._trusted = new AutomergeValue(path.concat('trusted'), modelDB, false);
+    this._executionCount =  new AutomergeValue(path.concat('execution_count'), modelDB, '');
   }
 
   public initObservables() {
-    /* no-op */
+    super.initObservables();
+    this._codeEditor.initObservables();
+    this._metadata.initObservables();
+    this._cellType.initObservables();
+    this._trusted.initObservables();
+    this._executionCount.initObservables();
   }
 
   get id(): string {

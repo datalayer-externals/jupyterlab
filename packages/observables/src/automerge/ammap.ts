@@ -7,7 +7,7 @@ import Automerge from 'automerge';
 
 import {
   amDocPath, 
-  setNested, 
+  setForcedNested, 
   waitOnAmDocInit, 
   AutomergeModelDB
 } from './ammodeldb';
@@ -32,15 +32,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   }
 
   public initObservables() {
-    const value = amDocPath(this._modelDB.amDoc, this._path);
-    if (value) {
-      /* no-op */
-    } else {
+    console.log('--- ammap observe', this._path);
+    if (!amDocPath(this._modelDB.amDoc, this._path)) {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `map init`,
         doc => {
-          setNested(doc, this._path, {});
+          setForcedNested(doc, this._path, {});
         }
       );
     }
@@ -48,6 +46,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
+        console.log('--- ammap observed', this._path, after);
         if (!local) {
           Object.keys(after).map(uuid => {
             const oldVal = before[uuid]
@@ -131,16 +130,16 @@ export class AutomergeMap<T> implements IObservableMap<T> {
           this._modelDB.amDoc,
           `map set ${this._path} ${key} ${value}`,
           doc => {
-            setNested(doc, this._path.concat([key]), value);
+            setForcedNested(doc, this._path.concat([key]), value);
           }
         );
       });
-    });
-    this._changed.emit({
-      type: oldVal ? 'change' : 'add',
-      key: key,
-      oldValue: oldVal,
-      newValue: value
+      this._changed.emit({
+        type: oldVal ? 'change' : 'add',
+        key: key,
+        oldValue: oldVal,
+        newValue: value
+      });
     });
     return oldVal;
   }
@@ -237,20 +236,20 @@ export class AutomergeMap<T> implements IObservableMap<T> {
           `map delete ${this._path} ${key}`,
           doc => {
             const path = this._path.concat([key]);
-            setNested(doc, path, '');
+            setForcedNested(doc, path, '');
           }
         );
       });
+      const removed = true;
+      if (removed) {
+        this._changed.emit({
+          type: 'remove',
+          key: key,
+          oldValue: oldVal,
+          newValue: undefined
+        });
+      }
     });
-    const removed = true;
-    if (removed) {
-      this._changed.emit({
-        type: 'remove',
-        key: key,
-        oldValue: oldVal,
-        newValue: undefined
-      });
-    }
     return oldVal;
   }
 

@@ -409,7 +409,7 @@ export class StaticNotebook extends Widget {
     sender: IObservableList<ICellModel>,
     args: IObservableList.IChangedArgs<ICellModel>
   ) {
-    console.log('widget oncellschanged', args)
+    console.log('--- widget notebook oncellschanged', args)
     let index = 0;
     switch (args.type) {
       case 'add':

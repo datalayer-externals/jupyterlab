@@ -174,6 +174,7 @@ export class ObservableString implements IObservableString {
    * @param text - The substring to insert.
    */
   insert(index: number, text: string): void {
+    console.log('--- ostring insert', index, text)
     this._text = this._text.slice(0, index) + text + this._text.slice(index);
     this._changed.emit({
       type: 'insert',

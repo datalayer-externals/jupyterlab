@@ -175,12 +175,12 @@ export interface IModelDB extends IDisposable {
   /**
    * TODO(ECH)
    */
-  createNotebook(path: string): IObservableNotebook;
+  createCell(path: string[], id: string): IObservableCell;
 
   /**
    * TODO(ECH)
    */
-  createCell(path: string[], id: string): IObservableCell;
+  createNotebook(path: string): IObservableNotebook;
 
   /**
    * Create an opaque value and insert it in the database.
@@ -389,18 +389,18 @@ export class ModelDB implements IModelDB {
   /**
    * TODO(ECH)
    */
-  createNotebook(path: string): IObservableNotebook {
-    throw new Error('createNotebook is not implemented by ModelDB')
-  }
-
-  /**
-   * TODO(ECH)
-   */
   createCell(path: string[], id: string): IObservableCell {
     const cell = new ObservableCell(id);
     this._disposables.add(cell);
     this.set(path[0], cell);
     return cell;
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  createNotebook(path: string): IObservableNotebook {
+    throw new Error('createNotebook is not implemented by ModelDB')
   }
 
   /**
