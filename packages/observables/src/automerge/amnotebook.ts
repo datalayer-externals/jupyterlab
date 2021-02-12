@@ -3,13 +3,7 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import Automerge from 'automerge';
-
-import { 
-  getNested,
-  waitOnAmDocInit,
-  AutomergeModelDB
-} from './ammodeldb';
+import { AutomergeModelDB } from './ammodeldb';
 
 import { IObservableNotebook } from '../observablenotebook';
 
@@ -23,8 +17,6 @@ import { AutomergeList } from './amlist';
 
 import { IObservableList } from '../observablelist';
 
-import { IObservableMap } from '../observablemap';
-
 import { AutomergeCell } from './amcell';
 
 export class AutomergeNotebook implements IObservableNotebook {
@@ -36,59 +28,20 @@ export class AutomergeNotebook implements IObservableNotebook {
     this._path = path;
     this._modelDB = modelDB;
     this._metadata = new AutomergeJSON(this._path.concat('metadata'),this._modelDB);
-    this._metadata.changed.connect(this._onMetadataChanged, this);
     this._cells = new AutomergeList(this._path.concat('cells'), this._modelDB);
   }
 
   public initObservables() {
     this._metadata.initObservables();
     this._cells.initObservables();
+    this._initCells();
+  }
+
+  private _initCells() {
     const cellId = 'init-cell-1';
     const cell = new AutomergeCell(['notebook', 'cells', '0'], this._modelDB, cellId);
     cell.initObservables();
     this._cells.insert(0, cell);
-  }
-
-  private _onMetadataChanged(
-    value: IObservableMap<any>,
-    args: IObservableMap.IChangedArgs<any>
-  ): void {
-    waitOnAmDocInit(this._modelDB, () => {
-      this._modelDB.withLock(() => {
-        switch (args.type) {
-          case 'add': {
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `notebook metadata add ${this._path} ${args.key}`,
-              doc => {
-                getNested(doc, this._path).metadata[args.key] = args.newValue;
-              }
-            );
-            break;
-          }
-          case 'remove': {
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `notebook metadata delete ${this._path} ${args.key}`,
-              doc => {
-                delete getNested(doc, this._path).metadata[args.key];
-              }
-            );
-            break;
-          }
-          case 'change': {
-            this._modelDB.amDoc = Automerge.change(
-              this._modelDB.amDoc,
-              `notebook metadata change ${this._path} ${args.key}`,
-              doc => {
-                getNested(doc, this._path).metadata[args.key] = args.newValue;
-              }
-            );
-            break;
-          }
-        }
-      });
-    });
   }
 
   get type(): 'Notebook' {

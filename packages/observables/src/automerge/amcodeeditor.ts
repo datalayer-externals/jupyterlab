@@ -30,6 +30,9 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     this._value = new AutomergeString(this._path.concat('value'), this._modelDB);
     this._mimeType = new AutomergeValue(this._path.concat('mimeType'),this._modelDB, '');
     this._selections = new AutomergeJSON(this._path.concat('selections'), this._modelDB);
+  }
+
+  public initObservables() {
     /*
     if (options.values) {
       for (const key in options.values) {
@@ -37,10 +40,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
       }
     }
     */
-  }
-
-  public initObservables() {
-    this._value.initObservables();
+   this._value.initObservables();
     this._mimeType.initObservables();
     this._selections.initObservables();
     if (this._value.text.length === 0) {

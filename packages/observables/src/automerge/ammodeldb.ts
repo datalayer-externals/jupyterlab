@@ -261,14 +261,16 @@ export class AutomergeModelDB implements IModelDB {
           this._amDoc = Automerge.applyChanges(this._amDoc, [changes]);
           // Check users.
           if (!this._amDoc['users']) {
-            this._amDoc = Automerge.change(this._amDoc, `users`, doc => {
+            this._amDoc = Automerge.change(this._amDoc, 
+              `users init`, 
+              doc => {
               doc['users'] = {};
             });
           }
           if (!this._amDoc['users'][this._actorId]) {
             this._amDoc = Automerge.change(
               this._amDoc,
-              `users ${this._actorId}`,
+              `users add ${this._actorId}`,
               doc => {
                 doc['users'][this._actorId] = true;
               }
