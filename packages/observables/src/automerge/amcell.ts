@@ -24,7 +24,7 @@ import { AutomergeValue } from './amvalue';
 /**
  * A concrete Automerge map for Cell data.
  */
-export class AutomergeCell extends AutomergeJSON {
+export class AutomergeCell extends AutomergeJSON implements IObservableCell {
   /**
    * Construct a new Automerge Cell object.
    */
@@ -35,8 +35,8 @@ export class AutomergeCell extends AutomergeJSON {
     options: AutomergeJSON.IOptions = {}
   ) {
     super(path, modelDB, { values: options.values });
-    this._id = id;
     console.log('--- amcell new', path, this._id);
+    this._id = new AutomergeValue(path.concat('id'), modelDB, id);
     this._codeEditor = new AutomergeCodeEditor(path.concat('codeEditor'), modelDB);
     this._metadata = new AutomergeJSON(path.concat('metadata'), modelDB);
     this._cellType = new AutomergeValue(path.concat('cell_type'), modelDB, 'code');
@@ -46,6 +46,7 @@ export class AutomergeCell extends AutomergeJSON {
 
   public initObservables() {
     super.initObservables();
+    this._id.initObservables();
     this._codeEditor.initObservables();
     this._metadata.initObservables();
     this._cellType.initObservables();
@@ -53,7 +54,7 @@ export class AutomergeCell extends AutomergeJSON {
     this._executionCount.initObservables();
   }
 
-  get id(): string {
+  get id(): IObservableValue {
     return this._id;
   }
 
@@ -77,7 +78,7 @@ export class AutomergeCell extends AutomergeJSON {
     return this._executionCount;
   }
 
-  private _id: string;
+  private _id: IObservableValue;
   private _codeEditor: IObservableCodeEditor;
   private _metadata: IObservableJSON;
   private _cellType: IObservableValue;

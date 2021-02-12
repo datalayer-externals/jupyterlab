@@ -402,43 +402,22 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
       return;
     }
     let values = Array<T>();
+    console.log('--- amlist move', fromIndex, toIndex)
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `list move ${this._path} ${fromIndex} ${toIndex}`,
           doc => {
-            values = [(getNested(doc, this._path) as List<any>)[fromIndex]];
+//            values = [(getNested(doc, this._path) as List<any>)[fromIndex]];
 //            ArrayExt.move(getNested(doc, this._path) as List<any>, fromIndex, toIndex);
-            const array = getNested(doc, this._path) as List<any>;
-            let n = array.length;
-            if (n <= 1) {
-              return;
-            }
-            if (fromIndex < 0) {
-              fromIndex = Math.max(0, fromIndex + n);
-            } else {
-              fromIndex = Math.min(fromIndex, n - 1);
-            }
-            if (toIndex < 0) {
-              toIndex = Math.max(0, toIndex + n);
-            } else {
-              toIndex = Math.min(toIndex, n - 1);
-            }
-            if (fromIndex === toIndex) {
-              return
-            }
-            let value = array[fromIndex];
-            let d = fromIndex < toIndex ? 1 : -1;
-            const tmp = []
-            for (let i = fromIndex; i !== toIndex; i += d) {
-//              array[i] = array[i + d];
-              tmp.push(array[i + d]);
-            }
-            for (let i = fromIndex; i !== toIndex; i += d) {
-              array[i] = tmp[i];
-            }
-            array[toIndex] = value;
+            // const removedItem = (getNested(doc, this._path) as List<any>).splice(fromIndex, fromIndex+1);
+            // (getNested(doc, this._path) as List<any>).insertAt!(toIndex, removedItem);
+            //
+            // https://github.com/automerge/automerge/issues/263
+            //
+            const removedItems = (getNested(doc, this._path) as List<any>).splice(fromIndex, 1);
+            (getNested(doc, this._path) as List<any>).insertAt!(toIndex, ...JSON.parse(JSON.stringify(removedItems)));
           }
         );
         this._changed.emit({
@@ -583,7 +562,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
 
   private _asCell(observableCell: IObservableCell) {
     return {
-      id: observableCell.id,
+      id: observableCell.id.get(),
       cell_type: observableCell.cellType.get() || 'code',
       execution_count: observableCell.executionCount.get() || '',
       metadata: observableCell.metadata.toJSON(),

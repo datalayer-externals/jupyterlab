@@ -22,7 +22,7 @@ import { IObservableValue, ObservableValue } from './observablevalue';
  * An observable Cell value.
  */
 export interface IObservableCell extends IObservableJSON {
-  readonly id: string;
+  readonly id: IObservableValue;
   readonly codeEditor: IObservableCodeEditor;
   readonly metadata: IObservableJSON;
   readonly cellType: IObservableValue;
@@ -45,19 +45,17 @@ export namespace IObservableCell {
 /**
  * A concrete Observable map for JSON data.
  */
-export class ObservableCell extends ObservableJSON {
+export class ObservableCell extends ObservableJSON implements IObservableCell {
   /**
    * Construct a new observable JSON object.
    */
   constructor(id: string, options: ObservableCell.IOptions = {}) {
-    super({
-      values: options.values
-    });
-    this._id = id;
+    super({ values: options.values });
+    this._id = new ObservableValue(id);;
     this._codeEditor = new ObservableCodeEditor();
     this._metadata = new ObservableJSON();
     this._cellType = new ObservableValue('code');
-    this._trusted = new ObservableValue('');
+    this._trusted = new ObservableValue(false);
     this._executionCount =  new ObservableValue('');
   }
 
@@ -65,7 +63,7 @@ export class ObservableCell extends ObservableJSON {
     /* no-op */
   }
 
-  get id(): string {
+  get id(): IObservableValue {
     return this._id;
   }
 
@@ -101,6 +99,7 @@ export class ObservableCell extends ObservableJSON {
         out[key] = JSONExt.deepCopy(value) as PartialJSONObject;
       }
     }
+    out['id'] = this._id.get();
     out['source'] = this._codeEditor.value.text;
     out['mimeType'] = this._codeEditor.mimeType.get();
     out['metadata'] = this._metadata.toJSON();
@@ -110,7 +109,7 @@ export class ObservableCell extends ObservableJSON {
     return out;
   }
 
-  private _id: string;
+  private _id: IObservableValue;
   private _codeEditor: IObservableCodeEditor;
   private _metadata: IObservableJSON;
   private _cellType: IObservableValue;

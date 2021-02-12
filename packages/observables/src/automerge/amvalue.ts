@@ -27,21 +27,16 @@ export class AutomergeValue implements IObservableValue {
   ) {
     this._path = path;
     this._modelDB = modelDB;
+    this._initialValue = initialValue;
   }
 
   public initObservables() {
-    const value = amDocPath(this._modelDB.amDoc, this._path);
-    if (value) {
-      this._changed.emit({
-        oldValue: undefined,
-        newValue: value
-      });
-    } else {
+    if (!amDocPath(this._modelDB.amDoc, this._path)) {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `value init`,
         doc => {
-          setForcedNested(doc, this._path, '');
+          setForcedNested(doc, this._path, this._initialValue);
         }
       );
     }
@@ -122,6 +117,7 @@ export class AutomergeValue implements IObservableValue {
 
   private _path: string[];
   private _modelDB: AutomergeModelDB;
+  private _initialValue: JSONValue;
   private _isDisposed: boolean = false;
   private _changed = new Signal<this, AutomergeValue.IChangedArgs>(this);
 }

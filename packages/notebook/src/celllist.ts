@@ -115,7 +115,7 @@ export class CellList implements IObservableList<ICellModel> {
     }
     const arr: ICellModel[] = [];
     for (const cell of toArray(this._cells)) {
-      arr.push(this._cellMap.get(cell.id)!);
+      arr.push(this._cellMap.get((cell as any).id as string)!);
     }
     return new ArrayIterator<ICellModel>(arr);
   }
@@ -154,7 +154,7 @@ export class CellList implements IObservableList<ICellModel> {
    * An `index` which is non-integral or out of range.
    */
   get(index: number): ICellModel {
-    let cell = this._cellMap.get(this._cells.get(index).id)!;
+    let cell = this._cellMap.get((this._cells.get(index) as any).id as string)!;
     console.log('--- celllist get', index, cell)
     return cell;
   }
@@ -292,7 +292,7 @@ export class CellList implements IObservableList<ICellModel> {
   remove(index: number): ICellModel {
     const c = this._cells.get(index);
     this._cells.remove(index);
-    const cell = this._cellMap.get(c.id)!;
+    const cell = this._cellMap.get(c.id.get() as string)!;
     return cell;
   }
 
@@ -498,22 +498,22 @@ export class CellList implements IObservableList<ICellModel> {
     console.log('--- celllist _onCellsChanged', change);
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, c => {
-        let cell: ICellModel | undefined = this._cellMap.get(c.id);
+        let cell: ICellModel | undefined = this._cellMap.get(c.id.get() as string);
         if (!cell) {
           const cellDB = this._factory.modelDB!;
           const cellType = cellDB.createValue(c.id + '.type');
           switch (cellType.get()) {
             case 'code':
-              cell = this._factory.createCodeCell({ id: c.id });
+              cell = this._factory.createCodeCell({ id: c.id.get() as string });
               break;
             case 'markdown':
-              cell = this._factory.createMarkdownCell({ id: c.id });
+              cell = this._factory.createMarkdownCell({ id: c.id.get() as string });
               break;
             default:
-              cell = this._factory.createRawCell({ id: c.id });
+              cell = this._factory.createRawCell({ id: c.id.get() as string });
               break;
           }
-          this._addToMap(c.id, cell);
+          this._addToMap(c.id.get() as string, cell);
         }
         if (cell.cell instanceof ObservableCell) {
           const amCell = this._modelDB.createCell(['notebook', 'cells', change.newIndex.toString()], cell.id);
@@ -526,10 +526,10 @@ export class CellList implements IObservableList<ICellModel> {
     const newValues: ICellModel[] = [];
     const oldValues: ICellModel[] = [];
     each(change.newValues, cell => {
-      newValues.push(this._cellMap.get(cell.id)!);
+      newValues.push(this._cellMap.get(cell.id.get() as string)!);
     });
     each(change.oldValues, cell => {
-      oldValues.push(this._cellMap.get(cell.id)!);
+      oldValues.push(this._cellMap.get(cell.id.get() as string)!);
     });
     this._changed.emit({
       type: change.type,
