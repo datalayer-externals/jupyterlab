@@ -181,7 +181,7 @@ export namespace CodeEditor {
     /** 
      * TODO(ECH)
      */
-    readonly codeEditor: IObservableCodeEditor;
+    codeEditor: IObservableCodeEditor;
 
     /**
      * The text stored in the model.
@@ -253,7 +253,21 @@ export namespace CodeEditor {
     /**
      * Get the value of the model.
      */
+    set codeEditor(newValue: IObservableCodeEditor) {
+      if (this._codeEditor) {
+        this._codeEditor.mimeType.changed.disconnect(this._onMimeTypeChanged, this);
+      }
+      newValue.value.text = newValue.value.text || this._codeEditor.value.text || '';
+      newValue.mimeType.set(this._codeEditor.mimeType.get() || 'text/plain');
+      this._codeEditor = newValue;
+      this._codeEditor.mimeType.changed.connect(this._onMimeTypeChanged, this);
+    }
+
+    /**
+     * Get the value of the model.
+     */
     get value(): IObservableString {
+      console.log('--- codeeditor value', this)
       return this._codeEditor.value;
     }
 

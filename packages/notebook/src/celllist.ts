@@ -155,13 +155,6 @@ export class CellList implements IObservableList<ICellModel> {
    */
   get(index: number): ICellModel {
     let cell = this._cellMap.get(this._cells.get(index).id)!;
-    if (!cell) {
-      const id = this._cells.get(index).id
-      cell = this._factory.createCodeCell({ id: id });
-      this._addToMap(id, cell);
-      console.log('--- celllist get', index, cell)
-      return cell;
-    }
     console.log('--- celllist get', index, cell)
     return cell;
   }
@@ -505,10 +498,10 @@ export class CellList implements IObservableList<ICellModel> {
     console.log('--- celllist _onCellsChanged', change);
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, c => {
-        if (!this._cellMap.has(c.id)) {
+        let cell: ICellModel | undefined = this._cellMap.get(c.id);
+        if (!cell) {
           const cellDB = this._factory.modelDB!;
           const cellType = cellDB.createValue(c.id + '.type');
-          let cell: ICellModel;
           switch (cellType.get()) {
             case 'code':
               cell = this._factory.createCodeCell({ id: c.id });
@@ -522,6 +515,12 @@ export class CellList implements IObservableList<ICellModel> {
           }
           this._addToMap(c.id, cell);
         }
+        if (cell.cell instanceof ObservableCell) {
+          const amCell = this._modelDB.createCell(['notebook', 'cells', change.newIndex.toString()], cell.id);
+          console.log('--- celllist to amcell', amCell);
+          cell.cell = amCell;
+        }
+        console.log('--- celllist oncellschanged', cell);
       });
     }
     const newValues: ICellModel[] = [];

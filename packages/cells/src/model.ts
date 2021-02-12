@@ -242,8 +242,14 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
     if (oldCell === newCell) {
       return;
     }
+    if (oldCell) {
+      oldCell.codeEditor.value.changed.disconnect(this.onGenericChange, this);
+      oldCell.metadata.changed.disconnect(this.onGenericChange, this);
+      oldCell.trusted.changed.disconnect(this.onGenericChange, this);
+    }
     this._cell = newCell;
     this._cell.cellType.set(this.type);
+    this.codeEditor = newCell.codeEditor;
     this._cell.codeEditor.value.changed.connect(this.onGenericChange, this);
     this._cell.metadata.changed.connect(this.onGenericChange, this);
     this._cell.trusted.changed.connect(this.onTrustedChanged, this);

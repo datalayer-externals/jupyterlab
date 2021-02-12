@@ -144,6 +144,8 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
       }
     });
 
+    console.log('--- codemirror construct', model)
+
     // Connect to changes.
     model.value.changed.connect(this._onValueChanged, this);
     model.mimeTypeChanged.connect(this._onMimeTypeChanged, this);
@@ -891,9 +893,10 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
+    console.log('--- codemirror onvaluechanged', args)
     if (this._changeGuard) {
       return;
-    }
+    }    
     this._changeGuard = true;
     const doc = this.doc;
     switch (args.type) {
