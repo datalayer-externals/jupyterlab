@@ -79,11 +79,11 @@ export class AutomergeValue implements IObservableValue {
    * Set the current value.
    */
   set(value: JSONValue): void {
-    const oldValue = amDocPath(this._modelDB.amDoc, this._path);
-    if (JSONExt.deepEqual(oldValue, value)) {
-      return;
-    }
     waitOnAmDocInit(this._modelDB, () => {
+      const oldValue = amDocPath(this._modelDB.amDoc, this._path);
+      if (JSONExt.deepEqual(oldValue, value)) {
+        return;
+      }
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,
         `value set ${this._path} ${value}`,
@@ -102,15 +102,15 @@ export class AutomergeValue implements IObservableValue {
    * Dispose of the resources held by the value.
    */
   dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    this._isDisposed = true;
-    Signal.clearData(this);
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
+        if (this._isDisposed) {
+          return;
+        }
+        this._isDisposed = true;
+        Signal.clearData(this);
         this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
+        this._modelDB.amDoc,
           `value delete ${this._path}`,
           doc => {
             setForcedNested(doc, this._path, undefined);

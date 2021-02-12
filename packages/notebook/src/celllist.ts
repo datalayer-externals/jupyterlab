@@ -7,7 +7,7 @@ import {
   IterableOrArrayLike,
   each,
   toArray,
-  ArrayIterator
+  ArrayIterator 
 } from '@lumino/algorithm';
 
 import { ISignal, Signal } from '@lumino/signaling';
@@ -35,19 +35,11 @@ export class CellList implements IObservableList<ICellModel> {
    */
   constructor(modelDB: IModelDB, factory: NotebookModel.IContentFactory) {
     this._factory = factory;
-
     this._modelDB = modelDB;
-
     this._cellMap = new ObservableMap<ICellModel>();
-
     this._notebook = modelDB.get('notebook') as IObservableNotebook;
-//    this._notebook.changed.connect(this._onNotebookChanged, this);
     this._cells = this._notebook.cells;
     this._cells.changed.connect(this._onCellsChanged, this);
-
-    const cellId = 'init-cell-1';
-    const cell = modelDB.createCell(['notebook', 'cells', '0'], cellId);
-    this._cells.insert(0, cell);
   }
 
   type: 'List';
@@ -505,23 +497,12 @@ export class CellList implements IObservableList<ICellModel> {
     console.log('--- celllist addtomap', id, cell)
     this._cellMap.set(id, cell);
   }
-/*
-  private _onNotebookChanged(
-    value: IObservableNotebook,
-    change: IObservableList.IChangedArgs<IObservableCell>
-  ): void {
-    this._onCellsUpdate(change);
-  }
-*/
+
   private _onCellsChanged(
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
   ): void {
-    this._onCellsUpdate(change);
-  }
-
-  private _onCellsUpdate(change: IObservableList.IChangedArgs<IObservableCell>) {
-    console.log('--- celllist onupdatecells', change);
+    console.log('--- celllist _onCellsChanged', change);
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, c => {
         if (!this._cellMap.has(c.id)) {

@@ -34,11 +34,7 @@ export class AutomergeCell extends AutomergeJSON {
     id: string,
     options: AutomergeJSON.IOptions = {}
   ) {
-    super(
-      path, modelDB,
-      {
-      values: options.values
-    });
+    super(path, modelDB, { values: options.values });
     this._id = id;
     console.log('--- amcell new', path, this._id);
     this._codeEditor = new AutomergeCodeEditor(path.concat('codeEditor'), modelDB);

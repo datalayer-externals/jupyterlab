@@ -18,7 +18,7 @@ import { IObservableCell } from './observablecell';
  */
 export interface IObservableNotebook extends IDisposable, IObservable {
   type: 'Notebook';
-  readonly changed: ISignal<this, IObservableList.IChangedArgs<IObservableCell>>;
+  readonly changed: ISignal<this, IObservableNotebook.IChangedArgs>;
   readonly metadata: IObservableJSON;
   readonly cells: IObservableList<IObservableCell>;
   dispose(): void;

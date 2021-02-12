@@ -25,6 +25,8 @@ import { IObservableList } from '../observablelist';
 
 import { IObservableMap } from '../observablemap';
 
+import { AutomergeCell } from './amcell';
+
 export class AutomergeNotebook implements IObservableNotebook {
   constructor(
     path: string[],
@@ -33,21 +35,17 @@ export class AutomergeNotebook implements IObservableNotebook {
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    this._metadata = new AutomergeJSON(
-      this._path.concat('metadata'),
-      this._modelDB,
-    );
+    this._metadata = new AutomergeJSON(this._path.concat('metadata'),this._modelDB);
     this._metadata.changed.connect(this._onMetadataChanged, this);
-    this._cells = new AutomergeList(
-      this._path.concat('cells'),
-      this._modelDB,
-    );
-    this._cells.changed.connect(this._onCellsChanged, this);
+    this._cells = new AutomergeList(this._path.concat('cells'), this._modelDB);
   }
 
   public initObservables() {
     this._metadata.initObservables();
     this._cells.initObservables();
+    const cellId = 'init-cell-1';
+    const cell = new AutomergeCell(['notebook', 'cells', '0'], this._modelDB, cellId);
+    this._cells.insert(0, cell);
   }
 
   private _onMetadataChanged(
@@ -92,19 +90,11 @@ export class AutomergeNotebook implements IObservableNotebook {
     });
   }
 
-  private _onCellsChanged(
-    value: IObservableList<IObservableCell>,
-    args: IObservableList.IChangedArgs<IObservableCell>
-  ): void {
-    console.log('--- amnotebook oncellschanged', args);
-    this._changed.emit(args);
-  }
-
   get type(): 'Notebook' {
     return 'Notebook';
   }
 
-  get changed(): ISignal<this, IObservableList.IChangedArgs<IObservableCell>> {
+  get changed(): ISignal<this, IObservableNotebook.IChangedArgs> {
     return this._changed;
   }
 
@@ -138,7 +128,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   private _cells: IObservableList<IObservableCell>;
   private _path: string[];
   private _modelDB: AutomergeModelDB;
-  private _changed = new Signal<this, IObservableList.IChangedArgs<IObservableCell>>(this);
+  private _changed = new Signal<this, IObservableNotebook.IChangedArgs>(this);
   private _isDisposed = false;
 }
 
