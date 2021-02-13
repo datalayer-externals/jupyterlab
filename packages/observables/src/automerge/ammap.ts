@@ -46,6 +46,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
         if (!local) {
+          console.log('--- ammap seen', diff, before, after);
           Object.keys(after).map(uuid => {
             const oldVal = before[uuid]
               ? before[uuid]

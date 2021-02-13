@@ -47,7 +47,6 @@ export class AutomergeString implements IObservableString {
         }
       );
     }
-    console.log('--- amstring observe ', this._path);
     // Observe and Handle Remote Changes.
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),

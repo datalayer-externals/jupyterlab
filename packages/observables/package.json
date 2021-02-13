@@ -42,7 +42,7 @@
     "@lumino/disposable": "^1.4.3",
     "@lumino/messaging": "^1.4.3",
     "@lumino/signaling": "^1.4.3",
-    "automerge": "file:///Users/echarles/repos/automerge-performance"
+    "automerge": "file:./../../../../externals/automerge-observable-path"
   },
   "devDependencies": {
     "@jupyterlab/testutils": "^3.0.3",

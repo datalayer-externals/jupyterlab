@@ -237,7 +237,6 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
    * TODO(ECH)
    */
   set cell(newCell: IObservableCell) {
-    console.log('--- cellmodel set cell', newCell)
     const oldCell = this.cell;
     if (oldCell === newCell) {
       return;
