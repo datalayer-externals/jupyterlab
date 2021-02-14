@@ -117,6 +117,7 @@ export class CellList implements IObservableList<ICellModel> {
     for (const cell of toArray(this._cells)) {
       arr.push(this._cellMap.get(this._getCellId(cell))!);
     }
+    console.log('--- celllist iter', arr)
     return new ArrayIterator<ICellModel>(arr);
   }
 

@@ -117,13 +117,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     const oldVal = amDocPath(this._modelDB.amDoc, this._path)
       ? amDocPath(this._modelDB.amDoc, this._path)[key]
       : undefined;
-    // Bail if the value does not change.
-    const itemCmp = this._itemCmp;
-    if (oldVal !== undefined && itemCmp(oldVal, value)) {
-      return oldVal;
-    }
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
+        // Bail if the value does not change.
+        const itemCmp = this._itemCmp;
+        if (oldVal !== undefined && itemCmp(oldVal, value)) {
+          return oldVal;
+        }
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `map set ${this._path} ${key} ${value}`,
@@ -131,12 +131,12 @@ export class AutomergeMap<T> implements IObservableMap<T> {
             setForcedNested(doc, this._path.concat([key]), value);
           }
         );
-      });
-      this._changed.emit({
-        type: oldVal ? 'change' : 'add',
-        key: key,
-        oldValue: oldVal,
-        newValue: value
+        this._changed.emit({
+          type: oldVal ? 'change' : 'add',
+          key: key,
+          oldValue: oldVal,
+          newValue: value
+        });
       });
     });
     return oldVal;
