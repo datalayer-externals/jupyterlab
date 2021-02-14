@@ -58,7 +58,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
         if (!local && diff.edits) {
-          console.log('--- amlist', after);
+          console.log('--- amlist', diff.edits, after);
           this._changed.emit({
             type: 'add',
             oldIndex: -1,

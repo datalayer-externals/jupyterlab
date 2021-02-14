@@ -296,7 +296,7 @@ export class CellList implements IObservableList<ICellModel> {
   remove(index: number): ICellModel {
     const c = this._cells.get(index);
     this._cells.remove(index);
-    const cell = this._cellMap.get(c.id.get() as string)!;
+    const cell = this._cellMap.get(this._getCellId(c))!;
     return cell;
   }
 
