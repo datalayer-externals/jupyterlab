@@ -546,7 +546,6 @@ export class StaticNotebook extends Widget {
    * Move a cell widget.
    */
   private _moveCell(fromIndex: number, toIndex: number): void {
-    console.log('--- widget move cell', fromIndex, toIndex)
     const layout = this.layout as PanelLayout;
     layout.insertWidget(toIndex, layout.widgets[fromIndex]);
     this.onCellMoved(fromIndex, toIndex);

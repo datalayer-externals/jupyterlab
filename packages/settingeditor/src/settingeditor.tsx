@@ -48,6 +48,7 @@ const DEFAULT_LAYOUT: SettingEditor.ILayoutState = {
 };
 
 /**
+ * 
  * An interface for modifying and saving application settings.
  */
 export class SettingEditor extends Widget {

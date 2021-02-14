@@ -156,16 +156,15 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
         if (value === undefined) {
           throw new Error('Cannot set an undefined item');
         }
-        const newV = this._asCell(value);
         const oldValue = (amDocPath(this._modelDB.amDoc, this._path) as List<any>)[index];
- //       const oldV = this._asCell(oldValue)
-        // Bail if the value does not change.
         /*
+        const oldV = this._asCell(oldValue)
+        const newV = this._asCell(value);
+        // Bail if the value does not change.
         const itemCmp = this._itemCmp;
         if (itemCmp(oldV, newV)) {
           return;
         }
-        */
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `list set ${this._path} ${index} ${newV}`,
@@ -174,6 +173,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
             (getNested(doc, this._path) as List<any>)[index] = newV;
           }
         );
+        */
         this._changed.emit({
           type: 'set',
           oldIndex: index,
@@ -199,6 +199,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * No changes.
    */
   push(value: T): number {
+    console.log('--- amlist push', value)
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         const v = this._asCell(value);
@@ -243,6 +244,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * An `index` which is non-integral.
    */
   insert(index: number, value: T): void {
+    console.log('--- amlist insert', index, value)
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         /*
@@ -400,7 +402,6 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
       return;
     }
     let values = Array<T>();
-    console.log('--- amlist move', fromIndex, toIndex)
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
@@ -443,6 +444,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * No changes.
    */
   pushAll(values: IterableOrArrayLike<T>): number {
+    console.log('--- amlist pushAll', values)
     const newIndex = this.length;
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
@@ -488,6 +490,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * An `index` which is non-integral.
    */
   insertAll(index: number, values: IterableOrArrayLike<T>): void {
+    console.log('--- amlist insertAll', values)
     const newIndex = index;
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {

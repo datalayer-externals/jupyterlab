@@ -115,7 +115,7 @@ export class CellList implements IObservableList<ICellModel> {
     }
     const arr: ICellModel[] = [];
     for (const cell of toArray(this._cells)) {
-      arr.push(this._cellMap.get((cell as any).id as string)!);
+      arr.push(this._cellMap.get(this._getCellId(cell))!);
     }
     return new ArrayIterator<ICellModel>(arr);
   }
@@ -154,7 +154,9 @@ export class CellList implements IObservableList<ICellModel> {
    * An `index` which is non-integral or out of range.
    */
   get(index: number): ICellModel {
-    return this._cellMap.get((this._cells.get(index) as any).id as string)!;
+    const cell = this._cells.get(index);
+    const id = this._getCellId(cell)
+    return this._cellMap.get(id)!;
   }
 
   /**
@@ -179,6 +181,12 @@ export class CellList implements IObservableList<ICellModel> {
    * not be called by other actors.
    */
   set(index: number, cell: ICellModel): void {
+    if (cell.cell instanceof ObservableCell) {
+      const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
+      collaborativeCell.codeEditor.value.text = cell.value.text;
+      collaborativeCell.cellType.set(cell.cell.cellType.get() as any);
+      cell.cell = collaborativeCell;
+    }
     // Set the internal data structures.
     this._addToMap(cell.id, cell);
     this._cells.set(index, cell.cell);
@@ -237,7 +245,6 @@ export class CellList implements IObservableList<ICellModel> {
    */
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
-    console.log('--- celllist insert', index, cell);
     if (cell.cell instanceof ObservableCell) {
       const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
       cell.cell = collaborativeCell;
@@ -487,6 +494,17 @@ export class CellList implements IObservableList<ICellModel> {
     this._cellMap.set(id, cell);
   }
 
+  private _getCellId(cell: any) {
+    // TODO(ECH) Revisit this...
+    try {
+      return cell.id.get();
+    }
+    catch(e) {
+      return cell.id;
+    }
+  }
+
+
   private _onCellsChanged(
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
@@ -496,19 +514,20 @@ export class CellList implements IObservableList<ICellModel> {
         let cell: ICellModel | undefined = this._cellMap.get(c.id.get() as string);
         if (!cell) {
           const cellDB = this._factory.modelDB!;
-          const cellType = cellDB.createValue(c.id + '.type');
+          // TODO(ECH) Revisit this...
+          const cellType = cellDB.createValue(this._getCellId(c) + '.type');
           switch (cellType.get()) {
             case 'code':
-              cell = this._factory.createCodeCell({ id: c.id.get() as string });
+              cell = this._factory.createCodeCell({ id: this._getCellId(c) });
               break;
             case 'markdown':
-              cell = this._factory.createMarkdownCell({ id: c.id.get() as string });
+              cell = this._factory.createMarkdownCell({ id: this._getCellId(c) });
               break;
             default:
-              cell = this._factory.createRawCell({ id: c.id.get() as string });
+              cell = this._factory.createCodeCell({ id: this._getCellId(c) });
               break;
           }
-          this._addToMap(c.id.get() as string, cell);
+          this._addToMap(this._getCellId(c), cell);
         }
         if (cell.cell instanceof ObservableCell) {
           const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', change.newIndex.toString()], cell.id);
@@ -519,14 +538,12 @@ export class CellList implements IObservableList<ICellModel> {
     const newValues: ICellModel[] = [];
     const oldValues: ICellModel[] = [];
     each(change.newValues, cell => {
-      const newCell = this._cellMap.get(cell.id.get() as string)!;
-      console.log('--- celllist newCell', newCell)
+      const newCell = this._cellMap.get(this._getCellId(cell))!;
       newValues.push(newCell);
     });
     each(change.oldValues, cell => {
-      const oldCell = this._cellMap.get(cell.id.get() as string)!;
-      console.log('--- celllist newCell', oldCell)
-      oldValues.push(this._cellMap.get(cell.id.get() as string)!);
+      const oldCell = this._cellMap.get(this._getCellId(cell))!;
+      oldValues.push(oldCell);
     });
     this._changed.emit({
       type: change.type,

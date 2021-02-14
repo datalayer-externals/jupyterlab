@@ -23,7 +23,7 @@ export class AutomergeValue implements IObservableValue {
   constructor(
     path: string[],
     modelDB: AutomergeModelDB,
-    initialValue: JSONValue = null
+    initialValue: JSONValue = ''
   ) {
     this._path = path;
     this._modelDB = modelDB;
@@ -36,10 +36,27 @@ export class AutomergeValue implements IObservableValue {
         this._modelDB.amDoc,
         `value init`,
         doc => {
-          setForcedNested(doc, this._path, this._initialValue);
+          setForcedNested(doc, this._path, { value: this._initialValue });
         }
       );
     }
+    this._modelDB.observable.observe(
+      amDocPath(this._modelDB.amDoc, this._path),
+      (diff, before, after, local, changes, path) => {
+          Object.keys(after).map(key => {
+            const oldVal = before[key]
+              ? before[key]
+              : undefined;
+            const newVal = after[key]
+              ? after[key]
+              : undefined;
+            this._changed.emit({
+              oldValue: oldVal,
+              newValue: newVal
+            });
+        });
+      }
+    );
   }
 
   /**
@@ -67,7 +84,7 @@ export class AutomergeValue implements IObservableValue {
    * Get the current value, or `undefined` if it has not been set.
    */
   get(): JSONValue {
-    return amDocPath(this._modelDB.amDoc, this._path);
+    return amDocPath(this._modelDB.amDoc, this._path).value;
   }
 
   /**
@@ -75,20 +92,22 @@ export class AutomergeValue implements IObservableValue {
    */
   set(value: JSONValue): void {
     waitOnAmDocInit(this._modelDB, () => {
-      const oldValue = amDocPath(this._modelDB.amDoc, this._path);
-      if (JSONExt.deepEqual(oldValue, value)) {
-        return;
-      }
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
-        `value set ${this._path} ${value}`,
-        doc => {
-          setForcedNested(doc, this._path, value);
+      this._modelDB.withLock(() => {
+        const oldValue = amDocPath(this._modelDB.amDoc, this._path).value;
+        if (JSONExt.deepEqual(oldValue, value)) {
+          return;
         }
-      );
-      this._changed.emit({
-        oldValue: oldValue,
-        newValue: value
+        this._modelDB.amDoc = Automerge.change(
+          this._modelDB.amDoc,
+          `value set ${this._path} ${value}`,
+          doc => {
+            setForcedNested(doc, this._path, { value: value });
+          }
+        );
+        this._changed.emit({
+          oldValue: oldValue,
+          newValue: value
+        });
       });
     });
   }

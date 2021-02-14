@@ -237,7 +237,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
    * TODO(ECH)
    */
   set cell(newCell: IObservableCell) {
-    const oldCell = this.cell;
+    const oldCell = this._cell;
     if (oldCell === newCell) {
       return;
     }
@@ -247,7 +247,6 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
       oldCell.trusted.changed.disconnect(this.onGenericChange, this);
     }
     this._cell = newCell;
-    this._cell.cellType.set(this.type);
     this.codeEditor = newCell.codeEditor;
     this._cell.codeEditor.value.changed.connect(this.onGenericChange, this);
     this._cell.metadata.changed.connect(this.onGenericChange, this);
@@ -467,6 +466,7 @@ export class MarkdownCellModel extends AttachmentsCellModel {
     super(options);
     // Use the Github-flavored markdown mode.
     this.mimeType = 'text/x-ipythongfm';
+    this.cell.cellType.set('markdown');
   }
 
   /**
@@ -499,6 +499,8 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
 
     const trusted = this.trusted;
     const cell = options.cell as nbformat.ICodeCell;
+
+    this.cell.cellType.set('code');
 
     let outputs: nbformat.IOutput[] = [];
 
