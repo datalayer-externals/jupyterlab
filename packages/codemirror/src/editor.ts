@@ -891,7 +891,6 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     value: IObservableString,
     args: IObservableString.IChangedArgs
   ): void {
-    console.log('--- codemirror onvaluechanged', args)
     if (this._changeGuard) {
       return;
     }    

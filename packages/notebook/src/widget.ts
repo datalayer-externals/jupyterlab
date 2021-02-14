@@ -409,7 +409,6 @@ export class StaticNotebook extends Widget {
     sender: IObservableList<ICellModel>,
     args: IObservableList.IChangedArgs<ICellModel>
   ) {
-    console.log('--- widget notebook oncellschanged', args)
     let index = 0;
     switch (args.type) {
       case 'add':
@@ -463,7 +462,6 @@ export class StaticNotebook extends Widget {
    * Create a cell widget and insert into the notebook.
    */
   private _insertCell(index: number, cell: ICellModel): void {
-    console.log('--- widget insert', index, cell)
     let widget: Cell;
     switch (cell.type) {
       case 'code':

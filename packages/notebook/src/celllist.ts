@@ -239,9 +239,8 @@ export class CellList implements IObservableList<ICellModel> {
     // Set the internal data structures.
     console.log('--- celllist insert', index, cell);
     if (cell.cell instanceof ObservableCell) {
-      const amCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
-      console.log('--- celllist to amcell', amCell);
-      cell.cell = amCell;
+      const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
+      cell.cell = collaborativeCell;
     }
     this._addToMap(cell.id, cell);
     this._cells.insert(index, cell.cell);
@@ -485,7 +484,6 @@ export class CellList implements IObservableList<ICellModel> {
   }
 
   private _addToMap(id: string, cell: ICellModel) {
-    console.log('--- celllist addtomap', id, cell)
     this._cellMap.set(id, cell);
   }
 
@@ -493,7 +491,6 @@ export class CellList implements IObservableList<ICellModel> {
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
   ): void {
-    console.log('--- celllist _onCellsChanged', change);
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, c => {
         let cell: ICellModel | undefined = this._cellMap.get(c.id.get() as string);
@@ -514,19 +511,21 @@ export class CellList implements IObservableList<ICellModel> {
           this._addToMap(c.id.get() as string, cell);
         }
         if (cell.cell instanceof ObservableCell) {
-          const amCell = this._modelDB.createCell(['notebook', 'cells', change.newIndex.toString()], cell.id);
-          console.log('--- celllist to amcell', amCell);
-          cell.cell = amCell;
+          const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', change.newIndex.toString()], cell.id);
+          cell.cell = collaborativeCell;
         }
-        console.log('--- celllist oncellschanged', cell);
       });
     }
     const newValues: ICellModel[] = [];
     const oldValues: ICellModel[] = [];
     each(change.newValues, cell => {
-      newValues.push(this._cellMap.get(cell.id.get() as string)!);
+      const newCell = this._cellMap.get(cell.id.get() as string)!;
+      console.log('--- celllist newCell', newCell)
+      newValues.push(newCell);
     });
     each(change.oldValues, cell => {
+      const oldCell = this._cellMap.get(cell.id.get() as string)!;
+      console.log('--- celllist newCell', oldCell)
       oldValues.push(this._cellMap.get(cell.id.get() as string)!);
     });
     this._changed.emit({

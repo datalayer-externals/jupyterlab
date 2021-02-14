@@ -51,7 +51,6 @@ export class AutomergeString implements IObservableString {
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
-        console.log('---- amstring seen', this._path, after)
         if (!local && diff.edits && diff.props) {
           const edits = diff.edits;
           const props = diff.props;
@@ -155,7 +154,6 @@ export class AutomergeString implements IObservableString {
    * @param text - The substring to insert.
    */
   insert(index: number, text: string): void {
-    console.log('--- amstring insert', this._path, index, text)
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(

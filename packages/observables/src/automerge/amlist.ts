@@ -57,7 +57,6 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
-        console.log('--- amlist seen', path, after)
         if (!local) {
         }
       }
@@ -244,7 +243,6 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * An `index` which is non-integral.
    */
   insert(index: number, value: T): void {
-    console.log('--- amlist insert', index, value);
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         /*

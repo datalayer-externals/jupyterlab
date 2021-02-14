@@ -31,7 +31,6 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     options: ObservableJSON.IOptions = {}
   ) {
     super(path, modelDB, { values: options.values });
-    console.log('--- amcell new', path, this._id);
     this._id = new AutomergeValue(path.concat('id'), modelDB, id);
     this._codeEditor = new AutomergeCodeEditor(path.concat('codeEditor'), modelDB);
     this._metadata = new AutomergeJSON(path.concat('metadata'), modelDB);
@@ -41,7 +40,7 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
   }
 
   public initObservables() {
-    super.initObservables();
+//    super.initObservables();
     this._id.initObservables();
     this._codeEditor.initObservables();
     this._metadata.initObservables();

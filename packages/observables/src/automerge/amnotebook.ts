@@ -27,7 +27,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   ) {
     this._path = path;
     this._modelDB = modelDB;
-    this._metadata = new AutomergeJSON(this._path.concat('metadata'),this._modelDB);
+    this._metadata = new AutomergeJSON(this._path.concat('metadata'), this._modelDB);
     this._cells = new AutomergeList(this._path.concat('cells'), this._modelDB);
   }
 
@@ -38,10 +38,23 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   private _initCells() {
-    const cellId = 'init-cell-1';
-    const cell = new AutomergeCell(['notebook', 'cells', '0'], this._modelDB, cellId);
-    cell.initObservables();
-    this._cells.insert(0, cell);
+    const cells = this._modelDB.amDoc.notebook.cells as [];
+    console.log('--- notebook init', cells.length)
+    if (cells.length === 0) {
+      const cellId = 'init-cell-1';
+      const automergeCell = new AutomergeCell(['notebook', 'cells', '0'], this._modelDB, cellId);
+      automergeCell.initObservables();
+      this._cells.insert(0, automergeCell);
+      return;
+    }
+    for (let i=0; i < cells.length; i++) {
+      const cell = cells[i] as any;
+      console.log('---- notebook init', cell)
+      const cellId = cell.id;
+      const automergeCell = new AutomergeCell(['notebook', 'cells', `${i}`], this._modelDB, cellId);
+      automergeCell.initObservables();
+      this._cells.insert(i, automergeCell);
+    }
   }
 
   get type(): 'Notebook' {
