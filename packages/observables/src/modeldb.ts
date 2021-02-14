@@ -400,7 +400,7 @@ export class ModelDB implements IModelDB {
    * TODO(ECH)
    */
   createNotebook(path: string): IObservableNotebook {
-    throw new Error('createNotebook is not implemented by ModelDB')
+    throw new Error('createNotebook is not implemented by ModelDB');
   }
 
   /**

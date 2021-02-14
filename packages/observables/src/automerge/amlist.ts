@@ -6,8 +6,8 @@ import {
   ArrayIterator,
   IIterator,
   IterableOrArrayLike,
-  each,
-  toArray
+//  each,
+//  toArray
 } from '@lumino/algorithm';
 
 import { ISignal, Signal } from '@lumino/signaling';
@@ -57,7 +57,15 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
-        if (!local) {
+        if (!local && diff.edits) {
+          console.log('--- amlist', after);
+          this._changed.emit({
+            type: 'add',
+            oldIndex: -1,
+            newIndex: this.length - 1,
+            oldValues: [],
+            newValues: [after[1]]
+          });
         }
       }
     );
@@ -199,7 +207,8 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * No changes.
    */
   push(value: T): number {
-    console.log('--- amlist push', value)
+    throw new Error('push is not implemented by AutomergeList');
+    /*
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         const v = this._asCell(value);
@@ -221,7 +230,8 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
       });
       return num;
     });
-    return (amDocPath(this._modelDB.amDoc, this._path) as List<any>).length
+    return (amDocPath(this._modelDB.amDoc, this._path) as List<any>).length;
+    */
   }
 
   /**
@@ -244,7 +254,6 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * An `index` which is non-integral.
    */
   insert(index: number, value: T): void {
-    console.log('--- amlist insert', index, value)
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         /*
@@ -444,7 +453,8 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * No changes.
    */
   pushAll(values: IterableOrArrayLike<T>): number {
-    console.log('--- amlist pushAll', values)
+    throw new Error('pushAll is not implemented by AutomergeList');
+    /*
     const newIndex = this.length;
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
@@ -468,6 +478,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
       });
     });
     return this.length;
+    */
   }
 
   /**
@@ -490,7 +501,8 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * An `index` which is non-integral.
    */
   insertAll(index: number, values: IterableOrArrayLike<T>): void {
-    console.log('--- amlist insertAll', values)
+    throw new Error('insertAll is not implemented by AutomergeList');
+    /*
     const newIndex = index;
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
@@ -513,6 +525,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
         newValues: toArray(values)
       });
     });
+    */
   }
 
   /**
@@ -560,7 +573,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
     });
     return this.length;
   }
-
+/*
   private _asCell(observableCell: IObservableCell) {
     return {
       id: observableCell.id.get(),
@@ -571,7 +584,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
       source: new Text(observableCell.codeEditor.value.text),
     };
   }
-
+*/
   private _path: string[];
   private _modelDB: AutomergeModelDB;
   private _isDisposed = false;

@@ -511,7 +511,7 @@ export class CellList implements IObservableList<ICellModel> {
   ): void {
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, c => {
-        let cell: ICellModel | undefined = this._cellMap.get(c.id.get() as string);
+        let cell: ICellModel | undefined = this._cellMap.get(this._getCellId(c));
         if (!cell) {
           const cellDB = this._factory.modelDB!;
           // TODO(ECH) Revisit this...
