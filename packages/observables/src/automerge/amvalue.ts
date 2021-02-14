@@ -84,6 +84,9 @@ export class AutomergeValue implements IObservableValue {
    * Get the current value, or `undefined` if it has not been set.
    */
   get(): JSONValue {
+    if (!amDocPath(this._modelDB.amDoc, this._path)) {
+      return '';
+    }
     return amDocPath(this._modelDB.amDoc, this._path).value;
   }
 
