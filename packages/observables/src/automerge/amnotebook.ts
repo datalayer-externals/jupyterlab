@@ -39,7 +39,6 @@ export class AutomergeNotebook implements IObservableNotebook {
 
   private _initCells() {
     const cells = this._modelDB.amDoc.notebook.cells as [];
-    console.log('--- notebook init', cells.length)
     if (cells.length === 0) {
       const cellId = 'init-cell-1';
       const automergeCell = new AutomergeCell(['notebook', 'cells', '0'], this._modelDB, cellId);
