@@ -114,10 +114,19 @@ export class CellList implements IObservableList<ICellModel> {
       return new ArrayIterator<ICellModel>([]);
     }
     const arr: ICellModel[] = [];
-    for (const cell of toArray(this._cells)) {
+    const iter = this._cells.iter();
+    const cells = toArray(iter);
+    for (const cell of cells) {
       arr.push(this._cellMap.get(this._getCellId(cell))!);
     }
-    console.log('--- celllist iter', arr)
+    /*
+    for (let i=0; i < this._cells.length; i++) {
+      const c = this._cells.get(i);
+      const id = this._getCellId(c);
+      const c2 = this._cellMap.get(id)!;
+      arr.push(c2);
+    }
+    */
     return new ArrayIterator<ICellModel>(arr);
   }
 
@@ -501,7 +510,7 @@ export class CellList implements IObservableList<ICellModel> {
       return cell.id.get();
     }
     catch(e) {
-      return cell.id;
+      return cell.id.value;
     }
   }
 

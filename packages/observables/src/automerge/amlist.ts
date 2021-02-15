@@ -122,10 +122,11 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * Constant.
    *
    * #### Iterator Validity
-   * No changes.
+   * No changes.;
    */
   iter(): IIterator<T> {
-    return new ArrayIterator(amDocPath(this._modelDB.amDoc, this._path) as List<T>);
+    const list = amDocPath(this._modelDB.amDoc, this._path) as List<T>;
+    return new ArrayIterator(list);
   }
 
   /**
