@@ -196,6 +196,7 @@ export class CellList implements IObservableList<ICellModel> {
       collaborativeCell.codeEditor.value.text = cell.value.text;
       collaborativeCell.cellType.set(cell.cell.cellType.get() as any);
       cell.cell = collaborativeCell;
+      this._cells.set(index, collaborativeCell);
     }
     // Set the internal data structures.
     this._addToMap(cell.id, cell);
@@ -255,12 +256,13 @@ export class CellList implements IObservableList<ICellModel> {
    */
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
+    this._addToMap(cell.id, cell);
+    this._cells.insert(index, cell.cell);
     if (cell.cell instanceof ObservableCell) {
       const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
       cell.cell = collaborativeCell;
+      this._cells.set(index, collaborativeCell);
     }
-    this._addToMap(cell.id, cell);
-    this._cells.insert(index, cell.cell);
   }
 
   /**
@@ -540,8 +542,10 @@ export class CellList implements IObservableList<ICellModel> {
           this._addToMap(this._getCellId(c), cell);
         }
         if (cell.cell instanceof ObservableCell) {
-          const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', change.newIndex.toString()], cell.id);
+          const index = change.newIndex;
+          const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
           cell.cell = collaborativeCell;
+          this._cells.set(index, collaborativeCell);
         }
       });
     }

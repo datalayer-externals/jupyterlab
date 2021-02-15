@@ -60,12 +60,14 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
       (diff, before, after, local, changes, path) => {
         if (!local && diff.edits) {
           /*
+          const index = diff.edits[0].index;
+          const cell = (after as any[])[0];
           this._changed.emit({
             type: 'add',
             oldIndex: -1,
-            newIndex: this.length - 1,
+            newIndex: index,
             oldValues: [],
-            newValues: [after[1]]
+            newValues: [cell]
           });
           */
         }
@@ -162,7 +164,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * An `index` which is non-integral or out of range.
    */
   set(index: number, value: T): void {
-    this._list.insert(index, value);
+    this._list.set(index, value);
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         if (value === undefined) {
@@ -262,6 +264,10 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._list.insert(index, value);
+        for (let i=0; i<this._list.length; i++) {
+          this._list.get(i).path = ['notebook', 'cells', i.toString()];
+        }
+        console.log('--- amlist this._list', this._list)
         /*
         if (!getNested(this._modelDB.amDoc, this._path)) {
           this._modelDB.amDoc = Automerge.change(
