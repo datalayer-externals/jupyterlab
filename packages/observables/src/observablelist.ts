@@ -473,7 +473,6 @@ export class ObservableList<T> implements IObservableList<T> {
    * An `index` which is non-integral.
    */
   insert(index: number, value: T): void {
-    console.log('--- observablelist insert', index, value)
     ArrayExt.insert(this._array, index, value);
     this._changed.emit({
       type: 'add',

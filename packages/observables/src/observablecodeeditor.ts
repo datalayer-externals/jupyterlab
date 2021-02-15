@@ -17,6 +17,12 @@ import { IObservableJSON, ObservableJSON } from './observablejson';
  * A map which can be seen for changes.
  */
 export interface IObservableCodeEditor extends IDisposable, IObservable {
+
+  /**
+   * TODO(ECH)
+   */
+  path: string[];
+
   /**
    * The type of the Observable.
    */
@@ -97,6 +103,12 @@ export class ObservableCodeEditor implements IObservableCodeEditor {
 
   public initObservables() {
     /* no-op */
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  set path(path: string[]) {
   }
 
   /**

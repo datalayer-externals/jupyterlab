@@ -22,6 +22,11 @@ export interface IObservableString extends IDisposable, IObservable {
   readonly changed: ISignal<this, IObservableString.IChangedArgs>;
 
   /**
+   * TODO(ECH)
+   */
+  path: string[];
+
+  /**
    * The value of the string.
    */
   text: string;
@@ -127,6 +132,12 @@ export class ObservableString implements IObservableString {
 
   public initObservables() {
     /* no-op */
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  set path(path: string[]) {
   }
 
   /**

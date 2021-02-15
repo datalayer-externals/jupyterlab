@@ -222,9 +222,9 @@ export class CellList implements IObservableList<ICellModel> {
    */
   push(cell: ICellModel): number {
     // Set the internal data structures.
-    this._addToMap(cell.id, cell);
-    const num = this._cells.push(cell.cell);
-    return num;
+    this.insert(this._cells.length, cell);
+//    return this._cells.push(cell.cell);
+    return this._cells.length;
   }
 
   /**
@@ -514,7 +514,6 @@ export class CellList implements IObservableList<ICellModel> {
     }
   }
 
-
   private _onCellsChanged(
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
@@ -537,6 +536,7 @@ export class CellList implements IObservableList<ICellModel> {
               cell = this._factory.createCodeCell({ id: this._getCellId(c) });
               break;
           }
+          cell.cell = c;
           this._addToMap(this._getCellId(c), cell);
         }
         if (cell.cell instanceof ObservableCell) {

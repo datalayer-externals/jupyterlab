@@ -88,6 +88,10 @@ export class AutomergeString implements IObservableString {
     );
   }
 
+  set path(path: string[]) {
+    this._path = path;
+  }
+
   /**
    * The type of the Observable.
    */

@@ -14,7 +14,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 
 import Automerge, { List } from 'automerge';
 
-import { IObservableList } from '../observablelist';
+import { IObservableList, ObservableList } from '../observablelist';
 
 import { IObservableCell } from '../observablecell';
 
@@ -40,6 +40,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
   ) {
     this._path = path;
     this._modelDB = modelDB;
+    this._list = new ObservableList<T>();
     this._itemCmp = options.itemCmp || Private.itemCmp;
   }
 
@@ -53,12 +54,12 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
         }
       );
     }
-    // Observe and Handle Remote Changes.
+    // Observe and Handle Changes.
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
         if (!local && diff.edits) {
-          console.log('--- amlist', diff.edits, after);
+          /*
           this._changed.emit({
             type: 'add',
             oldIndex: -1,
@@ -66,6 +67,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
             oldValues: [],
             newValues: [after[1]]
           });
+          */
         }
       }
     );
@@ -160,11 +162,13 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * An `index` which is non-integral or out of range.
    */
   set(index: number, value: T): void {
+    this._list.insert(index, value);
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         if (value === undefined) {
           throw new Error('Cannot set an undefined item');
         }
+        this._list.set(index, value);
         const oldValue = (amDocPath(this._modelDB.amDoc, this._path) as List<any>)[index];
         /*
         const oldV = this._asCell(oldValue)
@@ -257,6 +261,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
   insert(index: number, value: T): void {
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
+        this._list.insert(index, value);
         /*
         if (!getNested(this._modelDB.amDoc, this._path)) {
           this._modelDB.amDoc = Automerge.change(
@@ -332,14 +337,18 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
    * An `index` which is non-integral.
    */
   remove(index: number): T | undefined {
-    let value :any = undefined;
+    let value = getNested(this._modelDB.amDoc, this._path.concat(index.toString()));
+    this._list.remove(index);
+    for (let i=0; i<this._list.length; i++) {
+      this._list.get(i).path = ['notebook', 'cells', i.toString()];
+    }
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
           this._modelDB.amDoc,
           `list remove ${this._path} ${index}`,
           doc => {
-            value = (getNested(doc, this._path) as List<any>).deleteAt!(index);
+            (getNested(doc, this._path) as List<any>).deleteAt!(index);
           }
         );
       });
@@ -411,6 +420,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
     if (this.length <= 1 || fromIndex === toIndex) {
       return;
     }
+    this._list.move(fromIndex, toIndex);
     let values = Array<T>();
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
@@ -552,6 +562,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
       startIndex,
       endIndex
     );
+    this._list.removeRange(startIndex, endIndex);
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         this._modelDB.amDoc = Automerge.change(
@@ -586,6 +597,7 @@ export class AutomergeList<T extends IObservableCell> implements IObservableList
     };
   }
 */
+  private _list: IObservableList<T>;
   private _path: string[];
   private _modelDB: AutomergeModelDB;
   private _isDisposed = false;

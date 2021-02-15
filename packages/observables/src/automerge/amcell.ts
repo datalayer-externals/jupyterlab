@@ -36,7 +36,7 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     this._metadata = new AutomergeJSON(path.concat('metadata'), modelDB);
     this._cellType = new AutomergeValue(path.concat('cell_type'), modelDB, 'code');
     this._trusted = new AutomergeValue(path.concat('trusted'), modelDB, false);
-    this._executionCount =  new AutomergeValue(path.concat('execution_count'), modelDB, '');
+    this._executionCount = new AutomergeValue(path.concat('execution_count'), modelDB, '');
   }
 
   public initObservables() {
@@ -48,6 +48,16 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     this._trusted.initObservables();
     this._executionCount.initObservables();
   }
+
+  set path(path: string[]) {
+    this._path = path;
+    this._id.path = path.concat('id');
+    this._codeEditor.path = path.concat('codeEditor');
+    this._metadata.path = path.concat('metadata');
+    this._cellType.path = path.concat('cell_type');
+    this._trusted.path = path.concat('trusted');
+    this._executionCount.path = path.concat('execution_count');
+  } 
 
   get id(): IObservableValue {
     return this._id;

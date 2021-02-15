@@ -41,10 +41,11 @@ export class AutomergeMap<T> implements IObservableMap<T> {
         }
       );
     }
-    // Observe and Handle Remote Changes.
+    // Observe and Handle Changes.
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
+        this._path = path as string[];
         if (!local) {
           Object.keys(after).map(key => {
             const oldVal = before[key]
@@ -63,6 +64,10 @@ export class AutomergeMap<T> implements IObservableMap<T> {
         }
       }
     );
+  }
+
+  set path(path: string[]) {
+    this._path = path;
   }
 
   /**
@@ -276,8 +281,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     }
   }
 
-  private _path: string[];
-  private _modelDB: AutomergeModelDB;
+  protected _path: string[];
+  protected _modelDB: AutomergeModelDB;
   private _itemCmp: (first: T, second: T) => boolean;
   private _changed = new Signal<this, IObservableMap.IChangedArgs<T>>(this);
   private _isDisposed = false;

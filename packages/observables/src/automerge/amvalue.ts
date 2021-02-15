@@ -43,6 +43,8 @@ export class AutomergeValue implements IObservableValue {
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {
+        this._path = path as string[];
+        if (!local) {
           Object.keys(after).map(key => {
             const oldVal = before[key]
               ? before[key]
@@ -54,9 +56,14 @@ export class AutomergeValue implements IObservableValue {
               oldValue: oldVal,
               newValue: newVal
             });
-        });
+          });
+        }
       }
     );
+  }
+
+  set path(path: string[]) {
+    this._path = path;
   }
 
   /**

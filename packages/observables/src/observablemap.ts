@@ -17,6 +17,11 @@ export interface IObservableMap<T> extends IDisposable, IObservable {
   type: 'Map';
 
   /**
+   * TODO(ECH)
+   */
+  path: string[];
+
+  /**
    * A signal emitted when the map has changed.
    */
   readonly changed: ISignal<this, IObservableMap.IChangedArgs<T>>;
@@ -158,6 +163,12 @@ export class ObservableMap<T> implements IObservableMap<T> {
 
   public initObservables() {
     /* no-op */
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  set path(path: string[]) {
   }
 
   /**

@@ -22,6 +22,7 @@ import { IObservableValue, ObservableValue } from './observablevalue';
  * An observable Cell value.
  */
 export interface IObservableCell extends IObservableJSON {
+  path: string[];
   readonly id: IObservableValue;
   readonly codeEditor: IObservableCodeEditor;
   readonly metadata: IObservableJSON;
@@ -63,7 +64,13 @@ export class ObservableCell extends ObservableJSON implements IObservableCell {
     /* no-op */
   }
 
-  get id(): IObservableValue {
+  /**
+   * TODO(ECH)
+   */
+  set path(path: string[]) {
+  }
+
+ get id(): IObservableValue {
     return this._id;
   }
 

@@ -22,6 +22,11 @@ export interface IObservableValue extends IObservable {
   readonly changed: ISignal<IObservableValue, ObservableValue.IChangedArgs>;
 
   /**
+   * TODO(ECH)
+   */
+  path: string[];
+
+  /**
    * Get the current value, or `undefined` if it has not been set.
    */
   get(): PartialJSONValue | undefined;
@@ -54,6 +59,12 @@ export class ObservableValue implements IObservableValue {
    */
   get type(): 'Value' {
     return 'Value';
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  set path(path: string[]) {
   }
 
   /**

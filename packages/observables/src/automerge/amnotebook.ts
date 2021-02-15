@@ -36,7 +36,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     this._cells.initObservables();
     const cells = this._modelDB.amDoc.notebook.cells as [];
     if (cells.length === 0) {
-      const cellId = 'init-cell-1';
+      const cellId = 'init-cell-id-1';
       const automergeCell = new AutomergeCell(['notebook', 'cells', '0'], this._modelDB, cellId);
       automergeCell.initObservables();
       this._cells.insert(0, automergeCell);
@@ -48,7 +48,7 @@ export class AutomergeNotebook implements IObservableNotebook {
       const automergeCell = new AutomergeCell(['notebook', 'cells', `${i}`], this._modelDB, cellId);
       automergeCell.initObservables();
       this._cells.insert(i, automergeCell);
-    }
+    } 
   }
 
   get type(): 'Notebook' {

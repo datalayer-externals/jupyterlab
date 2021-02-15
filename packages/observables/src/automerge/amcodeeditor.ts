@@ -41,15 +41,21 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     }
     */
     this._value.initObservables();
-    /*
-    if (this._value.text.length === 0) {      
-      this._value.insert(0, `Welcome to JupyterLab RTC!
-
-What can I do for you?`);
-    }
-    */
     this._mimeType.initObservables();
     this._selections.initObservables();
+    this._modelDB.observable.observe(
+      amDocPath(this._modelDB.amDoc, this._path),
+      (diff, before, after, local, changes, path) => {
+        this._path = path as string[];
+      }
+    );
+  }
+
+  set path(path: string[]) {
+    this._path = path;
+    this._value.path = path.concat('value');
+    this._mimeType.path = path.concat('mimeType');
+    this._selections.path = path.concat('selections');
   }
 
   /**
