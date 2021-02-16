@@ -21,6 +21,12 @@ export interface IObservableNotebook extends IDisposable, IObservable {
   readonly changed: ISignal<this, IObservableNotebook.IChangedArgs>;
   readonly metadata: IObservableJSON;
   readonly cells: IObservableList<IObservableCell>;
+  getCell(index: number): IObservableCell;
+  setCell(index: number, cell: IObservableCell): IObservableCell;
+  insertCell(index: number, cell: IObservableCell): IObservableCell;
+  removeCell(index: number): void;
+  removeCellsRange(startIndex: number, endIndex: number): void;
+  moveCell(fromIndex: number, toIndex: number): void;
   dispose(): void;
 }
 

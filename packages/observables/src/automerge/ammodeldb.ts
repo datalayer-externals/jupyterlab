@@ -29,8 +29,6 @@ import { AutomergeNotebook } from './amnotebook';
 
 import { AutomergeValue } from './amvalue';
 
-import { AutomergeCell } from './amcell';
-
 import { IObservableNotebook } from '../observablenotebook';
 
 import { IObservableList } from '../observablelist';
@@ -219,8 +217,8 @@ export class AutomergeModelDB implements IModelDB {
       params = params + 'initialize';
     }
     const uri = encodeURI(
-      `ws://localhost:4321/${this._actorId}/${options.localPath}?${params}`
-//      `ws://${location.hostname}:${location.port}/jupyter_rtc_proxy/${this._actorId}/${options.localPath}?${params}`
+//      `ws://localhost:4321/${this._actorId}/${options.localPath}?${params}`
+      `ws://${location.hostname}:${location.port}/jupyter_rtc_proxy/${this._actorId}/${options.localPath}?${params}`
     );
     this._ws = new WebSocket(uri);
     this._ws.binaryType = 'arraybuffer';
@@ -464,14 +462,6 @@ export class AutomergeModelDB implements IModelDB {
     this._disposables.add(codeEditor);
     this.set(path, codeEditor);
     return codeEditor;
-  }
-
-  public createCell(path: string[], id: string): IObservableCell {
-    const cell = new AutomergeCell(path, this, id);
-    waitOnAmDocInit(this, () => cell.initObservables());
-    this._disposables.add(cell);
-    this.set(path[0], cell);
-    return cell;
   }
 
   public createNotebook(path: string): IObservableNotebook {

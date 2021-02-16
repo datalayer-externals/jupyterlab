@@ -7,7 +7,7 @@ import { AutomergeModelDB } from './ammodeldb';
 
 import { IObservableNotebook } from '../observablenotebook';
 
-import { IObservableCell } from '../observablecell';
+import { IObservableCell, ObservableCell } from '../observablecell';
 
 import { IObservableJSON } from '../observablejson';
 
@@ -17,7 +17,7 @@ import { AutomergeList } from './amlist';
 
 import { IObservableList } from '../observablelist';
 
-import { AutomergeCell } from './amcell';
+// import { AutomergeCell } from './amcell';
 
 export class AutomergeNotebook implements IObservableNotebook {
   constructor(
@@ -37,18 +37,17 @@ export class AutomergeNotebook implements IObservableNotebook {
     const cells = this._modelDB.amDoc.notebook.cells as [];
     if (cells.length === 0) {
       const cellId = 'init-cell-id-1';
-      const automergeCell = new AutomergeCell(['notebook', 'cells', '0'], this._modelDB, cellId);
-      automergeCell.initObservables();
-      this._cells.insert(0, automergeCell);
-      return;
+      const observableCell = new ObservableCell(cellId);
+      this.insertCell(0, observableCell);
     }
-    for (let i=0; i < cells.length; i++) {
-      const cell = cells[i] as any;
-      const cellId = cell.id;
-      const automergeCell = new AutomergeCell(['notebook', 'cells', `${i}`], this._modelDB, cellId);
-      automergeCell.initObservables();
-      this._cells.insert(i, automergeCell);
-    } 
+    else {
+      for (let i=0; i < cells.length; i++) {
+        const cell = cells[i] as any;
+        const cellId = cell.id;
+        const observableCell = new ObservableCell(cellId);
+        this.insertCell(i, observableCell);
+      } 
+    }
   }
 
   get type(): 'Notebook' {
@@ -69,6 +68,42 @@ export class AutomergeNotebook implements IObservableNotebook {
 
   get cells(): IObservableList<IObservableCell> {
     return this._cells;
+  }
+  
+  getCell(index: number): IObservableCell {
+    throw new Error('getCell is not implemented by AutomergeNotebook');
+  }
+
+  setCell(index: number, cell: IObservableCell): IObservableCell {
+    throw new Error('setCell is not implemented by AutomergeNotebook');
+  }
+
+  insertCell(index: number, cell: IObservableCell): IObservableCell {
+    throw new Error('insertCell is not implemented by AutomergeNotebook');
+    /*
+    if (cell instanceof ObservableCell) {
+      cell = new AutomergeCell(['notebook', 'cells', index.toString()], this._modelDB, cell.id.get() as string);
+    }
+    return cell;
+    */
+    /*
+    const cell = new AutomergeCell(path, this, id);
+    waitOnAmDocInit(this, () => cell.initObservables());
+    this._disposables.add(cell);
+    this.set(path[0], cell);
+    */
+  }
+
+  removeCell(index: number): void {
+    throw new Error('removeCell is not implemented by AutomergeNotebook');
+  }
+
+  removeCellsRange(startIndex: number, endIndex: number): void {
+    throw new Error('removeCellsRange is not implemented by AutomergeNotebook');
+  }
+
+  moveCell(fromIndex: number, toIndex: number): void {
+    throw new Error('moveCell is not implemented by AutomergeNotebook');
   }
 
   dispose(): void {

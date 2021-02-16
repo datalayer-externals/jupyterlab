@@ -20,8 +20,7 @@ import {
   IObservableList,
   IModelDB,
   IObservableCell,
-  IObservableNotebook,
-  ObservableCell
+  IObservableNotebook
 } from '@jupyterlab/observables';
 
 import { NotebookModel } from './model';
@@ -35,11 +34,9 @@ export class CellList implements IObservableList<ICellModel> {
    */
   constructor(modelDB: IModelDB, factory: NotebookModel.IContentFactory) {
     this._factory = factory;
-    this._modelDB = modelDB;
     this._cellMap = new ObservableMap<ICellModel>();
     this._notebook = modelDB.get('notebook') as IObservableNotebook;
-    this._cells = this._notebook.cells;
-    this._cells.changed.connect(this._onCellsChanged, this);
+    this._notebook.cells.changed.connect(this._onCellsChanged, this);
   }
 
   type: 'List';
@@ -77,7 +74,7 @@ export class CellList implements IObservableList<ICellModel> {
    * No changes.
    */
   get isEmpty(): boolean {
-    return this._cells.length === 0;
+    return this._notebook.cells.length === 0;
   }
 
   /**
@@ -95,7 +92,7 @@ export class CellList implements IObservableList<ICellModel> {
    * No changes.
    */
   get length(): number {
-    return this._cells.length;
+    return this._notebook.cells.length;
   }
 
   /**
@@ -110,23 +107,15 @@ export class CellList implements IObservableList<ICellModel> {
    * No changes.
    */
   iter(): IIterator<ICellModel> {
-    if (this._cells.length === 0) {
+    if (this._notebook.cells.length === 0) {
       return new ArrayIterator<ICellModel>([]);
     }
     const arr: ICellModel[] = [];
-    const iter = this._cells.iter();
+    const iter = this._notebook.cells.iter();
     const cells = toArray(iter);
     for (const cell of cells) {
       arr.push(this._cellMap.get(this._getCellId(cell))!);
     }
-    /*
-    for (let i=0; i < this._cells.length; i++) {
-      const c = this._cells.get(i);
-      const id = this._getCellId(c);
-      const c2 = this._cellMap.get(id)!;
-      arr.push(c2);
-    }
-    */
     return new ArrayIterator<ICellModel>(arr);
   }
 
@@ -144,7 +133,7 @@ export class CellList implements IObservableList<ICellModel> {
       cell.dispose();
     }
     this._cellMap.dispose();
-    this._cells.dispose();
+    this._notebook.cells.dispose();
   }
 
   /**
@@ -164,7 +153,7 @@ export class CellList implements IObservableList<ICellModel> {
    * An `index` which is non-integral or out of range.
    */
   get(index: number): ICellModel {
-    const cell = this._cells.get(index);
+    const cell = this._notebook.getCell(index);
     const id = this._getCellId(cell)
     return this._cellMap.get(id)!;
   }
@@ -192,9 +181,8 @@ export class CellList implements IObservableList<ICellModel> {
    */
   set(index: number, cell: ICellModel): void {
     // Set the internal data structures.
-//    this._ensureCollaborativeCell(index, cell);
     this._addToMap(cell.id, cell);
-    this._cells.set(index, cell.observableCell);
+    this._notebook.setCell(index, cell.observableCell);
   }
 
   /**
@@ -217,8 +205,8 @@ export class CellList implements IObservableList<ICellModel> {
    */
   push(cell: ICellModel): number {
     // Set the internal data structures.
-    this.insert(this._cells.length, cell);
-    return this._cells.length;
+    this.insert(this._notebook.cells.length, cell);
+    return this._notebook.cells.length;
   }
 
   /**
@@ -250,8 +238,7 @@ export class CellList implements IObservableList<ICellModel> {
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
     this._addToMap(cell.id, cell);
-    this._cells.insert(index, cell.observableCell);
-//    this._ensureCollaborativeCell(index, cell);
+    this._notebook.insertCell(index, cell.observableCell);
   }
 
   /**
@@ -270,7 +257,7 @@ export class CellList implements IObservableList<ICellModel> {
    */
   removeValue(cell: ICellModel): number {
     const index = ArrayExt.findFirstIndex(
-      toArray(this._cells),
+      toArray(this._notebook.type),
       id => this._cellMap.get(cell.id) === cell
     );
     this.remove(index);
@@ -295,10 +282,9 @@ export class CellList implements IObservableList<ICellModel> {
    * An `index` which is non-integral.
    */
   remove(index: number): ICellModel {
-    const c = this._cells.get(index);
-    this._cells.remove(index);
-    const cell = this._cellMap.get(this._getCellId(c))!;
-    return cell;
+    const c = this._notebook.getCell(index);
+    this._notebook.removeCell(index);
+    return this._cellMap.get(this._getCellId(c))!;
   }
 
   /**
@@ -311,7 +297,7 @@ export class CellList implements IObservableList<ICellModel> {
    * All current iterators are invalidated.
    */
   clear(): void {
-    this._cells.clear();
+    this._notebook.cells.clear();
   }
 
   /**
@@ -332,7 +318,7 @@ export class CellList implements IObservableList<ICellModel> {
    * A `fromIndex` or a `toIndex` which is non-integral.
    */
   move(fromIndex: number, toIndex: number): void {
-    this._cells.move(fromIndex, toIndex);
+    this._notebook.moveCell(fromIndex, toIndex);
   }
 
   /**
@@ -357,8 +343,7 @@ export class CellList implements IObservableList<ICellModel> {
     const newValues = toArray(cells);
     each(newValues, cell => {
       // Set the internal data structures.
-      this._addToMap(cell.id, cell);
-      this._cells.push(cell.observableCell);
+      this.push(cell);
     });
     return this.length;
   }
@@ -394,7 +379,7 @@ export class CellList implements IObservableList<ICellModel> {
     each(newValues, cell => {
       this._addToMap(cell.id, cell);
 //      this._cells.beginCompoundOperation();
-      this._cells.insert(index++, cell.observableCell);
+      this.insert(index++, cell);
 //      this._cells.endCompoundOperation();
     });
     return this.length;
@@ -419,7 +404,7 @@ export class CellList implements IObservableList<ICellModel> {
    * A `startIndex` or `endIndex` which is non-integral.
    */
   removeRange(startIndex: number, endIndex: number): number {
-    this._cells.removeRange(startIndex, endIndex);
+    this._notebook.removeCellsRange(startIndex, endIndex);
     return this.length;
   }
 
@@ -504,15 +489,14 @@ export class CellList implements IObservableList<ICellModel> {
       return cell.id.value;
     }
   }
-
+/*
   private _ensureCollaborativeCell(index: number, cell: ICellModel) {
     if (cell.observableCell instanceof ObservableCell) {
-      const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
+      const collaborativeCell = this._notebook.insertCell(index, cell.observableCell);
       cell.observableCell = collaborativeCell;
-      this._cells.set(index, collaborativeCell);
     }
   }
-
+*/
   private _onCellsChanged(
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
@@ -536,7 +520,7 @@ export class CellList implements IObservableList<ICellModel> {
           cell.observableCell = c;
           this._addToMap(this._getCellId(c), cell);
         }
-        this._ensureCollaborativeCell(change.newIndex, cell);
+//        this._ensureCollaborativeCell(change.newIndex, cell);
       });
     }
     const newValues: ICellModel[] = [];
@@ -560,11 +544,9 @@ export class CellList implements IObservableList<ICellModel> {
 
   private _isDisposed: boolean = false;
   private _notebook: IObservableNotebook;
-  private _cells: IObservableList<IObservableCell>;
   private _cellMap: IObservableMap<ICellModel>;
   private _changed = new Signal<this, IObservableList.IChangedArgs<ICellModel>>(
     this
   );
-  private _modelDB: IModelDB;
   private _factory: NotebookModel.IContentFactory;
 }

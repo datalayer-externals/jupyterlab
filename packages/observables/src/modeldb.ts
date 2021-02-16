@@ -17,7 +17,7 @@ import { IObservableString, ObservableString } from './observablestring';
 
 import { IObservableList, ObservableList } from './observablelist';
 
-import { IObservableCell, ObservableCell } from './observablecell';
+import { IObservableCell } from './observablecell';
 
 import { IObservableCodeEditor, ObservableCodeEditor } from './observablecodeeditor';
 
@@ -171,11 +171,6 @@ export interface IModelDB extends IDisposable {
    * TODO(ECH)
    */
   createCodeEditor(path: string): IObservableCodeEditor;
-
-  /**
-   * TODO(ECH)
-   */
-  createCell(path: string[], id: string): IObservableCell;
 
   /**
    * TODO(ECH)
@@ -384,16 +379,6 @@ export class ModelDB implements IModelDB {
     this._disposables.add(codeEditor);
     this.set(path, codeEditor);
     return codeEditor;
-  }
-
-  /**
-   * TODO(ECH)
-   */
-  createCell(path: string[], id: string): IObservableCell {
-    const cell = new ObservableCell(id);
-    this._disposables.add(cell);
-    this.set(path[0], cell);
-    return cell;
   }
 
   /**

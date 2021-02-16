@@ -24,6 +24,7 @@ import {
   ObservableValue,
   IObservableMap,
   IObservableCell,
+  ObservableCell
 } from '@jupyterlab/observables';
 
 import { IOutputAreaModel, OutputAreaModel } from '@jupyterlab/outputarea';
@@ -172,7 +173,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
 
     this.id = options.id || UUID.uuid4();
 
-    this.observableCell = this.modelDB.createCell(['notebook', 'cells_tmp', this.id], this.id);
+    this.observableCell = new ObservableCell(this.id);
 
     const cell = options.cell;
 
