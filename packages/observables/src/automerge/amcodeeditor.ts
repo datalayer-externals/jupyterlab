@@ -32,7 +32,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     this._selections = new AutomergeJSON(this._path.concat('selections'), this._modelDB);
   }
 
-  public initObservables() {
+  public initObservable() {
     /*
     if (options.values) {
       for (const key in options.values) {
@@ -40,9 +40,9 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
       }
     }
     */
-    this._value.initObservables();
-    this._mimeType.initObservables();
-    this._selections.initObservables();
+    this._value.initObservable();
+    this._mimeType.initObservable();
+    this._selections.initObservable();
     this._modelDB.observable.observe(
       amDocPath(this._modelDB.amDoc, this._path),
       (diff, before, after, local, changes, path) => {

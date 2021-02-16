@@ -101,7 +101,7 @@ export class ObservableCodeEditor implements IObservableCodeEditor {
     this._selections = new ObservableJSON();
   }
 
-  public initObservables() {
+  public initObservable() {
     /* no-op */
   }
 

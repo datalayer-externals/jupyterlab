@@ -28,7 +28,7 @@ export class AutomergeString implements IObservableString {
     this._modelDB = modelDB;
   }
 
-  public initObservables() {
+  public initObservable() {
     const value = amDocPath(this._modelDB.amDoc, this._path);
     if (value) {
       const s = value.toString()

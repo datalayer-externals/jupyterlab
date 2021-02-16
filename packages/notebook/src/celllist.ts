@@ -19,7 +19,7 @@ import {
   ObservableMap,
   IObservableList,
   IModelDB,
-  IObservableCell,
+  ObservableCell,
   IObservableNotebook
 } from '@jupyterlab/observables';
 
@@ -36,12 +36,13 @@ export class CellList implements IObservableList<ICellModel> {
     this._factory = factory;
     this._cellMap = new ObservableMap<ICellModel>();
     this._notebook = modelDB.get('notebook') as IObservableNotebook;
-    this._notebook.cells.changed.connect(this._onCellsChanged, this);
+    this._notebook.cellOrderChanged.connect(this._onNotebookCellOrderChanged, this);
+    this._notebook.cellOrder.changed.connect(this._onCellOrderChanged, this);
   }
 
   type: 'List';
 
-  public initObservables() {
+  public initObservable() {
     /* no-op */
   }
 
@@ -74,7 +75,7 @@ export class CellList implements IObservableList<ICellModel> {
    * No changes.
    */
   get isEmpty(): boolean {
-    return this._notebook.cells.length === 0;
+    return this._notebook.cellOrder.length === 0;
   }
 
   /**
@@ -92,7 +93,7 @@ export class CellList implements IObservableList<ICellModel> {
    * No changes.
    */
   get length(): number {
-    return this._notebook.cells.length;
+    return this._notebook.cellOrder.length;
   }
 
   /**
@@ -107,11 +108,11 @@ export class CellList implements IObservableList<ICellModel> {
    * No changes.
    */
   iter(): IIterator<ICellModel> {
-    if (this._notebook.cells.length === 0) {
+    if (this._notebook.cellOrder.length === 0) {
       return new ArrayIterator<ICellModel>([]);
     }
     const arr: ICellModel[] = [];
-    const iter = this._notebook.cells.iter();
+    const iter = this._notebook.cellOrder.iter();
     const cells = toArray(iter);
     for (const cell of cells) {
       arr.push(this._cellMap.get(this._getCellId(cell))!);
@@ -133,7 +134,7 @@ export class CellList implements IObservableList<ICellModel> {
       cell.dispose();
     }
     this._cellMap.dispose();
-    this._notebook.cells.dispose();
+    this._notebook.cellOrder.dispose();
   }
 
   /**
@@ -153,8 +154,7 @@ export class CellList implements IObservableList<ICellModel> {
    * An `index` which is non-integral or out of range.
    */
   get(index: number): ICellModel {
-    const cell = this._notebook.getCell(index);
-    const id = this._getCellId(cell)
+    const id = this._notebook.cellOrder.get(index);
     return this._cellMap.get(id)!;
   }
 
@@ -205,8 +205,8 @@ export class CellList implements IObservableList<ICellModel> {
    */
   push(cell: ICellModel): number {
     // Set the internal data structures.
-    this.insert(this._notebook.cells.length, cell);
-    return this._notebook.cells.length;
+    this.insert(this._notebook.cellOrder.length, cell);
+    return this._notebook.cellOrder.length;
   }
 
   /**
@@ -282,9 +282,10 @@ export class CellList implements IObservableList<ICellModel> {
    * An `index` which is non-integral.
    */
   remove(index: number): ICellModel {
-    const c = this._notebook.getCell(index);
-    this._notebook.removeCell(index);
-    return this._cellMap.get(this._getCellId(c))!;
+    const id = this._notebook.cellOrder.get(index);
+    this._notebook.cellOrder.remove(index);
+    const cell = this._cellMap.get(id)!;
+    return cell;
   }
 
   /**
@@ -297,7 +298,7 @@ export class CellList implements IObservableList<ICellModel> {
    * All current iterators are invalidated.
    */
   clear(): void {
-    this._notebook.cells.clear();
+    this._notebook.cellOrder.clear();
   }
 
   /**
@@ -480,58 +481,67 @@ export class CellList implements IObservableList<ICellModel> {
     this._cellMap.set(id, cell);
   }
 
+  // TODO(ECH) Revisit this...
   private _getCellId(cell: any) {
-    // TODO(ECH) Revisit this...
-    try {
-      return cell.id.get();
-    }
-    catch(e) {
-      return cell.id.value;
-    }
+    return cell;
   }
-/*
-  private _ensureCollaborativeCell(index: number, cell: ICellModel) {
+
+  private _ensureCollaborativeCell(cell: ICellModel) {
     if (cell.observableCell instanceof ObservableCell) {
-      const collaborativeCell = this._notebook.insertCell(index, cell.observableCell);
+      let collaborativeCell = this._notebook.getCell(cell.id);
+      if (!collaborativeCell) {
+        collaborativeCell = this._notebook.createCell(cell.observableCell);
+      }
       cell.observableCell = collaborativeCell;
     }
   }
-*/
-  private _onCellsChanged(
-    order: IObservableList<IObservableCell>,
-    change: IObservableList.IChangedArgs<IObservableCell>
+
+  private _onNotebookCellOrderChanged(
+    order: IObservableNotebook,
+    change: IObservableList.IChangedArgs<string>
   ): void {
+    this._onOrderChanged(change);
+  }
+
+  private _onCellOrderChanged(
+    order: IObservableList<string>,
+    change: IObservableList.IChangedArgs<string>
+  ): void {
+    this._onOrderChanged(change);
+  }
+
+  private _onOrderChanged(
+    change: IObservableList.IChangedArgs<string>
+  ): void {
+    console.log('--- celllist', change);
     if (change.type === 'add' || change.type === 'set') {
-      each(change.newValues, c => {
-        let cell: ICellModel | undefined = this._cellMap.get(this._getCellId(c));
-        if (!cell) {
-          const cellType = this._factory.modelDB!.createValue(this._getCellId(c) + '.type');
+      each(change.newValues, id => {
+        if (!this._cellMap.has(id)) {
+          const cellType = this._factory.modelDB!.createValue(id + '.type');
+          let cell: ICellModel;
           switch (cellType.get()) {
             case 'code':
-              cell = this._factory.createCodeCell({ id: this._getCellId(c) });
+              cell = this._factory.createCodeCell({ id: id });
               break;
             case 'markdown':
-              cell = this._factory.createMarkdownCell({ id: this._getCellId(c) });
+              cell = this._factory.createMarkdownCell({ id: id });
               break;
             default:
-              cell = this._factory.createCodeCell({ id: this._getCellId(c) });
+              cell = this._factory.createCodeCell({ id: id });
               break;
           }
-          cell.observableCell = c;
-          this._addToMap(this._getCellId(c), cell);
+          this._addToMap(id, cell);
         }
-//        this._ensureCollaborativeCell(change.newIndex, cell);
+        this._ensureCollaborativeCell(this._cellMap.get(id)!);
       });
     }
     const newValues: ICellModel[] = [];
     const oldValues: ICellModel[] = [];
-    each(change.newValues, cell => {
-      const newCell = this._cellMap.get(this._getCellId(cell))!;
-      newValues.push(newCell);
+    each(change.newValues, id => {
+      newValues.push(this._cellMap.get(id)!);
     });
-    each(change.oldValues, cell => {
-      const oldCell = this._cellMap.get(this._getCellId(cell))!;
-      oldValues.push(oldCell);
+    each(change.oldValues, id => {
+      oldValues.push(this._cellMap.get(id)!);
     });
     this._changed.emit({
       type: change.type,

@@ -531,7 +531,7 @@ export namespace NotebookModel {
         // TODO(ECH) Revisit this...
         if (options.cell?.id) {
           options.id = options.cell?.id;
-        } else {
+        } else if (!options.id) {
           options.id = UUID.uuid4();
         }
         options.modelDB = this.modelDB.view(options.id);

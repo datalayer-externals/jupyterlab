@@ -19,11 +19,13 @@ import { IObservableCell } from './observablecell';
 export interface IObservableNotebook extends IDisposable, IObservable {
   type: 'Notebook';
   readonly changed: ISignal<this, IObservableNotebook.IChangedArgs>;
+  readonly cellOrderChanged: ISignal<this, IObservableList.IChangedArgs<string>>;
   readonly metadata: IObservableJSON;
-  readonly cells: IObservableList<IObservableCell>;
-  getCell(index: number): IObservableCell;
-  setCell(index: number, cell: IObservableCell): IObservableCell;
-  insertCell(index: number, cell: IObservableCell): IObservableCell;
+  readonly cellOrder: IObservableList<string>;
+  getCell(id: string): IObservableCell;
+  setCell(index: number, cell: IObservableCell): void;
+  createCell(cell: IObservableCell): IObservableCell;
+  insertCell(index: number, cell: IObservableCell): void;
   removeCell(index: number): void;
   removeCellsRange(startIndex: number, endIndex: number): void;
   moveCell(fromIndex: number, toIndex: number): void;

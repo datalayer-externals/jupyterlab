@@ -81,7 +81,7 @@ export class ObservableUndoableList<T>
     this.changed.connect(this._onListChanged, this);
   }
 
-  public initObservables() {
+  public initObservable() {
     /* no-op */
   }
 

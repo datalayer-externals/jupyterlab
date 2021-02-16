@@ -31,7 +31,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     this._itemCmp = options.itemCmp || Private.itemCmp;
   }
 
-  public initObservables() {
+  public initObservable() {
     if (!amDocPath(this._modelDB.amDoc, this._path)) {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,

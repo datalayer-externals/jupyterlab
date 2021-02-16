@@ -30,7 +30,7 @@ export class AutomergeValue implements IObservableValue {
     this._initialValue = initialValue;
   }
 
-  public initObservables() {
+  public initObservable() {
     if (!amDocPath(this._modelDB.amDoc, this._path)) {
       this._modelDB.amDoc = Automerge.change(
         this._modelDB.amDoc,

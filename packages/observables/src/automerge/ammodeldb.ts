@@ -139,7 +139,7 @@ export const setForcedNested = (doc: any, path: string[], value: any) => {
   for (let i = 0; i < path.length - 1; i++) {
     if (!leaf[path[i]]) {
       // TODO(ECH) Revisit this...
-      if (path[i] === 'cells') {
+      if (path[i] === 'cellOrder') {
         leaf[path[i]] = [];
       } else {
         leaf[path[i]] = {};
@@ -217,8 +217,8 @@ export class AutomergeModelDB implements IModelDB {
       params = params + 'initialize';
     }
     const uri = encodeURI(
-//      `ws://localhost:4321/${this._actorId}/${options.localPath}?${params}`
-      `ws://${location.hostname}:${location.port}/jupyter_rtc_proxy/${this._actorId}/${options.localPath}?${params}`
+      `ws://localhost:4321/${this._actorId}/${options.localPath}?${params}`
+//      `ws://${location.hostname}:${location.port}/jupyter_rtc_proxy/${this._actorId}/${options.localPath}?${params}`
     );
     this._ws = new WebSocket(uri);
     this._ws.binaryType = 'arraybuffer';
@@ -293,7 +293,7 @@ export class AutomergeModelDB implements IModelDB {
             /*
             // Initalize for Observables if not yet the case.
             (this._db as ObservableMap<any>).values().map(value => {
-              value.initObservables();
+              value.initObservable();
             });
             */
             this._isInitialized = true;
@@ -381,7 +381,7 @@ export class AutomergeModelDB implements IModelDB {
    */
   createString(path: string): IObservableString {
     let str: IObservableString = new AutomergeString([this.idPath(path)], this);
-    waitOnAmDocInit(this, () => str.initObservables());
+    waitOnAmDocInit(this, () => str.initObservable());
     this._disposables.add(str);
     this.set(path, str);
     return str;
@@ -389,7 +389,7 @@ export class AutomergeModelDB implements IModelDB {
 
   createList<T extends IObservableCell>(path: string): IObservableList<T> {
     const list = new AutomergeList<T>([this.idPath(path)], this);
-    waitOnAmDocInit(this, () => list.initObservables());
+    waitOnAmDocInit(this, () => list.initObservable());
     this._disposables.add(list);
     this.set(path, list);
     return list;
@@ -415,7 +415,7 @@ export class AutomergeModelDB implements IModelDB {
       this,
       new ObservableUndoableList.IdentitySerializer<T>()
     );
-    waitOnAmDocInit(this, () => list.initObservables());
+    waitOnAmDocInit(this, () => list.initObservable());
     this._disposables.add(list);
     this.set(path, list);
     return list;
@@ -431,7 +431,7 @@ export class AutomergeModelDB implements IModelDB {
    */
   createMap(path: string): IObservableMap<any> {
     const map = new AutomergeMap([this.idPath(path)], this);
-    waitOnAmDocInit(this, () => map.initObservables());
+    waitOnAmDocInit(this, () => map.initObservable());
     this._disposables.add(map);
     this.set(path, map);
     return map;
@@ -450,7 +450,7 @@ export class AutomergeModelDB implements IModelDB {
    */
   createJSON(path: string): IObservableJSON {
     const json = new AutomergeJSON([this.idPath(path)], this);
-    waitOnAmDocInit(this, () => json.initObservables());
+    waitOnAmDocInit(this, () => json.initObservable());
     this._disposables.add(json);
     this.set(path, json);
     return json;
@@ -458,7 +458,7 @@ export class AutomergeModelDB implements IModelDB {
 
   public createCodeEditor(path: string): IObservableCodeEditor {
     const codeEditor = new AutomergeCodeEditor([this.idPath(path)], this);
-    waitOnAmDocInit(this, () => codeEditor.initObservables());
+    waitOnAmDocInit(this, () => codeEditor.initObservable());
     this._disposables.add(codeEditor);
     this.set(path, codeEditor);
     return codeEditor;
@@ -466,7 +466,7 @@ export class AutomergeModelDB implements IModelDB {
 
   public createNotebook(path: string): IObservableNotebook {
     const notebook = new AutomergeNotebook([this.idPath(path)], this);
-    waitOnAmDocInit(this, () => notebook.initObservables());
+    waitOnAmDocInit(this, () => notebook.initObservable());
     this._disposables.add(notebook);
     this.set(path, notebook);
     return notebook;
@@ -481,7 +481,7 @@ export class AutomergeModelDB implements IModelDB {
    */
   createValue(path: string): IObservableValue {
     const val = new AutomergeValue([this.idPath(path)], this);
-    waitOnAmDocInit(this, () => val.initObservables());
+    waitOnAmDocInit(this, () => val.initObservable());
     this._disposables.add(val);
     this.set(path, val);
     return val;

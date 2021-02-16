@@ -39,14 +39,14 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     this._executionCount = new AutomergeValue(path.concat('execution_count'), modelDB, '');
   }
 
-  public initObservables() {
-//    super.initObservables();
-    this._id.initObservables();
-    this._codeEditor.initObservables();
-    this._metadata.initObservables();
-    this._cellType.initObservables();
-    this._trusted.initObservables();
-    this._executionCount.initObservables();
+  public initObservable() {
+    //    super.initObservable();
+    this._id.initObservable();
+    this._codeEditor.initObservable();
+    this._metadata.initObservable();
+    this._cellType.initObservable();
+    this._trusted.initObservable();
+    this._executionCount.initObservable();
   }
 
   set path(path: string[]) {

@@ -3,7 +3,7 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import { AutomergeModelDB } from './ammodeldb';
+import { amDocPath, AutomergeModelDB } from './ammodeldb';
 
 import { IObservableNotebook } from '../observablenotebook';
 
@@ -17,6 +17,8 @@ import { AutomergeList } from './amlist';
 
 import { IObservableList } from '../observablelist';
 
+import { AutomergeCell } from './amcell';
+
 // import { AutomergeCell } from './amcell';
 
 export class AutomergeNotebook implements IObservableNotebook {
@@ -28,26 +30,62 @@ export class AutomergeNotebook implements IObservableNotebook {
     this._path = path;
     this._modelDB = modelDB;
     this._metadata = new AutomergeJSON(this._path.concat('metadata'), this._modelDB);
-    this._cells = new AutomergeList(this._path.concat('cells'), this._modelDB);
+    this._cellOrder = new AutomergeList(this._path.concat('cellOrder'), this._modelDB);
   }
 
-  public initObservables() {
-    this._metadata.initObservables();
-    this._cells.initObservables();
-    const cells = this._modelDB.amDoc.notebook.cells as [];
-    if (cells.length === 0) {
-      const cellId = 'init-cell-id-1';
-      const observableCell = new ObservableCell(cellId);
-      this.insertCell(0, observableCell);
+  public initObservable() {
+    this._metadata.initObservable();
+    this._cellOrder.initObservable();
+    const cellOrder = this._modelDB.amDoc.notebook.cellOrder as [];
+    if (cellOrder.length === 0) {
+      const cell = new ObservableCell('init-cell-id-1')
+      this.createCell(cell);
+      this.insertCell(0, cell);
     }
     else {
-      for (let i=0; i < cells.length; i++) {
-        const cell = cells[i] as any;
-        const cellId = cell.id;
-        const observableCell = new ObservableCell(cellId);
-        this.insertCell(i, observableCell);
-      } 
+      for (let i=0; i < cellOrder.length; i++) {
+        this._cellOrderChanged.emit({
+          type: 'add',
+          oldIndex: -1,
+          newIndex: i,
+          oldValues: [],
+          newValues: [cellOrder[i]]
+        });
+      }
     }
+    // Observe and Handle Changes.
+    this._modelDB.observable.observe(
+      amDocPath(this._modelDB.amDoc, this._path.concat('cellOrder')),
+      (diff, before, after, local, changes, path) => {
+        if (!local && diff.edits) {
+          const action = diff.edits[0].action;
+          const index = diff.edits[0].index;
+          const cellId = (after as any[])[index];
+          console.log('--- amnotebook remote', action, index, cellId);
+          // 'add' 'move' 'remove' 'set'
+          switch(action) {
+            case 'insert':
+              this._cellOrderChanged.emit({
+                type: 'add',
+                oldIndex: -1,
+                newIndex: index,
+                oldValues: [],
+                newValues: [cellId]
+              });
+              break
+            case 'remove':
+              this._cellOrderChanged.emit({
+                type: 'remove',
+                oldIndex: index,
+                newIndex: -1,
+                oldValues: [cellId],
+                newValues: []
+              });
+              break
+          }
+        }
+      }
+    );    
   }
 
   get type(): 'Notebook' {
@@ -58,6 +96,10 @@ export class AutomergeNotebook implements IObservableNotebook {
     return this._changed;
   }
 
+  get cellOrderChanged(): ISignal<this, IObservableList.IChangedArgs<string>> {
+    return this._cellOrderChanged;
+  }
+
   get isDisposed(): boolean {
     return this._isDisposed;
   }
@@ -66,32 +108,26 @@ export class AutomergeNotebook implements IObservableNotebook {
     return this._metadata;
   }
 
-  get cells(): IObservableList<IObservableCell> {
-    return this._cells;
+  get cellOrder(): IObservableList<string> {
+    return this._cellOrder;
   }
   
-  getCell(index: number): IObservableCell {
-    throw new Error('getCell is not implemented by AutomergeNotebook');
+  getCell(id: string): IObservableCell {
+    return this.createCell(new ObservableCell(id));
   }
 
-  setCell(index: number, cell: IObservableCell): IObservableCell {
-    throw new Error('setCell is not implemented by AutomergeNotebook');
+  setCell(index: number, cell: IObservableCell) {
+    this._cellOrder.set(index, cell.id.get() as string);
   }
 
-  insertCell(index: number, cell: IObservableCell): IObservableCell {
-    throw new Error('insertCell is not implemented by AutomergeNotebook');
-    /*
-    if (cell instanceof ObservableCell) {
-      cell = new AutomergeCell(['notebook', 'cells', index.toString()], this._modelDB, cell.id.get() as string);
-    }
-    return cell;
-    */
-    /*
-    const cell = new AutomergeCell(path, this, id);
-    waitOnAmDocInit(this, () => cell.initObservables());
-    this._disposables.add(cell);
-    this.set(path[0], cell);
-    */
+  createCell(cell: IObservableCell): IObservableCell {
+    const amCell = new AutomergeCell(['notebook', 'cells', cell.id.get() as string], this._modelDB, cell.id.get() as string);
+    amCell.initObservable();
+    return amCell;
+  }
+
+  insertCell(index: number, cell: IObservableCell): void {
+    this._cellOrder.insert(index, cell.id.get() as string);
   }
 
   removeCell(index: number): void {
@@ -121,10 +157,11 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   private _metadata: IObservableJSON;
-  private _cells: IObservableList<IObservableCell>;
+  private _cellOrder: IObservableList<string>;
   private _path: string[];
   private _modelDB: AutomergeModelDB;
   private _changed = new Signal<this, IObservableNotebook.IChangedArgs>(this);
+  private _cellOrderChanged = new Signal<this, IObservableList.IChangedArgs<string>>(this);
   private _isDisposed = false;
 }
 

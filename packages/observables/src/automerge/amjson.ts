@@ -31,8 +31,8 @@ export class AutomergeJSON extends AutomergeMap<ReadonlyPartialJSONValue> {
     });
   }
 
-  public initObservables() {
-    super.initObservables();
+  public initObservable() {
+    super.initObservable();
   }
 
   /**

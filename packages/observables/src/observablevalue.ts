@@ -50,7 +50,7 @@ export class ObservableValue implements IObservableValue {
     this._value = initialValue;
   }
 
-  public initObservables() {
+  public initObservable() {
     /* no-op */
   }
 

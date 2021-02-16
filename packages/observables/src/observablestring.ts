@@ -130,7 +130,7 @@ export class ObservableString implements IObservableString {
     this._text = initialText;
   }
 
-  public initObservables() {
+  public initObservable() {
     /* no-op */
   }
 
