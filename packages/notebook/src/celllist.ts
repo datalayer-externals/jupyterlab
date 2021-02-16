@@ -191,16 +191,10 @@ export class CellList implements IObservableList<ICellModel> {
    * not be called by other actors.
    */
   set(index: number, cell: ICellModel): void {
-    if (cell.cell instanceof ObservableCell) {
-      const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
-      collaborativeCell.codeEditor.value.text = cell.value.text;
-      collaborativeCell.cellType.set(cell.cell.cellType.get() as any);
-      cell.cell = collaborativeCell;
-      this._cells.set(index, collaborativeCell);
-    }
     // Set the internal data structures.
+//    this._ensureCollaborativeCell(index, cell);
     this._addToMap(cell.id, cell);
-    this._cells.set(index, cell.cell);
+    this._cells.set(index, cell.observableCell);
   }
 
   /**
@@ -224,7 +218,6 @@ export class CellList implements IObservableList<ICellModel> {
   push(cell: ICellModel): number {
     // Set the internal data structures.
     this.insert(this._cells.length, cell);
-//    return this._cells.push(cell.cell);
     return this._cells.length;
   }
 
@@ -257,12 +250,8 @@ export class CellList implements IObservableList<ICellModel> {
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
     this._addToMap(cell.id, cell);
-    this._cells.insert(index, cell.cell);
-    if (cell.cell instanceof ObservableCell) {
-      const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
-      cell.cell = collaborativeCell;
-      this._cells.set(index, collaborativeCell);
-    }
+    this._cells.insert(index, cell.observableCell);
+//    this._ensureCollaborativeCell(index, cell);
   }
 
   /**
@@ -369,7 +358,7 @@ export class CellList implements IObservableList<ICellModel> {
     each(newValues, cell => {
       // Set the internal data structures.
       this._addToMap(cell.id, cell);
-      this._cells.push(cell.cell);
+      this._cells.push(cell.observableCell);
     });
     return this.length;
   }
@@ -405,7 +394,7 @@ export class CellList implements IObservableList<ICellModel> {
     each(newValues, cell => {
       this._addToMap(cell.id, cell);
 //      this._cells.beginCompoundOperation();
-      this._cells.insert(index++, cell.cell);
+      this._cells.insert(index++, cell.observableCell);
 //      this._cells.endCompoundOperation();
     });
     return this.length;
@@ -516,6 +505,14 @@ export class CellList implements IObservableList<ICellModel> {
     }
   }
 
+  private _ensureCollaborativeCell(index: number, cell: ICellModel) {
+    if (cell.observableCell instanceof ObservableCell) {
+      const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
+      cell.observableCell = collaborativeCell;
+      this._cells.set(index, collaborativeCell);
+    }
+  }
+
   private _onCellsChanged(
     order: IObservableList<IObservableCell>,
     change: IObservableList.IChangedArgs<IObservableCell>
@@ -524,9 +521,7 @@ export class CellList implements IObservableList<ICellModel> {
       each(change.newValues, c => {
         let cell: ICellModel | undefined = this._cellMap.get(this._getCellId(c));
         if (!cell) {
-          const cellDB = this._factory.modelDB!;
-          // TODO(ECH) Revisit this...
-          const cellType = cellDB.createValue(this._getCellId(c) + '.type');
+          const cellType = this._factory.modelDB!.createValue(this._getCellId(c) + '.type');
           switch (cellType.get()) {
             case 'code':
               cell = this._factory.createCodeCell({ id: this._getCellId(c) });
@@ -538,15 +533,10 @@ export class CellList implements IObservableList<ICellModel> {
               cell = this._factory.createCodeCell({ id: this._getCellId(c) });
               break;
           }
-          cell.cell = c;
+          cell.observableCell = c;
           this._addToMap(this._getCellId(c), cell);
         }
-        if (cell.cell instanceof ObservableCell) {
-          const index = change.newIndex;
-          const collaborativeCell = this._modelDB.createCell(['notebook', 'cells', index.toString()], cell.id);
-          cell.cell = collaborativeCell;
-          this._cells.set(index, collaborativeCell);
-        }
+        this._ensureCollaborativeCell(change.newIndex, cell);
       });
     }
     const newValues: ICellModel[] = [];

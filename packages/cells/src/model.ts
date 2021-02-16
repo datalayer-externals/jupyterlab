@@ -55,7 +55,7 @@ export interface ICellModel extends CodeEditor.IModel {
   /**
    * TODO(ECH)
    */
-  cell: IObservableCell;
+  observableCell: IObservableCell;
 
   /**
    * Whether the cell is trusted.
@@ -172,15 +172,15 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
 
     this.id = options.id || UUID.uuid4();
 
-    this.cell = this.modelDB.createCell(['notebook', 'cells_tmp', this.id], this.id);
+    this.observableCell = this.modelDB.createCell(['notebook', 'cells_tmp', this.id], this.id);
 
     const cell = options.cell;
 
     if (!cell) {
-      this._cell.trusted.set(false);
+      this._observableCell.trusted.set(false);
       return;
     }
-    this._cell.trusted.set(!!cell.metadata['trusted']);
+    this._observableCell.trusted.set(!!cell.metadata['trusted']);
     delete cell.metadata['trusted'];
 
     if (Array.isArray(cell.source)) {
@@ -198,7 +198,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
     }
 
     for (const key in metadata) {
-      this._cell.metadata.set(key, metadata[key]);
+      this._observableCell.metadata.set(key, metadata[key]);
     }
   }
 
@@ -229,15 +229,15 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
   /**
    * TODO(ECH)
    */
-  get cell(): IObservableCell {
-    return this._cell;
+  get observableCell(): IObservableCell {
+    return this._observableCell;
   }
 
   /**
    * TODO(ECH)
    */
-  set cell(newCell: IObservableCell) {
-    const oldCell = this._cell;
+  set observableCell(newCell: IObservableCell) {
+    const oldCell = this._observableCell;
     if (oldCell === newCell) {
       return;
     }
@@ -246,25 +246,25 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
       oldCell.metadata.changed.disconnect(this.onGenericChange, this);
       oldCell.trusted.changed.disconnect(this.onGenericChange, this);
     }
-    this._cell = newCell;
-    this.codeEditor = newCell.codeEditor;
-    this._cell.codeEditor.value.changed.connect(this.onGenericChange, this);
-    this._cell.metadata.changed.connect(this.onGenericChange, this);
-    this._cell.trusted.changed.connect(this.onTrustedChanged, this);
+    this._observableCell = newCell;
+    this.observableCodeEditor = newCell.codeEditor;
+    this._observableCell.codeEditor.value.changed.connect(this.onGenericChange, this);
+    this._observableCell.metadata.changed.connect(this.onGenericChange, this);
+    this._observableCell.trusted.changed.connect(this.onTrustedChanged, this);
   }
 
   /**
    * The metadata associated with the cell.
    */
   get metadata(): IObservableJSON {
-    return this._cell.metadata as IObservableJSON;
+    return this._observableCell.metadata as IObservableJSON;
   }
 
   /**
    * Get the trusted state of the model.
    */
   get trusted(): boolean {
-    return this._cell.trusted.get() as boolean;
+    return this._observableCell.trusted.get() as boolean;
   }
 
   /**
@@ -275,7 +275,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
     if (oldValue === newValue) {
       return;
     }
-    this._cell.trusted.set(newValue);
+    this._observableCell.trusted.set(newValue);
   }
 
   /**
@@ -316,7 +316,7 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
     this.contentChanged.emit(void 0);
   }
 
-  private _cell: IObservableCell;
+  private _observableCell: IObservableCell;
 }
 
 /**
@@ -466,7 +466,7 @@ export class MarkdownCellModel extends AttachmentsCellModel {
     super(options);
     // Use the Github-flavored markdown mode.
     this.mimeType = 'text/x-ipythongfm';
-    this.cell.cellType.set('markdown');
+    this.observableCell.cellType.set('markdown');
   }
 
   /**
@@ -500,11 +500,11 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
     const trusted = this.trusted;
     const cell = options.cell as nbformat.ICodeCell;
 
-    this.cell.cellType.set('code');
+    this.observableCell.cellType.set('code');
 
     let outputs: nbformat.IOutput[] = [];
 
-    const executionCount = this.cell.executionCount;
+    const executionCount = this.observableCell.executionCount;
     if (!executionCount.get()) {
       if (cell && cell.cell_type === 'code') {
         executionCount.set(cell.execution_count || null);
@@ -549,17 +549,17 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
   /**
    * TODO(ECH)
    */
-  get cell(): IObservableCell {
-    return super.cell;
+  get observableCell(): IObservableCell {
+    return super.observableCell;
   }
 
   /**
    * TODO(ECH)
    */
-  set cell(newCell: IObservableCell) {
-    super.cell  = newCell;
+  set observableCell(newCell: IObservableCell) {
+    super.observableCell  = newCell;
     // TODO(ECH) Review this...
-    const executionCount = super.cell.executionCount;
+    const executionCount = super.observableCell.executionCount;
     if (!executionCount.get()) {
       executionCount.set(null);
     }
@@ -577,14 +577,14 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
    * The execution count of the cell.
    */
   get executionCount(): nbformat.ExecutionCount {
-    return this.cell.executionCount.get() as nbformat.ExecutionCount;
+    return this.observableCell.executionCount.get() as nbformat.ExecutionCount;
   }
   set executionCount(newValue: nbformat.ExecutionCount) {
     const oldValue = this.executionCount;
     if (newValue === oldValue) {
       return;
     }
-    this.cell.executionCount.set(newValue || null);
+    this.observableCell.executionCount.set(newValue || null);
   }
 
   clearExecution() {

@@ -181,7 +181,7 @@ export namespace CodeEditor {
     /** 
      * TODO(ECH)
      */
-    codeEditor: IObservableCodeEditor;
+    observableCodeEditor: IObservableCodeEditor;
 
     /**
      * The text stored in the model.
@@ -224,10 +224,10 @@ export namespace CodeEditor {
         this.modelDB = new ModelDB();
       }
 
-      this._codeEditor = this.modelDB.createCodeEditor('codeEditor');
-      this._codeEditor.value.text = this._codeEditor.value.text || options.value || '';
-      this._codeEditor.mimeType.set(options.mimeType || 'text/plain');
-      this._codeEditor.mimeType.changed.connect(this._onMimeTypeChanged, this);
+      this._observableCodeEditor = this.modelDB.createCodeEditor('codeEditor');
+      this._observableCodeEditor.value.text = this._observableCodeEditor.value.text || options.value || '';
+      this._observableCodeEditor.mimeType.set(options.mimeType || 'text/plain');
+      this._observableCodeEditor.mimeType.changed.connect(this._onMimeTypeChanged, this);
     }
 
     /**
@@ -246,35 +246,35 @@ export namespace CodeEditor {
     /**
      * Get the value of the model.
      */
-    get codeEditor(): IObservableCodeEditor {
-      return this._codeEditor;
+    get observableCodeEditor(): IObservableCodeEditor {
+      return this._observableCodeEditor;
     }
 
     /**
      * Get the value of the model.
      */
-    set codeEditor(newValue: IObservableCodeEditor) {
-      if (this._codeEditor) {
-        this._codeEditor.mimeType.changed.disconnect(this._onMimeTypeChanged, this);
+    set observableCodeEditor(newValue: IObservableCodeEditor) {
+      if (this._observableCodeEditor) {
+        this._observableCodeEditor.mimeType.changed.disconnect(this._onMimeTypeChanged, this);
       }
-      newValue.value.text = newValue.value.text || this._codeEditor.value.text || '';
-      newValue.mimeType.set(this._codeEditor.mimeType.get() || 'text/plain');
-      this._codeEditor = newValue;
-      this._codeEditor.mimeType.changed.connect(this._onMimeTypeChanged, this);
+      newValue.value.text = newValue.value.text || this._observableCodeEditor.value.text || '';
+      newValue.mimeType.set(this._observableCodeEditor.mimeType.get() || 'text/plain');
+      this._observableCodeEditor = newValue;
+      this._observableCodeEditor.mimeType.changed.connect(this._onMimeTypeChanged, this);
     }
 
     /**
      * Get the value of the model.
      */
     get value(): IObservableString {
-      return this._codeEditor.value;
+      return this._observableCodeEditor.value;
     }
 
     /**
      * Get the selections for the model.
      */
     get selections(): IObservableMap<ITextSelection[]> {
-      return this._codeEditor.selections as any as IObservableMap<
+      return this._observableCodeEditor.selections as any as IObservableMap<
         ITextSelection[]
       >;
     }
@@ -283,7 +283,7 @@ export namespace CodeEditor {
      * A mime type of the model.
      */
     get mimeType(): string {
-      const mimeType = this._codeEditor.mimeType.get() as string;
+      const mimeType = this._observableCodeEditor.mimeType.get() as string;
       return mimeType || 'text/plain';
     }
     set mimeType(newValue: string) {
@@ -291,7 +291,7 @@ export namespace CodeEditor {
       if (oldValue === newValue) {
         return;
       }
-      this._codeEditor.mimeType.set(newValue);
+      this._observableCodeEditor.mimeType.set(newValue);
     }
 
     /**
@@ -325,7 +325,7 @@ export namespace CodeEditor {
     }
 
     private _isDisposed = false;
-    private _codeEditor: IObservableCodeEditor;
+    private _observableCodeEditor: IObservableCodeEditor;
     private _mimeTypeChanged = new Signal<this, IChangedArgs<string>>(this);
   }
 
