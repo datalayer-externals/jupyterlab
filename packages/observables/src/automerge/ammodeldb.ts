@@ -62,7 +62,7 @@ const CSS_COLOR_NAMES = [
   'Silver'
 ];
 
-const SHORT_ID_NUMBER_OF_CHARS = 7;
+const SHORT_ID_NUMBER_OF_CHARS = 20;
 
 // const WS_READY_STATE_CONNECTING = 0
 const WS_READY_STATE_OPEN = 1;
@@ -193,15 +193,23 @@ export class AutomergeModelDB implements IModelDB {
 
     this._id = this._basePath;
 
-    this._actorId = UUID.uuid4().split('-').join('');
-    this._actorShortId = this._actorId.substr(0, SHORT_ID_NUMBER_OF_CHARS);
+    // @ts-ignore
+    const juser = window.juser;
+    console.log('--- juser', juser);
+    if (juser) {
+      this._actorId = juser.me.login;
+      this._actorShortId = this._actorId.substr(0, SHORT_ID_NUMBER_OF_CHARS);
+    } else {
+      this._actorId = UUID.uuid4().split('-').join('');
+      this._actorShortId = this._actorId.substr(0, SHORT_ID_NUMBER_OF_CHARS);
+    }
 
     const localCollaborator = new Collaborator(
       this._actorId,
       this._actorId,
-      `Me ${this._actorId}`,
+      `${this._actorId}`,
       CSS_COLOR_NAMES[Math.floor(Math.random() * CSS_COLOR_NAMES.length)],
-      `Me ${this._actorShortId}`
+      `${this._actorShortId}`
     );
     this._collaborators = new CollaboratorMap(localCollaborator);
 
@@ -280,11 +288,11 @@ export class AutomergeModelDB implements IModelDB {
               const collaborator = new Collaborator(
                 uuid,
                 uuid,
-                `Anonymous ${uuid}`,
+                `${uuid}`,
                 CSS_COLOR_NAMES[
                   Math.floor(Math.random() * CSS_COLOR_NAMES.length)
                 ],
-                `Anonymous ${uuid.substr(0, SHORT_ID_NUMBER_OF_CHARS)}`
+                `${uuid.substr(0, SHORT_ID_NUMBER_OF_CHARS)}`
               );
               this.collaborators.set(uuid, collaborator);
             }
