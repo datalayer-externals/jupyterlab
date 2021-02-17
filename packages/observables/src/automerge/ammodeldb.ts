@@ -195,7 +195,6 @@ export class AutomergeModelDB implements IModelDB {
 
     // @ts-ignore
     const juser = window.juser;
-    console.log('--- juser', juser);
     this._actorId = UUID.uuid4().split('-').join('');
     if (juser) {
       this._actorShortId = juser.me.name + ' @' + juser.me.login;
@@ -288,7 +287,6 @@ export class AutomergeModelDB implements IModelDB {
           const users = this._amDoc['users'];
           Object.keys(users).map(uuid => {
             if (!this.collaborators.get(uuid)) {
-              console.log('---', users[uuid])
               const collaborator = new Collaborator(
                 uuid,
                 uuid,
