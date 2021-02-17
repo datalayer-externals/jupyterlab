@@ -196,11 +196,10 @@ export class AutomergeModelDB implements IModelDB {
     // @ts-ignore
     const juser = window.juser;
     console.log('--- juser', juser);
+    this._actorId = UUID.uuid4().split('-').join('');
     if (juser) {
-      this._actorId = juser.me.login;
-      this._actorShortId = this._actorId.substr(0, SHORT_ID_NUMBER_OF_CHARS);
+      this._actorShortId = juser.me.name + ' @' + juser.me.login;
     } else {
-      this._actorId = UUID.uuid4().split('-').join('');
       this._actorShortId = this._actorId.substr(0, SHORT_ID_NUMBER_OF_CHARS);
     }
 
@@ -269,30 +268,35 @@ export class AutomergeModelDB implements IModelDB {
           // Check users.
           if (!this._amDoc['users']) {
             this._amDoc = Automerge.change(this._amDoc, 
-              `users init`, 
+              `users init`,
               doc => {
-              doc['users'] = {};
-            });
+                doc['users'] = {};
+              });
           }
           if (!this._amDoc['users'][this._actorId]) {
             this._amDoc = Automerge.change(
               this._amDoc,
               `users add ${this._actorId}`,
               doc => {
-                doc['users'][this._actorId] = true;
+                doc['users'][this._actorId] = {
+                  actorId: this._actorId,
+                  displayName: this._actorShortId
+                };
               }
             );
           }
-          Object.keys(this._amDoc['users']).map(uuid => {
+          const users = this._amDoc['users'];
+          Object.keys(users).map(uuid => {
             if (!this.collaborators.get(uuid)) {
+              console.log('---', users[uuid])
               const collaborator = new Collaborator(
                 uuid,
                 uuid,
-                `${uuid}`,
+                users[uuid]['displayName'],
                 CSS_COLOR_NAMES[
                   Math.floor(Math.random() * CSS_COLOR_NAMES.length)
                 ],
-                `${uuid.substr(0, SHORT_ID_NUMBER_OF_CHARS)}`
+                users[uuid]['displayName'],
               );
               this.collaborators.set(uuid, collaborator);
             }
