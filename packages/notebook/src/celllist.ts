@@ -536,7 +536,6 @@ export class CellList implements IObservableList<ICellModel> {
   private _onOrderChanged(
     change: IObservableList.IChangedArgs<string>
   ): void {
-    console.log('--- celllist', change);
     if (change.type === 'add' || change.type === 'set') {
       each(change.newValues, id => {
         if (!this._cellMap.has(id)) {

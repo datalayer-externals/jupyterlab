@@ -389,6 +389,7 @@ export class AutomergeList<T> implements IObservableList<T> {
     if (this.length <= 1 || fromIndex === toIndex) {
       return;
     }
+/*
     let values = Array<T>();
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
@@ -400,10 +401,8 @@ export class AutomergeList<T> implements IObservableList<T> {
 //            ArrayExt.move(getNested(doc, this._path) as List<any>, fromIndex, toIndex);
             // const removedItem = (getNested(doc, this._path) as List<any>).splice(fromIndex, fromIndex+1);
             // (getNested(doc, this._path) as List<any>).insertAt!(toIndex, removedItem);
-            //
-            // https://github.com/automerge/automerge/issues/263
-            //
             const removedItems = (getNested(doc, this._path) as List<any>).splice(fromIndex, 1);
+            console.log('--- amlist removed', removedItems);
             (getNested(doc, this._path) as List<any>).insertAt!(toIndex, ...JSON.parse(JSON.stringify(removedItems)));
           }
         );
@@ -416,7 +415,20 @@ export class AutomergeList<T> implements IObservableList<T> {
         });
       });
     });
-  }
+*/
+    const from = (getNested(this._modelDB.amDoc, this._path) as List<any>)[fromIndex];
+    this.remove(fromIndex);
+    this.insert(toIndex, from);
+    /*
+    this._changed.emit({
+      type: 'move',
+      oldIndex: fromIndex,
+      newIndex: toIndex,
+      oldValues: [from],
+      newValues: [from]
+    });
+    */
+}
 
   /**
    * Push a set of values to the back of the list.

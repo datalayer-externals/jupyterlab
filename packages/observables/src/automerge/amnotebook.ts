@@ -61,7 +61,6 @@ export class AutomergeNotebook implements IObservableNotebook {
           const action = diff.edits[0].action;
           const index = diff.edits[0].index;
           const cellId = (after as any[])[index];
-          console.log('--- amnotebook remote', action, index, cellId);
           const value = after[index];
           // 'add' 'move' 'remove' 'set'
           switch(action) {
