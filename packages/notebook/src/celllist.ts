@@ -36,6 +36,7 @@ export class CellList implements IObservableList<ICellModel> {
     this._factory = factory;
     this._cellMap = new ObservableMap<ICellModel>();
     this._notebook = modelDB.get('notebook') as IObservableNotebook;
+    this._notebook.changed.connect(this._onNotebookChanged, this);
     this._notebook.cellOrderChanged.connect(this._onNotebookCellOrderChanged, this);
     this._notebook.cellOrder.changed.connect(this._onCellOrderChanged, this);
   }
@@ -496,15 +497,37 @@ export class CellList implements IObservableList<ICellModel> {
     }
   }
 
+  private _onNotebookChanged(
+    notebook: IObservableNotebook,
+    change: IObservableNotebook.IChangedArgs
+  ): void {
+    console.log('--- celllist o', notebook, change)
+    const newValues: ICellModel[] = [];
+    const oldValues: ICellModel[] = [];    
+    each(change.newValues, id => {
+      newValues.push(this._cellMap.get(id)!);
+    });
+    each(change.oldValues, id => {
+      oldValues.push(this._cellMap.get(id)!);
+    });
+    this._changed.emit({
+      type: change.type,
+      oldIndex: change.oldIndex,
+      newIndex: change.newIndex,
+      oldValues: oldValues,
+      newValues: newValues
+    });
+  }
+
   private _onNotebookCellOrderChanged(
-    order: IObservableNotebook,
+    notebook: IObservableNotebook,
     change: IObservableList.IChangedArgs<string>
   ): void {
     this._onOrderChanged(change);
   }
 
   private _onCellOrderChanged(
-    order: IObservableList<string>,
+    notebook: IObservableList<string>,
     change: IObservableList.IChangedArgs<string>
   ): void {
     this._onOrderChanged(change);
@@ -547,8 +570,8 @@ export class CellList implements IObservableList<ICellModel> {
       type: change.type,
       oldIndex: change.oldIndex,
       newIndex: change.newIndex,
-      oldValues,
-      newValues
+      oldValues: oldValues,
+      newValues: newValues
     });
   }
 

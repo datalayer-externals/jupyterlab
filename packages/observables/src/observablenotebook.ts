@@ -41,31 +41,58 @@ export namespace IObservableNotebook {
    */
   export type ChangeType =
     /**
-     * An entry was added.
+     * Item(s) were added to the list.
      */
     | 'add'
 
     /**
-     * An entry was removed.
+     * An item was moved within the list.
+     */
+    | 'move'
+
+    /**
+     * Item(s) were removed from the list.
      */
     | 'remove'
 
     /**
-     * An entry was changed.
+     * An item was set in the list.
      */
-    | 'change';
+    | 'set';
 
   /**
    * The changed args object which is emitted by an observable map.
    */
   export interface IChangedArgs {
     /**
-     * The type of change undergone by the map.
+     * The type of change undergone by the vector.
      */
     type: ChangeType;
 
-    index: number;
+    /**
+     * The new index associated with the change.
+     */
+    newIndex: number;
 
-    cell: IObservableCell | undefined;
+    /**
+     * The new values associated with the change.
+     *
+     * #### Notes
+     * The values will be contiguous starting at the `newIndex`.
+     */
+    newValues: any[];
+
+    /**
+     * The old index associated with the change.
+     */
+    oldIndex: number;
+
+    /**
+     * The old values associated with the change.
+     *
+     * #### Notes
+     * The values will be contiguous starting at the `oldIndex`.
+     */
+    oldValues: any[];
   }
 }

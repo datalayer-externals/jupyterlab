@@ -62,9 +62,11 @@ export class AutomergeNotebook implements IObservableNotebook {
           const index = diff.edits[0].index;
           const cellId = (after as any[])[index];
           console.log('--- amnotebook remote', action, index, cellId);
+          const value = after[index];
           // 'add' 'move' 'remove' 'set'
           switch(action) {
             case 'insert':
+              this._cellOrder.insert(index, value);
               this._cellOrderChanged.emit({
                 type: 'add',
                 oldIndex: -1,
@@ -127,6 +129,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   insertCell(index: number, cell: IObservableCell): void {
+    this.createCell(cell);
     this._cellOrder.insert(index, cell.id.get() as string);
   }
 
@@ -139,7 +142,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   moveCell(fromIndex: number, toIndex: number): void {
-    throw new Error('moveCell is not implemented by AutomergeNotebook');
+    this._cellOrder.move(fromIndex, toIndex);
   }
 
   dispose(): void {
