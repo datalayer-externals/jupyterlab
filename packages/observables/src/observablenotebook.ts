@@ -24,11 +24,11 @@ export interface IObservableNotebook extends IDisposable, IObservable {
   readonly cellOrder: IObservableList<string>;
   getCell(id: string): IObservableCell;
   setCell(index: number, cell: IObservableCell): void;
-  createCell(cell: IObservableCell): IObservableCell;
   insertCell(index: number, cell: IObservableCell): void;
   removeCell(index: number): void;
   removeCellsRange(startIndex: number, endIndex: number): void;
   moveCell(fromIndex: number, toIndex: number): void;
+  clear(): void;
   dispose(): void;
 }
 

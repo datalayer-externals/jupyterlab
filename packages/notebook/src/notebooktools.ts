@@ -26,7 +26,7 @@ import {
 
 import * as nbformat from '@jupyterlab/nbformat';
 
-import { IObservableMap, ObservableJSON } from '@jupyterlab/observables';
+import { IObservableMap, ObservableJSON, IObservableString } from '@jupyterlab/observables';
 
 import {
   nullTranslator,
@@ -146,6 +146,7 @@ export class NotebookTools extends Widget implements INotebookTools {
 
     tool.addClass('jp-NotebookTools-tool');
     section.addWidget(tool, rank);
+
     // TODO: perhaps the necessary notebookTools functionality should be
     // consolidated into a single object, rather than a broad reference to this.
     tool.notebookTools = this;
@@ -504,8 +505,12 @@ export namespace NotebookTools {
     /**
      * Handle a change to the current editor value.
      */
-    private _onValueChanged(): void {
-      this._model.value.text = this._cellModel!.value.text.split('\n')[0];
+    private _onValueChanged(sender: IObservableString, args: IObservableString.IChangedArgs): void {
+      if (args.after) {
+        this._model.value.text = this._cellModel!.value.text.split('\n')[0];
+      } else {
+        this._model.value.text = this._cellModel!.value.text.split('\n')[0];
+      }
     }
 
     /**

@@ -205,9 +205,9 @@ export class AutomergeModelDB implements IModelDB {
     const localCollaborator = new Collaborator(
       this._actorId,
       this._actorId,
-      `${this._actorId}`,
+      this._actorId,
       CSS_COLOR_NAMES[Math.floor(Math.random() * CSS_COLOR_NAMES.length)],
-      `${this._actorShortId}`
+      `${this._actorShortId} @me`
     );
     this._collaborators = new CollaboratorMap(localCollaborator);
 
@@ -223,8 +223,8 @@ export class AutomergeModelDB implements IModelDB {
       params = params + 'initialize';
     }
     const uri = encodeURI(
-//      `ws://localhost:4321/${this._actorId}/${options.localPath}?${params}`
-      `ws://${location.hostname}:${location.port}/jupyter_rtc_proxy/${this._actorId}/${options.localPath}?${params}`
+      `ws://localhost:4321/${this._actorId}/${options.localPath}?${params}`
+//      `ws://${location.hostname}:${location.port}/jupyter_rtc_proxy/${this._actorId}/${options.localPath}?${params}`
     );
     this._ws = new WebSocket(uri);
     this._ws.binaryType = 'arraybuffer';
@@ -294,7 +294,7 @@ export class AutomergeModelDB implements IModelDB {
                 CSS_COLOR_NAMES[
                   Math.floor(Math.random() * CSS_COLOR_NAMES.length)
                 ],
-                users[uuid]['displayName'],
+                `${users[uuid]['displayName']} @anonymous`,
               );
               this.collaborators.set(uuid, collaborator);
             }

@@ -19,8 +19,6 @@ import { IObservableList } from '../observablelist';
 
 import { AutomergeCell } from './amcell';
 
-// import { AutomergeCell } from './amcell';
-
 export class AutomergeNotebook implements IObservableNotebook {
   constructor(
     path: string[],
@@ -39,7 +37,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     const cellOrder = this._modelDB.amDoc.notebook.cellOrder as [];
     if (cellOrder.length === 0) {
       const cell = new ObservableCell('init-cell-id-1')
-      this.createCell(cell);
+      this._getOrCreateAmCell(cell);
       this.insertCell(0, cell);
     }
     else {
@@ -114,34 +112,32 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
   
   getCell(id: string): IObservableCell {
-    return this.createCell(new ObservableCell(id));
+    return this._getOrCreateAmCell(new ObservableCell(id));
   }
 
   setCell(index: number, cell: IObservableCell) {
     this._cellOrder.set(index, cell.id.get() as string);
   }
 
-  createCell(cell: IObservableCell): IObservableCell {
-    const amCell = new AutomergeCell(['notebook', 'cells', cell.id.get() as string], this._modelDB, cell.id.get() as string);
-    amCell.initObservable();
-    return amCell;
-  }
-
   insertCell(index: number, cell: IObservableCell): void {
-    this.createCell(cell);
-    this._cellOrder.insert(index, cell.id.get() as string);
+    const amCell = this._getOrCreateAmCell(cell);
+    this._cellOrder.insert(index, amCell.id.get() as string);
   }
 
   removeCell(index: number): void {
-    throw new Error('removeCell is not implemented by AutomergeNotebook');
+    this._cellOrder.remove(index);
   }
 
   removeCellsRange(startIndex: number, endIndex: number): void {
-    throw new Error('removeCellsRange is not implemented by AutomergeNotebook');
+    this._cellOrder.removeRange(startIndex, endIndex);
   }
 
   moveCell(fromIndex: number, toIndex: number): void {
     this._cellOrder.move(fromIndex, toIndex);
+  }
+
+  clear(): void {
+    this._cellOrder.clear();
   }
 
   dispose(): void {
@@ -158,12 +154,18 @@ export class AutomergeNotebook implements IObservableNotebook {
     */
   }
 
-  private _metadata: IObservableJSON;
-  private _cellOrder: IObservableList<string>;
+  private _getOrCreateAmCell(cell: IObservableCell): IObservableCell {
+    const amCell = new AutomergeCell(['notebook', 'cells', cell.id.get() as string], this._modelDB, cell.id.get() as string);
+    amCell.initObservable();
+    return amCell;
+  }
+
   private _path: string[];
   private _modelDB: AutomergeModelDB;
   private _changed = new Signal<this, IObservableNotebook.IChangedArgs>(this);
   private _cellOrderChanged = new Signal<this, IObservableList.IChangedArgs<string>>(this);
+  private _metadata: IObservableJSON;
+  private _cellOrder: IObservableList<string>;
   private _isDisposed = false;
 }
 

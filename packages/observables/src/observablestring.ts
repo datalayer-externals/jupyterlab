@@ -116,6 +116,11 @@ export namespace IObservableString {
      * value of the removed substring.
      */
     value: string;
+
+    /**
+     * TODO(ECH)
+     */
+    after?: string
   }
 }
 

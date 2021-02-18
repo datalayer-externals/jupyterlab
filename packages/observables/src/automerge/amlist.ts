@@ -6,8 +6,8 @@ import {
   ArrayIterator,
   IIterator,
   IterableOrArrayLike,
-//  each,
-//  toArray
+  each,
+  toArray
 } from '@lumino/algorithm';
 
 import { ISignal, Signal } from '@lumino/signaling';
@@ -71,8 +71,9 @@ export class AutomergeList<T> implements IObservableList<T> {
    * The length of the list.
    */
   get length(): number {
-    return amDocPath(this._modelDB.amDoc, this._path)
-      ? (amDocPath(this._modelDB.amDoc, this._path) as List<T>).length
+    const list = amDocPath(this._modelDB.amDoc, this._path);
+    return list
+      ? list.length
       : 0;
   }
 
@@ -199,7 +200,6 @@ export class AutomergeList<T> implements IObservableList<T> {
           this._modelDB.amDoc,
           `list push ${this._path} ${value}`,
           doc => {
-//            (getNested(doc, this._path) as List<any>).push(v);
             (getNested(doc, this._path) as List<any>).push(v);
           });
       });
@@ -492,8 +492,6 @@ export class AutomergeList<T> implements IObservableList<T> {
    * An `index` which is non-integral.
    */
   insertAll(index: number, values: IterableOrArrayLike<T>): void {
-    throw new Error('insertAll is not implemented by AutomergeList');
-    /*
     const newIndex = index;
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
@@ -502,8 +500,7 @@ export class AutomergeList<T> implements IObservableList<T> {
           `list insertAll ${this._path} ${index} ${values}`,
           doc => {
             each(values, value => {
-              const v = this._asCell(value);
-              (getNested(doc, this._path) as List<any>).insertAt!(index++, v);
+              (getNested(doc, this._path) as List<any>).insertAt!(index++, value);
             });
           }
         );
@@ -516,7 +513,6 @@ export class AutomergeList<T> implements IObservableList<T> {
         newValues: toArray(values)
       });
     });
-    */
   }
 
   /**
@@ -564,18 +560,7 @@ export class AutomergeList<T> implements IObservableList<T> {
     });
     return this.length;
   }
-/*
-  private _asCell(observableCell: IObservableCell) {
-    return {
-      id: observableCell.id.get(),
-      cell_type: observableCell.cellType.get() || 'code',
-      execution_count: observableCell.executionCount.get() || '',
-      metadata: observableCell.metadata.toJSON(),
-      outputs: [],
-      source: new Text(observableCell.codeEditor.value.text),
-    };
-  }
-*/
+
   private _path: string[];
   private _modelDB: AutomergeModelDB;
   private _isDisposed = false;

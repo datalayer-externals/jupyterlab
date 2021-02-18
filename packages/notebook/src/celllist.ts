@@ -284,7 +284,7 @@ export class CellList implements IObservableList<ICellModel> {
    */
   remove(index: number): ICellModel {
     const id = this._notebook.cellOrder.get(index);
-    this._notebook.cellOrder.remove(index);
+    this._notebook.removeCell(index);
     const cell = this._cellMap.get(id)!;
     return cell;
   }
@@ -299,7 +299,7 @@ export class CellList implements IObservableList<ICellModel> {
    * All current iterators are invalidated.
    */
   clear(): void {
-    this._notebook.cellOrder.clear();
+    this._notebook.clear();
   }
 
   /**
@@ -487,21 +487,10 @@ export class CellList implements IObservableList<ICellModel> {
     return cell;
   }
 
-  private _ensureCollaborativeCell(cell: ICellModel) {
-    if (cell.observableCell instanceof ObservableCell) {
-      let collaborativeCell = this._notebook.getCell(cell.id);
-      if (!collaborativeCell) {
-        collaborativeCell = this._notebook.createCell(cell.observableCell);
-      }
-      cell.observableCell = collaborativeCell;
-    }
-  }
-
   private _onNotebookChanged(
     notebook: IObservableNotebook,
     change: IObservableNotebook.IChangedArgs
   ): void {
-    console.log('--- celllist o', notebook, change)
     const newValues: ICellModel[] = [];
     const oldValues: ICellModel[] = [];    
     each(change.newValues, id => {
@@ -554,7 +543,11 @@ export class CellList implements IObservableList<ICellModel> {
           }
           this._addToMap(id, cell);
         }
-        this._ensureCollaborativeCell(this._cellMap.get(id)!);
+        // Ensure collaborative cell.
+        const c = this._cellMap.get(id)!
+        if (c.observableCell instanceof ObservableCell) {
+          c.observableCell = this._notebook.getCell(c.id);
+        }
       });
     }
     const newValues: ICellModel[] = [];

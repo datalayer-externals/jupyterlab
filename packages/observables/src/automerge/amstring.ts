@@ -69,7 +69,8 @@ export class AutomergeString implements IObservableString {
                   type: 'insert',
                   start: edit.index,
                   end: edit.index + value.length,
-                  value: value
+                  value: value,
+                  after: after
                 });
               }
             }
@@ -79,7 +80,8 @@ export class AutomergeString implements IObservableString {
                 type: 'remove',
                 start: edit.index,
                 end: edit.index + value.length,
-                value: value
+                value: value,
+                after: after
               });
             }
           }
