@@ -70,7 +70,7 @@ export class AutomergeString implements IObservableString {
                   start: edit.index,
                   end: edit.index + value.length,
                   value: value,
-                  after: after
+                  after: after.toString()
                 });
               }
             }
@@ -81,7 +81,7 @@ export class AutomergeString implements IObservableString {
                 start: edit.index,
                 end: edit.index + value.length,
                 value: value,
-                after: after
+                after: after.toString()
               });
             }
           }

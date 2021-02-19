@@ -402,7 +402,6 @@ export class AutomergeList<T> implements IObservableList<T> {
             // const removedItem = (getNested(doc, this._path) as List<any>).splice(fromIndex, fromIndex+1);
             // (getNested(doc, this._path) as List<any>).insertAt!(toIndex, removedItem);
             const removedItems = (getNested(doc, this._path) as List<any>).splice(fromIndex, 1);
-            console.log('--- amlist removed', removedItems);
             (getNested(doc, this._path) as List<any>).insertAt!(toIndex, ...JSON.parse(JSON.stringify(removedItems)));
           }
         );

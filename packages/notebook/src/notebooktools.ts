@@ -507,7 +507,7 @@ export namespace NotebookTools {
      */
     private _onValueChanged(sender: IObservableString, args: IObservableString.IChangedArgs): void {
       if (args.after) {
-        this._model.value.text = this._cellModel!.value.text.split('\n')[0];
+        this._model.value.text = args.after.split('\n')[0];
       } else {
         this._model.value.text = this._cellModel!.value.text.split('\n')[0];
       }

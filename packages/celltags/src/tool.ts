@@ -10,6 +10,7 @@ import {
 } from '@jupyterlab/translation';
 import { TagWidget } from './widget';
 import { AddWidget } from './addwidget';
+import { ObservableJSON } from '@jupyterlab/observables';
 
 /**
  * A Tool for tag operations.
@@ -215,8 +216,13 @@ export class TagTool extends NotebookTools.Tool {
   /**
    * Handle a change to active cell metadata.
    */
-  protected onActiveCellMetadataChanged(): void {
-    const tags = this.tracker.activeCell!.model.metadata.get('tags');
+  protected onActiveCellMetadataChanged(
+    msg: ObservableJSON.ChangeMessage
+  ): void {
+    let tags = this.tracker.activeCell!.model.metadata.get('tags');
+    if (msg.args.key === 'tags') {
+      tags = msg.args.newValue;
+    }
     let taglist: string[] = [];
     if (tags === undefined) {
       return;
