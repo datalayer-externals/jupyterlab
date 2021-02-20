@@ -97,7 +97,7 @@ export namespace IObservableCodeEditor {
 export class ObservableCodeEditor implements IObservableCodeEditor {
   constructor() {
     this._value = new ObservableString();
-    this._mimeType = new ObservableValue('');
+    this._mimeType = new ObservableValue('text/x-ipython');
     this._selections = new ObservableJSON();
   }
 

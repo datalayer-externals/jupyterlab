@@ -101,6 +101,7 @@ export class AutomergeValue implements IObservableValue {
    * Set the current value.
    */
   set(value: JSONValue): void {
+    console.log('--- amvalue set', this._path, value)
     waitOnAmDocInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         const oldValue = amDocPath(this._modelDB.amDoc, this._path).value;

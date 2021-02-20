@@ -37,7 +37,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     const cellOrder = this._modelDB.amDoc.notebook.cellOrder as [];
     if (cellOrder.length === 0) {
       const cell = new ObservableCell('init-cell-id-1')
-      this._getOrCreateAmCell(cell);
+      this._getOrCreateAutomergeCell(cell);
       this.insertCell(0, cell);
     }
     else {
@@ -112,7 +112,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
   
   getCell(id: string): IObservableCell {
-    return this._getOrCreateAmCell(new ObservableCell(id));
+    return this._getOrCreateAutomergeCell(new ObservableCell(id));
   }
 
   setCell(index: number, cell: IObservableCell) {
@@ -120,7 +120,7 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   insertCell(index: number, cell: IObservableCell): void {
-    const amCell = this._getOrCreateAmCell(cell);
+    const amCell = this._getOrCreateAutomergeCell(cell);
     this._cellOrder.insert(index, amCell.id.get() as string);
   }
 
@@ -154,8 +154,12 @@ export class AutomergeNotebook implements IObservableNotebook {
     */
   }
 
-  private _getOrCreateAmCell(cell: IObservableCell): IObservableCell {
-    const amCell = new AutomergeCell(['notebook', 'cells', cell.id.get() as string], this._modelDB, cell.id.get() as string);
+  private _getOrCreateAutomergeCell(cell: IObservableCell): IObservableCell {
+    const amCell = new AutomergeCell(
+      ['notebook', 'cells', cell.id.get() as string], 
+      this._modelDB, 
+      cell.id.get() as string
+      );
     amCell.initObservable();
     return amCell;
   }

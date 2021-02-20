@@ -40,7 +40,7 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
   }
 
   public initObservable() {
-    //    super.initObservable();
+    // Do not initialize `super`- Just initialize `composites`.
     this._id.initObservable();
     this._codeEditor.initObservable();
     this._metadata.initObservable();

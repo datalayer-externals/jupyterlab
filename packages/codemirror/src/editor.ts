@@ -724,8 +724,10 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     selections: IObservableMap<CodeEditor.ITextSelection[]>,
     args: IObservableMap.IChangedArgs<CodeEditor.ITextSelection[]>
   ): void {
-    //    const index = this.doc.indexFromPos(this._toCodeMirrorPosition(args.newValue![0].end))
-    //    console.log('---', this.doc.posFromIndex(index))
+    /*
+    const index = this.doc.indexFromPos(this._toCodeMirrorPosition(args.newValue![0].end))
+    console.log('---', this.doc.posFromIndex(index));
+    */
     const uuid = args.key;
     //    if (uuid !== this.uuid) {
     this._cleanSelections(uuid);

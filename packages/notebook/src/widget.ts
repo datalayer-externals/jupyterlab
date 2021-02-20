@@ -409,6 +409,7 @@ export class StaticNotebook extends Widget {
     sender: IObservableList<ICellModel>,
     args: IObservableList.IChangedArgs<ICellModel>
   ) {
+    console.log('--- _onCellsChanged', args)
     let index = 0;
     switch (args.type) {
       case 'add':

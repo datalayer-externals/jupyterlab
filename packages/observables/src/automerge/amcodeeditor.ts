@@ -28,7 +28,7 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     this._path = path;
     this._modelDB = modelDB;
     this._value = new AutomergeString(this._path.concat('value'), this._modelDB);
-    this._mimeType = new AutomergeValue(this._path.concat('mimeType'),this._modelDB, '');
+    this._mimeType = new AutomergeValue(this._path.concat('mimeType'),this._modelDB, 'text/x-ipython');
     this._selections = new AutomergeJSON(this._path.concat('selections'), this._modelDB);
   }
 
