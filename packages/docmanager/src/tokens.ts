@@ -52,6 +52,11 @@ export interface IDocumentManager extends IDisposable {
   autosaveInterval: number;
 
   /**
+   * TODO(ECH)
+   */
+  realtimeProtocol: string;
+
+  /**
    * Clone a widget.
    *
    * @param widget - The source widget.

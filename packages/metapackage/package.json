@@ -90,7 +90,6 @@
     "@jupyterlab/notebook": "^3.1.0-alpha.3",
     "@jupyterlab/notebook-extension": "^3.1.0-alpha.3",
     "@jupyterlab/observables": "^4.1.0-alpha.3",
-    "@jupyterlab/observables-extension": "^4.1.0-alpha.3",
     "@jupyterlab/outputarea": "^3.1.0-alpha.3",
     "@jupyterlab/pdf-extension": "^3.1.0-alpha.3",
     "@jupyterlab/property-inspector": "^3.1.0-alpha.3",

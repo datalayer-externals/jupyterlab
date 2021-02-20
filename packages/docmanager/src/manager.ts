@@ -83,6 +83,20 @@ export class DocumentManager implements IDocumentManager {
   }
 
   /**
+   * TODO(ECH)
+   */
+  get realtimeProtocol(): string {
+    return this._realtimeProtocol;
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  set realtimeProtocol(value: string) {
+    this._realtimeProtocol = value;
+  }
+
+  /**
    * Whether to autosave documents.
    */
   get autosave(): boolean {
@@ -481,7 +495,8 @@ export class DocumentManager implements IDocumentManager {
       kernelPreference,
       modelDBFactory,
       setBusy: this._setBusy,
-      sessionDialogs: this._dialogs
+      sessionDialogs: this._dialogs,
+      realtimeProtocol: this._realtimeProtocol
     });
     const handler = new SaveHandler({
       context,
@@ -603,6 +618,7 @@ export class DocumentManager implements IDocumentManager {
   private _opener: DocumentManager.IWidgetOpener;
   private _widgetManager: DocumentWidgetManager;
   private _isDisposed = false;
+  private _realtimeProtocol = 'none';
   private _autosave = true;
   private _autosaveInterval = 120;
   private _when: Promise<void>;

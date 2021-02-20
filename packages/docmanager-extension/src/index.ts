@@ -170,6 +170,10 @@ const docManagerPlugin: JupyterFrontEndPlugin<IDocumentManager> = {
         autosave === true || autosave === false ? autosave : true;
       app.commands.notifyCommandChanged(CommandIDs.toggleAutosave);
 
+      const realtimeProtocol = settings.get('realtimeProtocol').composite as
+        | string;
+      docManager.realtimeProtocol = realtimeProtocol || 'local';
+
       // Handle autosave interval
       const autosaveInterval = settings.get('autosaveInterval').composite as
         | number

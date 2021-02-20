@@ -69,10 +69,19 @@ export class Context<
       this._model = this._factory.createNew(lang, this._modelDB);
     } else {
       const localPath = manager.contents.localPath(this._path);
-      this._modelDB = new AutomergeModelDB({ localPath: localPath });
+      switch (options.realtimeProtocol) {
+        case 'none':
+          this._modelDB = new ModelDB({ localPath: localPath });
+          break;
+        case 'automerge':
+          this._modelDB = new AutomergeModelDB({ localPath: localPath });
+          break;
+        default:
+          this._modelDB = new ModelDB({ localPath: localPath });
+          break;
+      }
       this._model = this._factory.createNew(lang, this._modelDB);
     }
-
     this._readyPromise = manager.ready.then(() => {
       return this._populatedPromise.promise;
     });
@@ -861,6 +870,11 @@ export namespace Context {
      * The application language translator.
      */
     translator?: ITranslator;
+
+    /**
+     * TODO(ECH)
+     */
+    realtimeProtocol?: string;
   }
 }
 
