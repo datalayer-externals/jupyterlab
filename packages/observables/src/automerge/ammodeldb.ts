@@ -536,7 +536,6 @@ export class AutomergeModelDB implements IModelDB {
    *   `IModelDB`, with `basePath` prepended to all paths.
    */
   view(basePath: string): IModelDB {
-//    const view = new AutomergeModelDBView(basePath, this);
     const view = new ModelDB({ basePath, baseDB: this });
     this._disposables.add(view);
     return view;
