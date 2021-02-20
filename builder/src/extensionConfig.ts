@@ -4,6 +4,7 @@
 import * as path from 'path';
 import * as webpack from 'webpack';
 import { Build } from './build';
+import { LicenseWebpackPlugin } from 'license-webpack-plugin';
 import { merge } from 'webpack-merge';
 import * as fs from 'fs-extra';
 import * as glob from 'glob';
@@ -209,6 +210,38 @@ function generateConfig({
       webpackConfig = require(webpackConfigPath);
     }
   }
+
+  let plugins = [
+    new ModuleFederationPlugin({
+      name: data.name,
+      library: {
+        type: 'var',
+        name: ['_JUPYTERLAB', data.name]
+      },
+      filename: 'remoteEntry.[contenthash].js',
+      exposes,
+      shared
+    }),
+    new CleanupPlugin()
+  ];
+
+  if (mode === 'production') {
+    plugins.push(
+      new LicenseWebpackPlugin({
+        perChunkOutput: false,
+        outputFilename: 'third-party-licenses.txt',
+        excludedPackageTest: packageName => packageName === data.name
+      })
+    );
+  }
+
+  // Add version argument when in production so the Jupyter server
+  // allows caching of files (i.e., does not set the CacheControl header to no-cache to prevent caching static files)
+  let filename = '[name].[contenthash].js';
+  if (mode === 'production') {
+    filename += '?v=[contenthash]';
+  }
+
   const config = [
     merge(
       baseConfig,
@@ -217,26 +250,14 @@ function generateConfig({
         devtool,
         entry: {},
         output: {
-          filename: '[name].[contenthash].js',
+          filename,
           path: staticPath,
           publicPath: staticUrl || 'auto'
         },
         module: {
           rules: [{ test: /\.html$/, use: 'file-loader' }]
         },
-        plugins: [
-          new ModuleFederationPlugin({
-            name: data.name,
-            library: {
-              type: 'var',
-              name: ['_JUPYTERLAB', data.name]
-            },
-            filename: 'remoteEntry.[contenthash].js',
-            exposes,
-            shared
-          }),
-          new CleanupPlugin()
-        ]
+        plugins
       },
       webpackConfig
     )

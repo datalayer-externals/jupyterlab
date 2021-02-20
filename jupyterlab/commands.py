@@ -4,6 +4,7 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 import contextlib
+from copy import deepcopy
 from packaging.version import Version
 import errno
 from glob import glob
@@ -13,6 +14,7 @@ import json
 import logging
 import os
 import os.path as osp
+from pathlib import Path
 import re
 import shutil
 import site
@@ -27,7 +29,7 @@ import warnings
 
 from jupyter_core.paths import jupyter_config_path, jupyter_path
 from jupyterlab_server.process import which, Process, WatchHelper, list2cmdline
-from jupyterlab_server.config import LabConfig, get_page_config, get_federated_extensions, get_static_page_config, write_page_config
+from jupyterlab_server.config import LabConfig, get_page_config, get_federated_extensions, get_package_url, get_static_page_config, write_page_config
 from jupyter_server.extension.serverextension import GREEN_ENABLED, GREEN_OK, RED_DISABLED, RED_X
 from traitlets import HasTraits, Bool, Dict, Instance, List, Unicode, default
 
@@ -146,7 +148,9 @@ def get_app_dir():
     """
     # Default to the override environment variable.
     if os.environ.get('JUPYTERLAB_DIR'):
-        return osp.abspath(os.environ['JUPYTERLAB_DIR'])
+        # We must resolve the path to get the canonical case of the path for
+        # case-sensitive systems
+        return str(Path(os.environ['JUPYTERLAB_DIR']).resolve())
 
     # Use the default locations for data_files.
     app_dir = pjoin(sys.prefix, 'share', 'jupyter', 'lab')
@@ -164,7 +168,10 @@ def get_app_dir():
           osp.exists(app_dir) and
           osp.exists('/usr/local/share/jupyter/lab')):
         app_dir = '/usr/local/share/jupyter/lab'
-    return osp.abspath(app_dir)
+
+    # We must resolve the path to get the canonical case of the path for
+    # case-sensitive systems
+    return str(Path(app_dir).resolve())
 
 
 def dedupe_yarn(path, logger=None):
@@ -574,7 +581,8 @@ class _AppHandler(object):
         self.app_dir = options.app_dir
         self.sys_dir = get_app_dir() if options.use_sys_dir else self.app_dir
         self.logger = options.logger
-        self.core_data = options.core_config._data
+        # Make a deep copy of the core data so we don't influence the original copy
+        self.core_data = deepcopy(options.core_config._data)
         self.labextensions_path = options.labextensions_path
         self.kill_event = options.kill_event
         self.registry = options.registry
@@ -664,11 +672,8 @@ class _AppHandler(object):
 
         # Build the app.
         dedupe_yarn(staging, self.logger)
-        starting_dir = os.getcwd()
-        os.chdir(staging)
         command = f'build:{"prod" if production else "dev"}{":minimize" if minimize else ""}'
-        ret = self._run(['node', YARN_PATH, 'run', command])
-        os.chdir(starting_dir)
+        ret = self._run(['node', YARN_PATH, 'run', command], cwd=staging)
         if ret != 0:
             msg = 'JupyterLab failed to build'
             self.logger.debug(msg)
@@ -1250,7 +1255,8 @@ class _AppHandler(object):
         """Get the template the for staging package.json file.
         """
         logger = self.logger
-        data = self.info['core_data']
+        # make a deep copy of the data so we don't influence the core data
+        data = deepcopy(self.info['core_data'])
         local = self.info['local_extensions']
         linked = self.info['linked_packages']
         extensions = self.info['extensions']
@@ -1401,13 +1407,7 @@ class _AppHandler(object):
                 alias = filename[len(PIN_PREFIX):-len(".tgz")]
             else:
                 alias = None
-            # homepage, repository  are optional
-            if 'homepage' in data:
-                url = data['homepage']
-            elif 'repository' in data and isinstance(data['repository'], dict):
-                url = data['repository'].get('url', '')
-            else:
-                url = ''
+            url = get_package_url(data)
             extensions[alias or name] = dict(path=path,
                                     filename=osp.basename(path),
                                     url=url,

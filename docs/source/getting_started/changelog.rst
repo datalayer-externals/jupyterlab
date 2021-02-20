@@ -10,6 +10,40 @@ See the `JupyterLab
 3.0 <https://github.com/jupyterlab/jupyterlab/milestone/48?closed=1>`__
 milestone on GitHub for the full list of pull requests and issues closed.
 
+v3.0.8
+^^^^^^
+* ``@jupyterlab/rendermime``: upgraded `marked` dep past vulnerability.   (`#9809 <https://github.com/jupyterlab/jupyterlab/pull/9809>`__)
+* Fix Services Tests.  (`#9806 <https://github.com/jupyterlab/jupyterlab/pull/9806>`__)
+* Enable jupyter labextension build/watch to work for custom jupyterlab distributions.  (`#9697 <https://github.com/jupyterlab/jupyterlab/pull/9697>`__)
+* Add hash to webpack requests to enable caching.  (`#9776 <https://github.com/jupyterlab/jupyterlab/pull/9776>`__)
+* Update MANIFEST.in to include package_data files.  (`#9780 <https://github.com/jupyterlab/jupyterlab/pull/9780>`__)
+* Correct synchronization of tags between metadata and tags widget.  (`#9773 <https://github.com/jupyterlab/jupyterlab/pull/9773>`__)
+* Fix use of hyphen in module name.  (`#9655 <https://github.com/jupyterlab/jupyterlab/pull/9655>`__)
+* Add missing default_url fields to examples.  (`#9731 <https://github.com/jupyterlab/jupyterlab/pull/9731>`__, `#9737 <https://github.com/jupyterlab/jupyterlab/pull/9737>`__)
+
+v3.0.7
+^^^^^^
+* Add link for prebuilt extensions too.  (`#9702 <https://github.com/jupyterlab/jupyterlab/pull/9702>`__)
+* Remove outdated note on ipywidgets. (`#9707 <https://github.com/jupyterlab/jupyterlab/pull/9707>`__)
+* Fix debug flag handling in build command.  (`#9715 <https://github.com/jupyterlab/jupyterlab/pull/9715>`__)
+* Update notebook toolbar example docs.  (`#9705 <https://github.com/jupyterlab/jupyterlab/pull/9705>`__)
+* Use ``Path.resolve()`` to get canonical case-sensitive path names.  (`#9709 <https://github.com/jupyterlab/jupyterlab/pull/9709>`__)
+
+v3.0.6
+^^^^^^
+* Listen for ``'restarting'`` instead of ``'autorestarting'`` from server.  (`#9674 <https://github.com/jupyterlab/jupyterlab/pull/9674>`__)
+* Use ``jupyterhub make_singleuser_app`` mixin when available.  (`#9681 <https://github.com/jupyterlab/jupyterlab/pull/9681>`__)
+* Remove jest version constrain.  (`#9632 <https://github.com/jupyterlab/jupyterlab/pull/9632>`__)
+* Disable large uploads for notebook server < 5.1.  (`#9628 <https://github.com/jupyterlab/jupyterlab/pull/9628>`__)
+* Ignore timeout errors when preloading settings.  (`#9629 <https://github.com/jupyterlab/jupyterlab/pull/9629>`__)
+* Customize template branch when upgrading extension.  (`#9630 <https://github.com/jupyterlab/jupyterlab/pull/9630>`__)
+* Renamed variable that clashed with a module.  (`#9641 <https://github.com/jupyterlab/jupyterlab/pull/9641>`__)
+* Allow for lazily retrieved documentation (with a getter).  (`#9643 <https://github.com/jupyterlab/jupyterlab/pull/9643>`__)
+* Upgrade ``html-webpack-plugin`` to support webpack 5.  (`#9651 <https://github.com/jupyterlab/jupyterlab/pull/9651>`__)
+* Fix viewing of PDF files in Safari.  (`#9656 <https://github.com/jupyterlab/jupyterlab/pull/9656>`__)
+* Add ToC entries for all headers in markdown cells.  (`#9358 <https://github.com/jupyterlab/jupyterlab/pull/9358>`__)
+* Revert creating a new browser tab for a new launcher when in simple interface.  (`#9664 <https://github.com/jupyterlab/jupyterlab/pull/9664>`__)
+* Add ``xeus-robot`` to the debugger documentation.  (`#9661 <https://github.com/jupyterlab/jupyterlab/pull/9661>`__)
 
 v3.0.5
 ^^^^^^

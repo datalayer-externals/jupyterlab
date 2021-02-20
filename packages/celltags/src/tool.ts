@@ -72,7 +72,9 @@ export class TagTool extends NotebookTools.Tool {
   addTag(name: string) {
     const cell = this.tracker?.activeCell;
     if (cell) {
-      const oldTags = (cell.model.metadata.get('tags') as string[]) || [];
+      const oldTags = [
+        ...((cell.model.metadata.get('tags') as string[]) ?? [])
+      ];
       let tagsToAdd = name.split(/[,\s]+/);
       tagsToAdd = tagsToAdd.filter(tag => tag !== '' && !oldTags.includes(tag));
       cell.model.metadata.set('tags', oldTags.concat(tagsToAdd));
@@ -89,7 +91,9 @@ export class TagTool extends NotebookTools.Tool {
   removeTag(name: string) {
     const cell = this.tracker?.activeCell;
     if (cell) {
-      const oldTags = cell.model.metadata.get('tags') as string[];
+      const oldTags = [
+        ...((cell.model.metadata.get('tags') as string[]) ?? [])
+      ];
       let tags = oldTags.filter(tag => tag !== name);
       cell.model.metadata.set('tags', tags);
       if (tags.length === 0) {
@@ -117,11 +121,11 @@ export class TagTool extends NotebookTools.Tool {
    */
   pullTags() {
     const notebook = this.tracker?.currentWidget;
-    const cells = notebook?.model?.cells || [];
+    const cells = notebook?.model?.cells ?? [];
     const allTags = reduce(
       cells,
       (allTags: string[], cell) => {
-        const tags = (cell.metadata.get('tags') as string[]) || [];
+        const tags = (cell.metadata.get('tags') as string[]) ?? [];
         return [...allTags, ...tags];
       },
       []
@@ -222,15 +226,16 @@ export class TagTool extends NotebookTools.Tool {
     let tags = this.tracker.activeCell!.model.metadata.get('tags');
     if (msg.args.key === 'tags') {
       tags = msg.args.newValue;
+    } else {
+      tags = this.tracker.activeCell!.model.metadata.get('tags') as string[];
     }
     let taglist: string[] = [];
-    if (tags === undefined) {
-      return;
-    }
-    if (typeof tags === 'string') {
-      taglist.push(tags);
-    } else {
-      taglist = tags as string[];
+    if (tags) {
+      if (typeof tags === 'string') {
+        taglist.push(tags);
+      } else {
+        taglist = tags as string[];
+      }
     }
     this.validateTags(this.tracker.activeCell!, taglist);
   }
