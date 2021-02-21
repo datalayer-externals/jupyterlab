@@ -21,7 +21,7 @@ import { IObservableCell } from './observablecell';
 
 import { IObservableCodeEditor, ObservableCodeEditor } from './observablecodeeditor';
 
-import { IObservableNotebook  } from './observablenotebook';
+import { IObservableNotebook, ObservableNotebook  } from './observablenotebook';
 
 /**
  * String type annotations for Observable objects that can be
@@ -385,7 +385,10 @@ export class ModelDB implements IModelDB {
    * TODO(ECH)
    */
   createNotebook(path: string): IObservableNotebook {
-    throw new Error('createNotebook is not implemented by ModelDB');
+    const notebook = new ObservableNotebook();
+    this._disposables.add(notebook);
+    this.set(path, notebook);
+    return notebook;
   }
 
   /**

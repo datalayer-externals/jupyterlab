@@ -176,9 +176,6 @@
       "path": "./packages/observables"
     },
     {
-      "path": "./packages/observables-extension"
-    },
-    {
       "path": "./packages/outputarea"
     },
     {
