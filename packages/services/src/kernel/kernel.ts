@@ -151,6 +151,12 @@ export interface IKernelConnection extends IObservableDisposable {
     disposeOnDone?: boolean
   ): IControlFuture<KernelMessage.IControlMessage<T>>;
 
+  addRemoteKernelShellControl<T extends KernelMessage.ShellMessageType>(
+    msg: KernelMessage.IShellMessage<T>,
+    expectReply?: boolean,
+    disposeOnDone?: boolean
+  ): IShellFuture<KernelMessage.IShellMessage<T>>;
+
   /**
    * Reconnect to a disconnected kernel.
    *

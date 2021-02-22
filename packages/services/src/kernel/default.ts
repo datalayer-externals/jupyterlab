@@ -371,6 +371,46 @@ export class KernelConnection implements Kernel.IKernelConnection {
     return future;
   }
 
+  addRemoteKernelShellControl<T extends KernelMessage.ShellMessageType>(
+    msg: KernelMessage.IShellMessage<T>,
+    expectReply = false,
+    disposeOnDone = true
+  ): Kernel.IShellFuture<KernelMessage.IShellMessage<T>> {
+    const future = new KernelShellFutureHandler(
+      () => {
+        const msgId = msg.header.msg_id;
+        this._futures.delete(msgId);
+        // Remove stored display id information.
+        const displayIds = this._msgIdToDisplayIds.get(msgId);
+        if (!displayIds) {
+          return;
+        }
+        displayIds.forEach(displayId => {
+          const msgIds = this._displayIdToParentIds.get(displayId);
+          if (msgIds) {
+            const idx = msgIds.indexOf(msgId);
+            if (idx === -1) {
+              return;
+            }
+            if (msgIds.length === 1) {
+              this._displayIdToParentIds.delete(displayId);
+            } else {
+              msgIds.splice(idx, 1);
+              this._displayIdToParentIds.set(displayId, msgIds);
+            }
+          }
+        });
+        this._msgIdToDisplayIds.delete(msgId);
+      },
+      msg,
+      expectReply,
+      disposeOnDone,
+      this
+    );
+    this._futures.set(msg.header.msg_id, future);
+    return future;
+  }
+
   /**
    * Send a message on the websocket.
    *
@@ -1349,8 +1389,8 @@ export class KernelConnection implements Kernel.IKernelConnection {
         else {
           // TODO(ECH) Revisit this...
           if (msg.metadata.cellId) {
-            console.log('--- kernel handleMessage with cellId', msg)
             this._iopubMessage.emit(msg as KernelMessage.IIOPubMessage);
+            return;
           }
         }
       }

@@ -502,8 +502,6 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
   constructor(options: CodeCellModel.IOptions) {
     super(options);
 
-    console.log('--- codecellmodel constructor', options)
-
     const factory =
       options.contentFactory || CodeCellModel.defaultContentFactory;
 

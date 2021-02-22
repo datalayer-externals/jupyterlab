@@ -69,7 +69,6 @@ export class Context<
       this._model = this._factory.createNew(lang, this._modelDB, this);
     } else {
       const localPath = manager.contents.localPath(this._path);
-      console.log('--- realtimeProtocol', options.realtimeProtocol)
       switch (options.realtimeProtocol) {
         case 'none':
           this._modelDB = new ModelDB({ localPath: localPath });

@@ -121,8 +121,12 @@ export class OutputArea extends Widget {
    * TODO(ECH)
    */
   private _onIOPubFromSessionContext(sender: ISessionContext, message: KernelMessage.IMessage) {
-    if (message.metadata.cellId) {
-      console.log('--- _onIOPubFromSessionContext', this.model.cellId, sender, message)
+    if (message.metadata.cellId === this.model.cellId) {
+      const future = this.model.sessionContext?.session?.kernel?.addRemoteKernelShellControl(message as any) as Kernel.IShellFuture<
+        KernelMessage.IExecuteRequestMsg,
+        KernelMessage.IExecuteReplyMsg
+      >
+      this.future = future!;
     }
   }
 
@@ -174,7 +178,7 @@ export class OutputArea extends Widget {
     >
   ) {
 
-    console.log('--- future value', value)
+    console.log('--- set future', value)
 
     // Bail if the model is disposed.
     if (this.model.isDisposed) {
@@ -504,10 +508,7 @@ export class OutputArea extends Widget {
    * Handle an iopub message.
    */
   private _onIOPub = (msg: KernelMessage.IIOPubMessage) => {
-    console.log('--- cellwidget _onIOPub', msg)
-    if (msg.metadata.cellId) {
-      console.log('--- cellwidget _onIOPub with cellId', msg)
-    }
+    console.log('--- outputarea widget on iopub', msg)
     const model = this.model;
     const msgType = msg.header.msg_type;
     let output: nbformat.IOutput;
@@ -551,6 +552,7 @@ export class OutputArea extends Widget {
    * Handle an execute reply message.
    */
   private _onExecuteReply = (msg: KernelMessage.IExecuteReplyMsg) => {
+    console.log('--- outputarea widget on execute reply', msg)
     // API responses that contain a pager are special cased and their type
     // is overridden from 'execute_reply' to 'display_data' in order to
     // render output.
