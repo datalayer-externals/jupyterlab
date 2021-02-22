@@ -178,8 +178,6 @@ export class OutputArea extends Widget {
     >
   ) {
 
-    console.log('--- set future', value)
-
     // Bail if the model is disposed.
     if (this.model.isDisposed) {
       throw Error('Model is disposed');
@@ -508,7 +506,6 @@ export class OutputArea extends Widget {
    * Handle an iopub message.
    */
   private _onIOPub = (msg: KernelMessage.IIOPubMessage) => {
-    console.log('--- outputarea widget on iopub', msg)
     const model = this.model;
     const msgType = msg.header.msg_type;
     let output: nbformat.IOutput;
@@ -552,7 +549,6 @@ export class OutputArea extends Widget {
    * Handle an execute reply message.
    */
   private _onExecuteReply = (msg: KernelMessage.IExecuteReplyMsg) => {
-    console.log('--- outputarea widget on execute reply', msg)
     // API responses that contain a pager are special cased and their type
     // is overridden from 'execute_reply' to 'display_data' in order to
     // render output.
