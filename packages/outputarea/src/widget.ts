@@ -113,6 +113,17 @@ export class OutputArea extends Widget {
     }
     model.changed.connect(this.onModelChanged, this);
     model.stateChanged.connect(this.onStateChanged, this);
+
+    model.sessionContext?.iopubMessage.connect(this._onIOPubFromSessionContext, this)
+  }
+
+  /**
+   * TODO(ECH)
+   */
+  private _onIOPubFromSessionContext(sender: ISessionContext, message: KernelMessage.IMessage) {
+    if (message.metadata.cellId) {
+      console.log('--- _onIOPubFromSessionContext', this.model.cellId, sender, message)
+    }
   }
 
   /**
@@ -162,6 +173,9 @@ export class OutputArea extends Widget {
       KernelMessage.IExecuteReplyMsg
     >
   ) {
+
+    console.log('--- future value', value)
+
     // Bail if the model is disposed.
     if (this.model.isDisposed) {
       throw Error('Model is disposed');
@@ -490,6 +504,10 @@ export class OutputArea extends Widget {
    * Handle an iopub message.
    */
   private _onIOPub = (msg: KernelMessage.IIOPubMessage) => {
+    console.log('--- cellwidget _onIOPub', msg)
+    if (msg.metadata.cellId) {
+      console.log('--- cellwidget _onIOPub with cellId', msg)
+    }
     const model = this.model;
     const msgType = msg.header.msg_type;
     let output: nbformat.IOutput;

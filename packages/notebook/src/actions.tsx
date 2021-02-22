@@ -288,7 +288,7 @@ export namespace NotebookActions {
     const model = notebook.model;
     const cell = model.contentFactory.createCell(
       notebook.notebookConfig.defaultCell,
-      {}
+      {sessionContext: notebook.model.context?.sessionContext}
     );
     const active = notebook.activeCellIndex;
 
@@ -320,7 +320,7 @@ export namespace NotebookActions {
     const model = notebook.model;
     const cell = model.contentFactory.createCell(
       notebook.notebookConfig.defaultCell,
-      {}
+      {sessionContext: notebook.model.context?.sessionContext}
     );
 
     model.cells.insert(notebook.activeCellIndex + 1, cell);
@@ -478,7 +478,7 @@ export namespace NotebookActions {
     if (notebook.activeCellIndex === notebook.widgets.length - 1) {
       const cell = model.contentFactory.createCell(
         notebook.notebookConfig.defaultCell,
-        {}
+        {sessionContext: sessionContext}
       );
 
       model.cells.push(cell);

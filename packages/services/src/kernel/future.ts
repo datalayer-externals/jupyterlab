@@ -130,6 +130,7 @@ export abstract class KernelFutureHandler<
   registerMessageHook(
     hook: (msg: KernelMessage.IIOPubMessage) => boolean | PromiseLike<boolean>
   ): void {
+    console.log('--- future registerMessageHook', hook)
     if (this.isDisposed) {
       throw new Error('Kernel future is disposed');
     }

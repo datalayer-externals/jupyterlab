@@ -7,6 +7,8 @@ import { JSONExt, JSONObject, JSONValue } from '@lumino/coreutils';
 
 import { ISignal, Signal } from '@lumino/signaling';
 
+import { ISessionContext } from '@jupyterlab/apputils';
+
 import { IAttachmentsModel, AttachmentsModel } from '@jupyterlab/attachments';
 
 import { CodeEditor } from '@jupyterlab/codeeditor';
@@ -342,6 +344,11 @@ export namespace CellModel {
      * A unique identifier for this cell.
      */
     id?: string;
+
+    /**
+     * TODO(ECH)
+     */
+    sessionContext?: ISessionContext;
   }
 }
 
@@ -495,6 +502,8 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
   constructor(options: CodeCellModel.IOptions) {
     super(options);
 
+    console.log('--- codecellmodel constructor', options)
+
     const factory =
       options.contentFactory || CodeCellModel.defaultContentFactory;
 
@@ -516,7 +525,7 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
     }
     executionCount.changed.connect(this._onExecutionCountChanged, this);
 
-    this._outputs = factory.createOutputArea({ trusted, values: outputs });
+    this._outputs = factory.createOutputArea({ trusted, values: outputs, cellId: options.id, sessionContext: options.sessionContext });
     this._outputs.changed.connect(this.onGenericChange, this);
 
     // We keep `collapsed` and `jupyter.outputs_hidden` metadata in sync, since

@@ -51,6 +51,11 @@ export interface INotebookModel extends DocumentRegistry.IModel {
   readonly contentFactory: NotebookModel.IContentFactory;
 
   /**
+   * TODO(ECH)
+   */
+  readonly context: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined;
+
+  /**
    * The major version number of the nbformat.
    */
   readonly nbformat: number;
@@ -81,13 +86,14 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
   constructor(options: NotebookModel.IOptions = {}) {
     super(options.languagePreference, options.modelDB);
 
+    this._context = options.context;
     this._notebook = this.modelDB.createNotebook('notebook');
 
     const factory =
       options.contentFactory || NotebookModel.defaultContentFactory;
     this.contentFactory = factory.clone(this.modelDB.view('cells'));
 
-    this._cells = new CellList(this.modelDB, this.contentFactory);
+    this._cells = new CellList(this.modelDB, this.contentFactory, this._context);
     this._trans = (options.translator || nullTranslator).load('jupyterlab');
     this._cells.changed.connect(this._onCellsChanged, this);
 
@@ -105,6 +111,13 @@ export class NotebookModel extends DocumentModel implements INotebookModel {
    * The cell model factory for the notebook.
    */
   readonly contentFactory: NotebookModel.IContentFactory;
+
+  /**
+   * TODO(ECH)
+   */
+  get context(): DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined {
+    return this._context;
+  }
 
   /**
    * The metadata associated with the notebook.
@@ -366,6 +379,7 @@ close the notebook without saving it.`,
   }
 
   private _trans: TranslationBundle;
+  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined;
   private _notebook: IObservableNotebook;
   private _cells: CellList;
   private _nbformat = nbformat.MAJOR_VERSION;
@@ -402,6 +416,11 @@ export namespace NotebookModel {
      * Language translator.
      */
     translator?: ITranslator;
+
+    /**
+     * TODO(ECH)
+     */
+    context?: DocumentRegistry.IContext<DocumentRegistry.IModel>
   }
 
   /**

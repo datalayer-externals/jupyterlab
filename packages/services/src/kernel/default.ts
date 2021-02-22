@@ -1346,6 +1346,13 @@ export class KernelConnection implements Kernel.IKernelConnection {
         if (msg.channel !== 'iopub' && owned) {
           this._unhandledMessage.emit(msg);
         }
+        else {
+          // TODO(ECH) Revisit this...
+          if (msg.metadata.cellId) {
+            console.log('--- kernel handleMessage with cellId', msg)
+            this._iopubMessage.emit(msg as KernelMessage.IIOPubMessage);
+          }
+        }
       }
     }
     if (msg.channel === 'iopub') {

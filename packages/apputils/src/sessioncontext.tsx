@@ -1048,6 +1048,7 @@ export class SessionContext implements ISessionContext {
     sender: Session.ISessionConnection,
     message: KernelMessage.IIOPubMessage
   ): void {
+    console.log('--- sessioncontext onIopubMessage', message)
     this._iopubMessage.emit(message);
   }
 

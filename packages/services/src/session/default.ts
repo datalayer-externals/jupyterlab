@@ -347,6 +347,7 @@ export class SessionConnection implements Session.ISessionConnection {
     sender: Kernel.IKernelConnection,
     msg: KernelMessage.IIOPubMessage
   ) {
+    console.log('--- sessionconnection onIOPub', msg)
     this._iopubMessage.emit(msg);
   }
 

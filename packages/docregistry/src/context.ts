@@ -66,9 +66,10 @@ export class Context<
     if (dbFactory) {
       const localPath = manager.contents.localPath(this._path);
       this._modelDB = dbFactory.createNew(localPath);
-      this._model = this._factory.createNew(lang, this._modelDB);
+      this._model = this._factory.createNew(lang, this._modelDB, this);
     } else {
       const localPath = manager.contents.localPath(this._path);
+      console.log('--- realtimeProtocol', options.realtimeProtocol)
       switch (options.realtimeProtocol) {
         case 'none':
           this._modelDB = new ModelDB({ localPath: localPath });
@@ -77,10 +78,10 @@ export class Context<
           this._modelDB = new AutomergeModelDB({ localPath: localPath });
           break;
         default:
-          this._modelDB = new ModelDB({ localPath: localPath });
+          this._modelDB = new AutomergeModelDB({ localPath: localPath });
           break;
       }
-      this._model = this._factory.createNew(lang, this._modelDB);
+      this._model = this._factory.createNew(lang, this._modelDB, this);
     }
     this._readyPromise = manager.ready.then(() => {
       return this._populatedPromise.promise;

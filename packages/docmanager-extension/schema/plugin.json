@@ -44,7 +44,7 @@
       "description": "The protocol for realtime collaboration:\n- none: no collaboration\n- automerge: initial support - EXPERIMENTAL\n- yjs: work in progress (planned soon) - EXPERIMENTAL",
       "type": "string",
       "enum": ["none", "automerge", "yjs"],
-      "default": "none"
+      "default": "automerge"
     },
     "maxChangesPerDocument": {
       "title": "Maximum number of changes per document",

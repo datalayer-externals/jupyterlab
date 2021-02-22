@@ -7,17 +7,30 @@ import { IDisposable } from '@lumino/disposable';
 
 import { ISignal, Signal } from '@lumino/signaling';
 
+import { ISessionContext } from '@jupyterlab/apputils';
+
+import { JSONExt } from '@lumino/coreutils';
+
 import * as nbformat from '@jupyterlab/nbformat';
 
 import { IObservableList, ObservableList } from '@jupyterlab/observables';
 
 import { IOutputModel, OutputModel } from '@jupyterlab/rendermime';
-import { JSONExt } from '@lumino/coreutils';
 
 /**
  * The model for an output area.
  */
 export interface IOutputAreaModel extends IDisposable {
+  /**
+   * TODO(ECH)
+   */
+  readonly sessionContext: ISessionContext | undefined;
+
+  /**
+   * TODO(ECH)
+   */
+  readonly cellId: string | undefined;
+
   /**
    * A signal emitted when the model state changes.
    */
@@ -94,6 +107,11 @@ export namespace IOutputAreaModel {
    */
   export interface IOptions {
     /**
+     * TODO(ECH)
+     */
+    cellId?: string;
+
+    /**
      * The initial values for the model.
      */
     values?: nbformat.IOutput[];
@@ -109,6 +127,11 @@ export namespace IOutputAreaModel {
      * If not given, a default factory will be used.
      */
     contentFactory?: IContentFactory;
+
+    /**
+     * TODO(ECH)
+     */
+    sessionContext?: ISessionContext;
   }
 
   /**
@@ -135,6 +158,8 @@ export class OutputAreaModel implements IOutputAreaModel {
    * Construct a new observable outputs instance.
    */
   constructor(options: IOutputAreaModel.IOptions = {}) {
+    this._sessionContext = options.sessionContext;
+    this._cellId = options.cellId;
     this._trusted = !!options.trusted;
     this.contentFactory =
       options.contentFactory || OutputAreaModel.defaultContentFactory;
@@ -145,6 +170,14 @@ export class OutputAreaModel implements IOutputAreaModel {
       });
     }
     this.list.changed.connect(this._onListChanged, this);
+  }
+
+  get cellId(): string | undefined {
+    return this._cellId;
+  }
+
+  get sessionContext(): ISessionContext | undefined {
+    return this._sessionContext;
   }
 
   /**
@@ -400,6 +433,8 @@ export class OutputAreaModel implements IOutputAreaModel {
 
   private _lastStream: string;
   private _lastName: 'stdout' | 'stderr';
+  private _sessionContext: ISessionContext | undefined;
+  private _cellId: string | undefined;
   private _trusted = false;
   private _isDisposed = false;
   private _stateChanged = new Signal<IOutputAreaModel, void>(this);

@@ -12,6 +12,8 @@ import {
 
 import { ISignal, Signal } from '@lumino/signaling';
 
+import { DocumentRegistry } from '@jupyterlab/docregistry';
+
 import { ICellModel } from '@jupyterlab/cells';
 
 import {
@@ -32,8 +34,9 @@ export class CellList implements IObservableList<ICellModel> {
   /**
    * Construct the cell list.
    */
-  constructor(modelDB: IModelDB, factory: NotebookModel.IContentFactory) {
+  constructor(modelDB: IModelDB, factory: NotebookModel.IContentFactory, context: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined) {
     this._factory = factory;
+    this._context = context;
     this._cellMap = new ObservableMap<ICellModel>();
     this._notebook = modelDB.get('notebook') as IObservableNotebook;
     this._notebook.changed.connect(this._onNotebookChanged, this);
@@ -532,13 +535,13 @@ export class CellList implements IObservableList<ICellModel> {
           let cell: ICellModel;
           switch (cellType.get()) {
             case 'code':
-              cell = this._factory.createCodeCell({ id: id });
+              cell = this._factory.createCodeCell({ id: id, sessionContext: this._context?.sessionContext });
               break;
             case 'markdown':
-              cell = this._factory.createMarkdownCell({ id: id });
+              cell = this._factory.createMarkdownCell({ id: id, sessionContext: this._context?.sessionContext });
               break;
             default:
-              cell = this._factory.createCodeCell({ id: id });
+              cell = this._factory.createCodeCell({ id: id, sessionContext: this._context?.sessionContext });
               break;
           }
           this._addToMap(id, cell);
@@ -574,4 +577,5 @@ export class CellList implements IObservableList<ICellModel> {
     this
   );
   private _factory: NotebookModel.IContentFactory;
+  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel> | undefined;
 }

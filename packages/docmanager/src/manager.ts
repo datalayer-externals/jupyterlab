@@ -618,7 +618,7 @@ export class DocumentManager implements IDocumentManager {
   private _opener: DocumentManager.IWidgetOpener;
   private _widgetManager: DocumentWidgetManager;
   private _isDisposed = false;
-  private _realtimeProtocol = 'none';
+  private _realtimeProtocol = '';
   private _autosave = true;
   private _autosaveInterval = 120;
   private _when: Promise<void>;

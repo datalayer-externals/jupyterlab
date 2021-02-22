@@ -226,6 +226,8 @@ export class TagTool extends NotebookTools.Tool {
     let tags = this.tracker.activeCell!.model.metadata.get('tags');
     if (msg.args.key === 'tags') {
       tags = msg.args.newValue;
+      // TODO(ECH) Revisit this...
+      // this.tracker.activeCell!.model.metadata.set('tags', tags);
     } else {
       tags = this.tracker.activeCell!.model.metadata.get('tags') as string[];
     }

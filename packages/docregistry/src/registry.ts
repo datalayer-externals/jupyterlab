@@ -1147,7 +1147,7 @@ export namespace DocumentRegistry {
      *
      * @returns A new document model.
      */
-    createNew(languagePreference?: string, modelDB?: IModelDB): T;
+    createNew(languagePreference?: string, modelDB?: IModelDB, context?: DocumentRegistry.IContext<DocumentRegistry.IModel>): T;
 
     /**
      * Get the preferred kernel language given a file path.
