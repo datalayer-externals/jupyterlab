@@ -74,6 +74,7 @@ export class AutomergeString implements IObservableString {
               }
             }
             if (edit.action === 'remove') {
+              // TODO(ECH) Revisit this...
               if (!value) value = ' ';
               this._changed.emit({
                 type: 'remove',

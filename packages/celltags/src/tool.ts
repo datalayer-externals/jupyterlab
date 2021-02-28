@@ -78,7 +78,7 @@ export class TagTool extends NotebookTools.Tool {
       let tagsToAdd = name.split(/[,\s]+/);
       tagsToAdd = tagsToAdd.filter(tag => tag !== '' && !oldTags.includes(tag));
       cell.model.metadata.set('tags', oldTags.concat(tagsToAdd));
-      this.refreshTags();
+      this.refreshTags([]);
       this.loadActiveTags();
     }
   }
@@ -99,7 +99,7 @@ export class TagTool extends NotebookTools.Tool {
       if (tags.length === 0) {
         cell.model.metadata.delete('tags');
       }
-      this.refreshTags();
+      this.refreshTags([]);
       this.loadActiveTags();
     }
   }
@@ -119,7 +119,7 @@ export class TagTool extends NotebookTools.Tool {
    * Pull from cell metadata all the tags used in the notebook and update the
    * stored tag list.
    */
-  pullTags() {
+  pullTags(tags: string[]) {
     const notebook = this.tracker?.currentWidget;
     const cells = notebook?.model?.cells ?? [];
     const allTags = reduce(
@@ -128,7 +128,7 @@ export class TagTool extends NotebookTools.Tool {
         const tags = (cell.metadata.get('tags') as string[]) ?? [];
         return [...allTags, ...tags];
       },
-      []
+      tags
     );
     this.tagList = [...new Set(allTags)].filter(tag => tag !== '');
   }
@@ -137,8 +137,8 @@ export class TagTool extends NotebookTools.Tool {
    * Pull the most recent list of tags and update the tag widgets - dispose if
    * the tag no longer exists, and create new widgets for new tags.
    */
-  refreshTags() {
-    this.pullTags();
+  refreshTags(tags: string[]) {
+    this.pullTags(tags);
     const layout = this.layout as PanelLayout;
     const tagWidgets = layout.widgets.filter(w => w.id !== 'add-tag');
     tagWidgets.forEach(widget => {
@@ -170,7 +170,7 @@ export class TagTool extends NotebookTools.Tool {
     );
     const validTags = [...new Set(tags)].filter(tag => tag !== '');
     cell.model.metadata.set('tags', validTags);
-    this.refreshTags();
+    this.refreshTags(tags);
     this.loadActiveTags();
   }
 
@@ -185,7 +185,7 @@ export class TagTool extends NotebookTools.Tool {
    * Get all tags once available.
    */
   protected onAfterShow() {
-    this.refreshTags();
+    this.refreshTags([]);
     this.loadActiveTags();
   }
 
@@ -203,16 +203,16 @@ export class TagTool extends NotebookTools.Tool {
     }
     if (this.tracker.currentWidget) {
       void this.tracker.currentWidget.context.ready.then(() => {
-        this.refreshTags();
+        this.refreshTags([]);
         this.loadActiveTags();
       });
       this.tracker.currentWidget.model!.cells.changed.connect(() => {
-        this.refreshTags();
+        this.refreshTags([]);
         this.loadActiveTags();
       });
     }
     this.tracker.currentChanged.connect(() => {
-      this.refreshTags();
+      this.refreshTags([]);
       this.loadActiveTags();
     });
   }
@@ -225,9 +225,10 @@ export class TagTool extends NotebookTools.Tool {
   ): void {
     let tags = this.tracker.activeCell!.model.metadata.get('tags');
     if (msg.args.key === 'tags') {
-      tags = msg.args.newValue;
       // TODO(ECH) Revisit this...
-      // this.tracker.activeCell!.model.metadata.set('tags', tags);
+      console.log('--- celltags', msg.args)
+      this.tracker.activeCell!.model.metadata.set('tags', msg.args.newValue);
+      tags = msg.args.newValue;
     } else {
       tags = this.tracker.activeCell!.model.metadata.get('tags') as string[];
     }

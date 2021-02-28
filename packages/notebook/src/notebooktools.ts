@@ -506,7 +506,7 @@ export namespace NotebookTools {
      * Handle a change to the current editor value.
      */
     private _onValueChanged(sender: IObservableString, args: IObservableString.IChangedArgs): void {
-      if (args.after) {
+      if (args.after !== undefined) {
         this._model.value.text = args.after.split('\n')[0];
       } else {
         this._model.value.text = this._cellModel!.value.text.split('\n')[0];

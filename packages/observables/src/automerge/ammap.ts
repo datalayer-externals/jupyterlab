@@ -44,26 +44,26 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     // Observe and Handle Changes.
     this._modelDB.observable.observe(
       getNested(this._modelDB.document, this._path),
-      (diff, before, after, local, changes, path) => {
-        this._path = path as string[];
-        if (!local) {
-          Object.keys(after).map(key => {
-            const oldVal = before[key]
-              ? before[key]
-              : undefined;
-            const newVal = after[key]
-              ? after[key]
-              : undefined;
-            this._changed.emit({
-              type: oldVal ? 'change' : 'add',  
-              key: key,
-              oldValue: oldVal,
-              newValue: newVal
+        (diff, before, after, local, changes, path) => {
+          this._path = path as string[];
+          if (!local) {
+            Object.keys(after).map(key => {
+              const oldVal = before[key]
+                ? before[key]
+                : undefined;
+              const newVal = after[key]
+                ? after[key]
+                : undefined;
+              this._changed.emit({
+                type: oldVal ? 'change' : 'add',  
+                key: key,
+                oldValue: oldVal,
+                newValue: newVal
+              });
             });
-          });
+          }
         }
-      }
-    );
+      );
   }
 
   set path(path: string[]) {
