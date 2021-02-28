@@ -3,6 +3,12 @@
 
 import { AutomergeModelDB } from './ammodeldb';
 
+import { AutomergeJSON } from './amjson';
+
+import { AutomergeCodeEditor } from './amcodeeditor';
+
+import { AutomergeValue } from './amvalue';
+
 import { IObservableJSON, ObservableJSON } from './../observablejson';
 
 import { IObservableCell } from './../observablecell';
@@ -11,18 +17,12 @@ import { IObservableCodeEditor } from './../observablecodeeditor';
 
 import { IObservableValue } from './../observablevalue';
 
-import { AutomergeJSON } from './amjson';
-
-import { AutomergeCodeEditor } from './amcodeeditor';
-
-import { AutomergeValue } from './amvalue';
-
 /**
- * A concrete Automerge map for Cell data.
+ * A concrete automerge Cell data.
  */
 export class AutomergeCell extends AutomergeJSON implements IObservableCell {
   /**
-   * Construct a new Automerge Cell object.
+   * Construct a new automerge Cell object.
    */
   constructor(
     path: string[],
@@ -39,14 +39,14 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     this._executionCount = new AutomergeValue(path.concat('execution_count'), modelDB, '');
   }
 
-  public initObservable() {
-    // Do not initialize `super`- Just initialize `composites`.
-    this._id.initObservable();
-    this._codeEditor.initObservable();
-    this._metadata.initObservable();
-    this._cellType.initObservable();
-    this._trusted.initObservable();
-    this._executionCount.initObservable();
+  public initObservables() {
+    // Do NOT initialize the `super`- Just initialize the below `composites`!
+    this._id.initObservables();
+    this._codeEditor.initObservables();
+    this._metadata.initObservables();
+    this._cellType.initObservables();
+    this._trusted.initObservables();
+    this._executionCount.initObservables();
   }
 
   set path(path: string[]) {

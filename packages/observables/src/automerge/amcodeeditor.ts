@@ -3,7 +3,13 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import { amDocPath, AutomergeModelDB } from './ammodeldb';
+import { getNested, AutomergeModelDB } from './ammodeldb';
+
+import { AutomergeString } from './amstring';
+
+import { AutomergeValue } from './amvalue';
+
+import { AutomergeJSON } from './amjson';
 
 import { IObservableCodeEditor, ObservableCodeEditor } from './../observablecodeeditor';
 
@@ -12,12 +18,6 @@ import { IObservableValue } from './../observablevalue';
 import { IObservableString } from './../observablestring';
 
 import { IObservableJSON } from './../observablejson';
-
-import { AutomergeString } from './amstring';
-
-import { AutomergeValue } from './amvalue';
-
-import { AutomergeJSON } from './amjson';
 
 export class AutomergeCodeEditor implements IObservableCodeEditor {
   constructor(
@@ -32,19 +32,20 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     this._selections = new AutomergeJSON(this._path.concat('selections'), this._modelDB);
   }
 
-  public initObservable() {
+  public initObservables() {
     /*
+    // TODO(ECH)
     if (options.values) {
       for (const key in options.values) {
-        amDocPath(this._path)[key] = options.values[key];
+        getNested(this._path)[key] = options.values[key];
       }
     }
     */
-    this._value.initObservable();
-    this._mimeType.initObservable();
-    this._selections.initObservable();
+    this._value.initObservables();
+    this._mimeType.initObservables();
+    this._selections.initObservables();
     this._modelDB.observable.observe(
-      amDocPath(this._modelDB.amDoc, this._path),
+      getNested(this._modelDB.document, this._path),
       (diff, before, after, local, changes, path) => {
         this._path = path as string[];
       }
@@ -97,8 +98,8 @@ export class AutomergeCodeEditor implements IObservableCodeEditor {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    if (amDocPath(this._modelDB.amDoc, this._path)) {
-      amDocPath(this._modelDB.amDoc, this._path).clear();
+    if (getNested(this._modelDB.document, this._path)) {
+      getNested(this._modelDB.document, this._path).clear();
     }
   }
 

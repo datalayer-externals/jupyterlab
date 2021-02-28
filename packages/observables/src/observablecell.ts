@@ -60,7 +60,7 @@ export class ObservableCell extends ObservableJSON implements IObservableCell {
     this._executionCount =  new ObservableValue('');
   }
 
-  public initObservable() {
+  public initObservables() {
     /* no-op */
   }
 

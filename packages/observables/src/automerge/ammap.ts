@@ -6,16 +6,16 @@ import { ISignal, Signal } from '@lumino/signaling';
 import Automerge from 'automerge';
 
 import {
-  amDocPath, 
-  setForcedNested, 
-  waitOnAmDocInit, 
+  getNested, 
+  setNested, 
+  waitDocumentInit, 
   AutomergeModelDB
 } from './ammodeldb';
 
 import { IObservableMap } from '../observablemap';
 
 /**
- * A concrete implementation of IObservbleMap<T>.
+ * A automerge implementation of IObservableMap<T>.
  */
 export class AutomergeMap<T> implements IObservableMap<T> {
   /**
@@ -31,19 +31,19 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     this._itemCmp = options.itemCmp || Private.itemCmp;
   }
 
-  public initObservable() {
-    if (!amDocPath(this._modelDB.amDoc, this._path)) {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
+  public initObservables() {
+    if (!getNested(this._modelDB.document, this._path)) {
+      this._modelDB.document = Automerge.change(
+        this._modelDB.document,
         `map init`,
         doc => {
-          setForcedNested(doc, this._path, {});
+          setNested(doc, this._path, {});
         }
       );
     }
     // Observe and Handle Changes.
     this._modelDB.observable.observe(
-      amDocPath(this._modelDB.amDoc, this._path),
+      getNested(this._modelDB.document, this._path),
       (diff, before, after, local, changes, path) => {
         this._path = path as string[];
         if (!local) {
@@ -95,8 +95,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * The number of key-value pairs in the map.
    */
   get size(): number {
-    return amDocPath(this._modelDB.amDoc, this._path)
-      ? amDocPath(this._modelDB.amDoc, this._path).size
+    return getNested(this._modelDB.document, this._path)
+      ? getNested(this._modelDB.document, this._path).size
       : 0;
   }
 
@@ -119,21 +119,21 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     if (value === undefined) {
       throw Error('Cannot set an undefined value, use remove');
     }
-    const oldVal = amDocPath(this._modelDB.amDoc, this._path)
-      ? amDocPath(this._modelDB.amDoc, this._path)[key]
+    const oldVal = getNested(this._modelDB.document, this._path)
+      ? getNested(this._modelDB.document, this._path)[key]
       : undefined;
-    waitOnAmDocInit(this._modelDB, () => {
+    waitDocumentInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         // Bail if the value does not change.
         const itemCmp = this._itemCmp;
         if (oldVal !== undefined && itemCmp(oldVal, value)) {
           return oldVal;
         }
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
+        this._modelDB.document = Automerge.change(
+          this._modelDB.document,
           `map set ${this._path} ${key} ${value}`,
           doc => {
-            setForcedNested(doc, this._path.concat([key]), value);
+            setNested(doc, this._path.concat([key]), value);
           }
         );
         this._changed.emit({
@@ -155,8 +155,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns the value for that key.
    */
   get(key: string): T | undefined {
-    return amDocPath(this._modelDB.amDoc, this._path)
-      ? amDocPath(this._modelDB.amDoc, this._path)[key]
+    return getNested(this._modelDB.document, this._path)
+      ? getNested(this._modelDB.document, this._path)[key]
       : undefined;
   }
 
@@ -168,8 +168,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * @returns `true` if the map has the key, `false` otherwise.
    */
   has(key: string): boolean {
-    return amDocPath(this._modelDB.amDoc, this._path)
-      ? amDocPath(this._modelDB.amDoc, this._path)[key]
+    return getNested(this._modelDB.document, this._path)
+      ? getNested(this._modelDB.document, this._path)[key]
         ? true
         : false
       : false;
@@ -183,13 +183,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   keys(): string[] {
     /*
     const keyList: string[] = [];
-    amDocPath(this._path).forEach((v: T, k: string) => {
+    getNested(this._path).forEach((v: T, k: string) => {
       keyList.push(k);
     });
     return keyList;
     */
-    return amDocPath(this._modelDB.amDoc, this._path)
-      ? Object.keys(amDocPath(this._modelDB.amDoc, this._path))
+    return getNested(this._modelDB.document, this._path)
+      ? Object.keys(getNested(this._modelDB.document, this._path))
       : [];
   }
 
@@ -201,13 +201,13 @@ export class AutomergeMap<T> implements IObservableMap<T> {
   values(): T[] {
     /*
     const valList: T[] = [];
-    amDocPath(this._path).forEach((v: T, k: string) => {
+    getNested(this._path).forEach((v: T, k: string) => {
       valList.push(v);
     });
     return valList;
     */
-    return amDocPath(this._modelDB.amDoc, this._path)
-      ? Object.values(amDocPath(this._modelDB.amDoc, this._path))
+    return getNested(this._modelDB.document, this._path)
+      ? Object.values(getNested(this._modelDB.document, this._path))
       : [];
   }
 
@@ -223,7 +223,7 @@ export class AutomergeMap<T> implements IObservableMap<T> {
    * This is a no-op if the value does not change.
    */
   delete(key: string): T | undefined {
-    const old = amDocPath(this._modelDB.amDoc, this._path);
+    const old = getNested(this._modelDB.document, this._path);
     if (!old) {
       return;
     }
@@ -232,14 +232,14 @@ export class AutomergeMap<T> implements IObservableMap<T> {
       return oldVal;
     }
     // TODO(ECH) Fix this. We need to remove the key...
-    waitOnAmDocInit(this._modelDB, () => {
+    waitDocumentInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
+        this._modelDB.document = Automerge.change(
+          this._modelDB.document,
           `map delete ${this._path} ${key}`,
           doc => {
             const path = this._path.concat([key]);
-            setForcedNested(doc, path, '');
+            setNested(doc, path, '');
           }
         );
       });
@@ -276,8 +276,8 @@ export class AutomergeMap<T> implements IObservableMap<T> {
     }
     this._isDisposed = true;
     Signal.clearData(this);
-    if (amDocPath(this._modelDB.amDoc, this._path)) {
-      amDocPath(this._modelDB.amDoc, this._path).clear();
+    if (getNested(this._modelDB.document, this._path)) {
+      getNested(this._modelDB.document, this._path).clear();
     }
   }
 

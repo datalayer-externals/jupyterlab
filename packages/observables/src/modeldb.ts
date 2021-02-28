@@ -41,7 +41,7 @@ export interface IObservable extends IDisposable {
   /**
    * TODO(ECH)
    */
-  initObservable(): void;
+  initObservables(): void;
 }
 
 /**

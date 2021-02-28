@@ -7,12 +7,12 @@ import { JSONExt, JSONValue } from '@lumino/coreutils';
 
 import Automerge from 'automerge';
 
+import { getNested, setNested, waitDocumentInit, AutomergeModelDB } from './ammodeldb';
+
 import { IObservableValue, ObservableValue } from './../observablevalue';
 
-import { amDocPath, setForcedNested, waitOnAmDocInit, AutomergeModelDB } from './ammodeldb';
-
 /**
- * A concrete implementation of an `IObservableValue`.
+ * A automerge implementation of an `IObservableValue`.
  */
 export class AutomergeValue implements IObservableValue {
   /**
@@ -30,18 +30,18 @@ export class AutomergeValue implements IObservableValue {
     this._initialValue = initialValue;
   }
 
-  public initObservable() {
-    if (!amDocPath(this._modelDB.amDoc, this._path)) {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
+  public initObservables() {
+    if (!getNested(this._modelDB.document, this._path)) {
+      this._modelDB.document = Automerge.change(
+        this._modelDB.document,
         `value init`,
         doc => {
-          setForcedNested(doc, this._path, { value: this._initialValue });
+          setNested(doc, this._path, { value: this._initialValue });
         }
       );
     }
     this._modelDB.observable.observe(
-      amDocPath(this._modelDB.amDoc, this._path),
+      getNested(this._modelDB.document, this._path),
       (diff, before, after, local, changes, path) => {
         this._path = path as string[];
         if (!local) {
@@ -91,27 +91,27 @@ export class AutomergeValue implements IObservableValue {
    * Get the current value, or `undefined` if it has not been set.
    */
   get(): JSONValue {
-    if (!amDocPath(this._modelDB.amDoc, this._path)) {
+    if (!getNested(this._modelDB.document, this._path)) {
       return '';
     }
-    return amDocPath(this._modelDB.amDoc, this._path).value;
+    return getNested(this._modelDB.document, this._path).value;
   }
 
   /**
    * Set the current value.
    */
   set(value: JSONValue): void {
-    waitOnAmDocInit(this._modelDB, () => {
+    waitDocumentInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
-        const oldValue = amDocPath(this._modelDB.amDoc, this._path).value;
+        const oldValue = getNested(this._modelDB.document, this._path).value;
         if (JSONExt.deepEqual(oldValue, value)) {
           return;
         }
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
+        this._modelDB.document = Automerge.change(
+          this._modelDB.document,
           `value set ${this._path} ${value}`,
           doc => {
-            setForcedNested(doc, this._path, { value: value });
+            setNested(doc, this._path, { value: value });
           }
         );
         this._changed.emit({
@@ -126,18 +126,18 @@ export class AutomergeValue implements IObservableValue {
    * Dispose of the resources held by the value.
    */
   dispose(): void {
-    waitOnAmDocInit(this._modelDB, () => {
+    waitDocumentInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
         if (this._isDisposed) {
           return;
         }
         this._isDisposed = true;
         Signal.clearData(this);
-        this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
+        this._modelDB.document = Automerge.change(
+        this._modelDB.document,
           `value delete ${this._path}`,
           doc => {
-            setForcedNested(doc, this._path, undefined);
+            setNested(doc, this._path, undefined);
           }
         );
       });

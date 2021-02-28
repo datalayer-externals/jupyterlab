@@ -49,8 +49,8 @@ export class ObservableJSON extends ObservableMap<ReadonlyPartialJSONValue> {
     });
   }
 
-  public initObservable() {
-    super.initObservable();
+  public initObservables() {
+    super.initObservables();
   }
 
   /**

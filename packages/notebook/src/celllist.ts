@@ -46,7 +46,7 @@ export class CellList implements IObservableList<ICellModel> {
 
   type: 'List';
 
-  public initObservable() {
+  public initObservables() {
     /* no-op */
   }
 

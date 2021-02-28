@@ -3,33 +3,32 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import { IObservableString } from '../observablestring';
-
 import Automerge, { Text } from 'automerge';
 
 import {
-  amDocPath,
-  setForcedNested,
   getNested,
-  waitOnAmDocInit,
+  setNested,
+  waitDocumentInit,
   AutomergeModelDB,
-  AmDoc
+  Document
 } from './ammodeldb';
 
+import { IObservableString } from '../observablestring';
+
 /**
- * A concrete implementation of [[IObservableString]]
+ * A automerge implementation of [[IObservableString]]
  */
 export class AutomergeString implements IObservableString {
   /**
-   * Construct a new observable string.
+   * Construct a new automerge string.
    */
   constructor(path: string[], modelDB: AutomergeModelDB) {
     this._path = path;
     this._modelDB = modelDB;
   }
 
-  public initObservable() {
-    const value = amDocPath(this._modelDB.amDoc, this._path);
+  public initObservables() {
+    const value = getNested(this._modelDB.document, this._path);
     if (value) {
       const s = value.toString()
       this._changed.emit({
@@ -39,17 +38,17 @@ export class AutomergeString implements IObservableString {
         value: s
       });
     } else {
-      this._modelDB.amDoc = Automerge.change(
-        this._modelDB.amDoc,
+      this._modelDB.document = Automerge.change(
+        this._modelDB.document,
         `string init`,
         doc => {
-          setForcedNested(doc, this._path, new Text());
+          setNested(doc, this._path, new Text());
         }
       );
     }
     // Observe and Handle Remote Changes.
     this._modelDB.observable.observe(
-      amDocPath(this._modelDB.amDoc, this._path),
+      getNested(this._modelDB.document, this._path),
       (diff, before, after, local, changes, path) => {
         if (!local && diff.edits && diff.props) {
           const edits = diff.edits;
@@ -112,22 +111,22 @@ export class AutomergeString implements IObservableString {
    * Set the value of the string.
    */
   set text(value: string) {
-    waitOnAmDocInit(this._modelDB, () => {
+    waitDocumentInit(this._modelDB, () => {
       // TODO(ECH) Check this condition
-      if (amDocPath(this._modelDB.amDoc, this._path)) {
+      if (getNested(this._modelDB.document, this._path)) {
         return;
       }
-      if (amDocPath(this._modelDB.amDoc, this._path)) {
+      if (getNested(this._modelDB.document, this._path)) {
         if (
-          value.length === amDocPath(this._modelDB.amDoc, this._path).length &&
-          value === amDocPath(this._modelDB.amDoc, this._path)
+          value.length === getNested(this._modelDB.document, this._path).length &&
+          value === getNested(this._modelDB.document, this._path)
         ) {
           return;
         }
       }
       this._modelDB.withLock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
+        this._modelDB.document = Automerge.change(
+          this._modelDB.document,
           `string set ${this._path} ${value}`,
           doc => {
             doc.set(this._path, new Text(value));
@@ -147,8 +146,8 @@ export class AutomergeString implements IObservableString {
    * Get the value of the string.
    */
   get text(): string {
-    return amDocPath(this._modelDB.amDoc, this._path)
-      ? (amDocPath(this._modelDB.amDoc, this._path) as Text).toString()
+    return getNested(this._modelDB.document, this._path)
+      ? (getNested(this._modelDB.document, this._path) as Text).toString()
       : '';
   }
 
@@ -160,10 +159,10 @@ export class AutomergeString implements IObservableString {
    * @param text - The substring to insert.
    */
   insert(index: number, text: string): void {
-    waitOnAmDocInit(this._modelDB, () => {
+    waitDocumentInit(this._modelDB, () => {
       this._modelDB.withLock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
+        this._modelDB.document = Automerge.change(
+          this._modelDB.document,
           `string insert ${this._path} ${index} ${text}`,
           doc => {
             (getNested(doc, this._path) as Text).insertAt!(index, ...text);
@@ -187,13 +186,13 @@ export class AutomergeString implements IObservableString {
    * @param end - The ending index.
    */
   remove(start: number, end: number): void {
-    waitOnAmDocInit(this._modelDB, () => {
-      const oldValue = amDocPath(this._modelDB.amDoc, this._path)
+    waitDocumentInit(this._modelDB, () => {
+      const oldValue = getNested(this._modelDB.document, this._path)
         .toString()
         .slice(start, end);
       this._modelDB.withLock(() => {
-        this._modelDB.amDoc = Automerge.change(
-          this._modelDB.amDoc,
+        this._modelDB.document = Automerge.change(
+          this._modelDB.document,
           `string remove ${this._path} ${start} ${end}`,
           doc => {
             (getNested(doc, this._path) as Text).deleteAt!(
@@ -216,8 +215,8 @@ export class AutomergeString implements IObservableString {
    * Set the ObservableString to an empty string.
    */
   clear(): void {
-    waitOnAmDocInit(this._modelDB, () => {
-      this._modelDB.amDoc = Automerge.init<AmDoc>();
+    waitDocumentInit(this._modelDB, () => {
+      this._modelDB.document = Automerge.init<Document>();
       this.text = '';
     });
   }

@@ -105,9 +105,9 @@ export class ObservableNotebook implements IObservableNotebook {
     this._cellOrder = new ObservableList();
   }
 
-  public initObservable() {
-    this._metadata.initObservable();
-    this._cellOrder.initObservable();
+  public initObservables() {
+    this._metadata.initObservables();
+    this._cellOrder.initObservables();
     if (this._cellOrder.length === 0) {
       const cell = new ObservableCell('init-cell-id-1')
       this._getOrCreateObservableCell(cell);
@@ -195,7 +195,7 @@ export class ObservableNotebook implements IObservableNotebook {
 
   private _getOrCreateObservableCell(cell: IObservableCell): IObservableCell {
     const amCell = new ObservableCell(cell.id.get() as string);
-    amCell.initObservable();
+    amCell.initObservables();
     return amCell;
   }
 

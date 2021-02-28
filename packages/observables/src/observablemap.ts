@@ -161,7 +161,7 @@ export class ObservableMap<T> implements IObservableMap<T> {
     }
   }
 
-  public initObservable() {
+  public initObservables() {
     /* no-op */
   }
 

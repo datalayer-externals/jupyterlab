@@ -3,6 +3,23 @@
 
 import { IObservableMap, ObservableMap } from './observablemap';
 
+export const CSS_COLOR_NAMES = [
+  'Red',
+  'Orange',
+  'Olive',
+  'Green',
+  'Purple',
+  'Fuchsia',
+  'Lime',
+  'Teal',
+  'Aqua',
+  'Blue',
+  'Navy',
+  'Black',
+  'Gray',
+  'Silver'
+];
+
 /**
  * Interface for an object representing a single collaborator
  * on a realtime model.

@@ -3,7 +3,7 @@
 
 import { ISignal, Signal } from '@lumino/signaling';
 
-import { amDocPath, AutomergeModelDB } from './ammodeldb';
+import { getNested, AutomergeModelDB } from './ammodeldb';
 
 import { IObservableNotebook } from '../observablenotebook';
 
@@ -31,10 +31,10 @@ export class AutomergeNotebook implements IObservableNotebook {
     this._cellOrder = new AutomergeList(this._path.concat('cellOrder'), this._modelDB);
   }
 
-  public initObservable() {
-    this._metadata.initObservable();
-    this._cellOrder.initObservable();
-    const cellOrder = this._modelDB.amDoc.notebook.cellOrder as [];
+  public initObservables() {
+    this._metadata.initObservables();
+    this._cellOrder.initObservables();
+    const cellOrder = this._modelDB.document.notebook.cellOrder as [];
     if (cellOrder.length === 0) {
       const cell = new ObservableCell('init-cell-id-1')
       this._getOrCreateAutomergeCell(cell);
@@ -53,7 +53,7 @@ export class AutomergeNotebook implements IObservableNotebook {
     }
     // Observe and Handle Changes.
     this._modelDB.observable.observe(
-      amDocPath(this._modelDB.amDoc, this._path.concat('cellOrder')),
+      getNested(this._modelDB.document, this._path.concat('cellOrder')),
       (diff, before, after, local, changes, path) => {
         if (!local && diff.edits) {
           const action = diff.edits[0].action;
@@ -160,7 +160,7 @@ export class AutomergeNotebook implements IObservableNotebook {
       this._modelDB, 
       cell.id.get() as string
       );
-    amCell.initObservable();
+    amCell.initObservables();
     return amCell;
   }
 
