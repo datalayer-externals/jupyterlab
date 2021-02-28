@@ -466,7 +466,8 @@ export class StaticNotebook extends Widget {
     switch (cell.type) {
       case 'code':
         widget = this._createCodeCell(cell as ICodeCellModel);
-        widget.model.mimeType = this._mimetype;
+        // TODO(ECH) Review this...
+        // widget.model.mimeType = this._mimetype;
         break;
       case 'markdown':
         widget = this._createMarkdownCell(cell as IMarkdownCellModel);

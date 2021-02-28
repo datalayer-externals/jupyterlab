@@ -549,7 +549,8 @@ export class CellList implements IObservableList<ICellModel> {
         // Ensure collaborative cell.
         const c = this._cellMap.get(id)!
         if (c.observableCell instanceof ObservableCell) {
-          c.observableCell = this._notebook.getCell(c.id);
+          const observableCell = this._notebook.getCell(c.id);
+          c.observableCell = observableCell;
         }
       });
     }

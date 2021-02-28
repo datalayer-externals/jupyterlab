@@ -565,7 +565,7 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
    * TODO(ECH)
    */
   set observableCell(newCell: IObservableCell) {
-    super.observableCell  = newCell;
+    super.observableCell = newCell;
     // TODO(ECH) Review this...
     const executionCount = super.observableCell.executionCount;
     if (!executionCount.get()) {

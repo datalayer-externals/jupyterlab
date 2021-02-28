@@ -91,10 +91,10 @@ export class AutomergeValue implements IObservableValue {
    * Get the current value, or `undefined` if it has not been set.
    */
   get(): JSONValue {
-    if (!getNested(this._modelDB.document, this._path)) {
-      return '';
-    }
-    return getNested(this._modelDB.document, this._path).value;
+    const val = getNested(this._modelDB.document, this._path);
+    return val ?
+      val.value :
+      '';
   }
 
   /**

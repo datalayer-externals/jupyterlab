@@ -10,13 +10,13 @@ import { ISignal, Signal } from '@lumino/signaling';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 
 import {
-  ModelDB,
   IModelDB,
-  IObservableValue,
-  ObservableValue,
+  ModelDB,
   IObservableMap,
   IObservableString,
-  IObservableCodeEditor
+  IObservableCodeEditor,
+  IObservableValue,
+  ObservableValue
 } from '@jupyterlab/observables';
 
 import { ITranslator } from '@jupyterlab/translation';
@@ -253,13 +253,13 @@ export namespace CodeEditor {
     /**
      * Get the value of the model.
      */
-    set observableCodeEditor(newValue: IObservableCodeEditor) {
+    set observableCodeEditor(newCodeEditor: IObservableCodeEditor) {
       if (this._observableCodeEditor) {
         this._observableCodeEditor.mimeType.changed.disconnect(this._onMimeTypeChanged, this);
       }
-      newValue.value.text = newValue.value.text || this._observableCodeEditor.value.text || '';
-      newValue.mimeType.set(this._observableCodeEditor.mimeType.get() || 'text/plain');
-      this._observableCodeEditor = newValue;
+      newCodeEditor.value.text = newCodeEditor.value.text || this._observableCodeEditor.value.text || '';
+      newCodeEditor.mimeType.set(newCodeEditor.mimeType.get() || this._observableCodeEditor.mimeType.get() || 'text/plain');
+      this._observableCodeEditor = newCodeEditor;
       this._observableCodeEditor.mimeType.changed.connect(this._onMimeTypeChanged, this);
     }
 

@@ -9,7 +9,6 @@
 
 export * from './automerge/ammodeldb';
 export * from './collaborator';
-export * from './factory';
 export * from './modeldb';
 export * from './observablecell';
 export * from './observablecodeeditor';

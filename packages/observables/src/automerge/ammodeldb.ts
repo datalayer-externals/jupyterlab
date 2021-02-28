@@ -10,7 +10,7 @@ import Automerge, { Observable } from 'automerge';
 import { IModelDB, ModelDB, IObservable } from '../modeldb';
 
 import {
-  CSS_COLOR_NAMES,
+  COLLABORATOR_COLORS,
   ICollaboratorMap,
   CollaboratorMap,
   Collaborator
@@ -166,7 +166,7 @@ export class AutomergeModelDB implements IModelDB {
       this._actorId,
       this._actorId,
       this._actorId,
-      CSS_COLOR_NAMES[Math.floor(Math.random() * CSS_COLOR_NAMES.length)],
+      COLLABORATOR_COLORS[Math.floor(Math.random() * COLLABORATOR_COLORS.length)],
       `${this._actorShortId} @me`
     );
     this._collaborators = new CollaboratorMap(localCollaborator);
@@ -251,8 +251,8 @@ export class AutomergeModelDB implements IModelDB {
                 uuid,
                 uuid,
                 users[uuid]['displayName'],
-                CSS_COLOR_NAMES[
-                  Math.floor(Math.random() * CSS_COLOR_NAMES.length)
+                COLLABORATOR_COLORS[
+                  Math.floor(Math.random() * COLLABORATOR_COLORS.length)
                 ],
                 `${users[uuid]['displayName']} @anonymous`,
               );

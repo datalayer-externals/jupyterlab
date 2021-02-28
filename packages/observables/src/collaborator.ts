@@ -3,7 +3,7 @@
 
 import { IObservableMap, ObservableMap } from './observablemap';
 
-export const CSS_COLOR_NAMES = [
+export const COLLABORATOR_COLORS = [
   'Red',
   'Orange',
   'Olive',
