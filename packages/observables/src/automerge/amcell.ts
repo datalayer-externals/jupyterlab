@@ -28,17 +28,20 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     path: string[],
     modelDB: AutomergeModelDB,
     id: string,
-    textInit: string,
+    text: string,
+    cellType: string,
+    trusted: boolean,
+    executionCount: number,
     options: ObservableJSON.IOptions = {}
   ) {
     super(path, modelDB, { values: options.values });
-    this._textInit = textInit;
+    this._text = text;
     this._id = new AutomergeValue(path.concat('id'), modelDB, id);
     this._codeEditor = new AutomergeCodeEditor(path.concat('codeEditor'), modelDB);
     this._metadata = new AutomergeJSON(path.concat('metadata'), modelDB);
-    this._cellType = new AutomergeValue(path.concat('cell_type'), modelDB, 'code');
-    this._trusted = new AutomergeValue(path.concat('trusted'), modelDB, false);
-    this._executionCount = new AutomergeValue(path.concat('execution_count'), modelDB, '');
+    this._cellType = new AutomergeValue(path.concat('cell_type'), modelDB, cellType);
+    this._trusted = new AutomergeValue(path.concat('trusted'), modelDB, trusted);
+    this._executionCount = new AutomergeValue(path.concat('execution_count'), modelDB, executionCount);
   }
 
   public initObservables() {
@@ -49,8 +52,8 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     this._cellType.initObservables();
     this._trusted.initObservables();
     this._executionCount.initObservables();
-    if (this._textInit) {
-      this._codeEditor.value.insert(0, this._textInit);
+    if (this._text) {
+      this._codeEditor.value.insert(0, this._text);
     }
   }
 
@@ -88,7 +91,7 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     return this._executionCount;
   }
 
-  private _textInit: string;
+  private _text: string;
   private _id: IObservableValue;
   private _codeEditor: IObservableCodeEditor;
   private _metadata: IObservableJSON;

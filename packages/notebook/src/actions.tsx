@@ -25,7 +25,7 @@ import { KernelMessage } from '@jupyterlab/services';
 
 import { ArrayExt, each, toArray } from '@lumino/algorithm';
 
-import { JSONObject, JSONExt } from '@lumino/coreutils';
+import { JSONObject, JSONExt, UUID } from '@lumino/coreutils';
 
 import { ElementExt } from '@lumino/domutils';
 
@@ -1761,6 +1761,7 @@ namespace Private {
       }
       if (child.model.type !== value) {
         const cell = child.model.toJSON();
+        cell.id = UUID.uuid4();
         let newCell: ICellModel;
 
         switch (value) {

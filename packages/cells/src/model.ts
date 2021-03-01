@@ -475,6 +475,7 @@ export class MarkdownCellModel extends AttachmentsCellModel {
    */
   constructor(options: CellModel.IOptions) {
     super(options);
+    console.log('--- MarkdownCellModel', options)
     // Use the Github-flavored markdown mode.
     this.mimeType = 'text/x-ipythongfm';
     this.observableCell.cellType.set('markdown');

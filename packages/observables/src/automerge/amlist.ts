@@ -148,23 +148,18 @@ export class AutomergeList<T> implements IObservableList<T> {
           throw new Error('Cannot set an undefined item');
         }
         const oldValue = (getNested(this._modelDB.document, this._path) as List<any>)[index];
-        /*
-        const oldV = this._asCell(oldValue)
-        const newV = this._asCell(value);
         // Bail if the value does not change.
         const itemCmp = this._itemCmp;
-        if (itemCmp(oldV, newV)) {
+        if (itemCmp(oldValue, value)) {
           return;
         }
         this._modelDB.document = Automerge.change(
           this._modelDB.document,
-          `list set ${this._path} ${index} ${newV}`,
+          `list set ${this._path} ${index} ${value}`,
           doc => {
-//            setNested(doc, this._path.concat(['0']), value);
-            (getNested(doc, this._path) as List<any>)[index] = newV;
+            setNested(doc, this._path.concat([index.toString()]), value);
           }
         );
-        */
         this._changed.emit({
           type: 'set',
           oldIndex: index,

@@ -56,31 +56,50 @@ export class AutomergeNotebook implements IObservableNotebook {
       getNested(this._modelDB.document, this._path.concat('cellOrder')),
       (diff, before, after, local, changes, path) => {
         if (!local && diff.edits) {
-          const action = diff.edits[0].action;
-          const index = diff.edits[0].index;
-          const cellId = (after as any[])[index];
-          const value = after[index];
-          // 'add' 'move' 'remove' 'set'
-          switch(action) {
-            case 'insert':
-              this._cellOrder.insert(index, value);
-              this._cellOrderChanged.emit({
-                type: 'add',
-                oldIndex: -1,
-                newIndex: index,
-                oldValues: [],
-                newValues: [cellId]
+          if (diff.edits[0]) {
+            const action = diff.edits[0].action;
+            const index = diff.edits[0].index;
+            const cellId = (after as any[])[index];
+            const value = after[index];
+            // 'add' 'move' 'remove' 'set'
+            switch(action) {
+              case 'insert':
+                this._cellOrder.insert(index, value);
+                this._cellOrderChanged.emit({
+                  type: 'add',
+                  oldIndex: -1,
+                  newIndex: index,
+                  oldValues: [],
+                  newValues: [cellId]
+                });
+                break;
+              case 'remove':
+                this._cellOrderChanged.emit({
+                  type: 'remove',
+                  oldIndex: index,
+                  newIndex: -1,
+                  oldValues: [cellId],
+                  newValues: []
+                });
+                break;
+            }
+          } else {
+            const props = (diff as any).props;
+            if (props) {
+              Object.keys(props).map(prop => {
+                const index = Number(prop);
+                const propsIndex = props[index];
+                Object.keys(propsIndex).map(nested_prop => {
+                  this._cellOrderChanged.emit({
+                    type: 'set',
+                    oldIndex: index,
+                    newIndex: index,
+                    oldValues: [before[index]],
+                    newValues: [after[index]]
+                  });
+                });
               });
-              break
-            case 'remove':
-              this._cellOrderChanged.emit({
-                type: 'remove',
-                oldIndex: index,
-                newIndex: -1,
-                oldValues: [cellId],
-                newValues: []
-              });
-              break
+            }
           }
         }
       }
@@ -116,6 +135,11 @@ export class AutomergeNotebook implements IObservableNotebook {
   }
 
   setCell(index: number, cell: IObservableCell) {
+    const amCell = this._getOrCreateAutomergeCell(cell);
+    amCell.codeEditor.mimeType.set(cell.codeEditor.mimeType.get() as string);
+    // TODO(ECH) Revisit this...
+    // this.insertCell(index, amCell);
+    // this.removeCell(index);
     this._cellOrder.set(index, cell.id.get() as string);
   }
 
@@ -159,7 +183,10 @@ export class AutomergeNotebook implements IObservableNotebook {
       ['notebook', 'cells', cell.id.get() as string], 
       this._modelDB, 
       cell.id.get() as string,
-      cell.codeEditor.value.text
+      cell.codeEditor.value.text,
+      cell.cellType.get() as string,
+      cell.trusted.get() as boolean,
+      cell.executionCount.get() as number
       );
     amCell.initObservables();
     return amCell;
