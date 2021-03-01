@@ -183,8 +183,8 @@ export class AutomergeModelDB implements IModelDB {
       params = params + 'initialize';
     }
     const uri = encodeURI(
-      `ws://localhost:4321/${this._actorId}/${options.localPath}?${params}`
-//      `ws://${location.hostname}:${location.port}/jupyter_rtc_proxy/${this._actorId}/${options.localPath}?${params}`
+//      `ws://localhost:4321/${this._actorId}/${options.localPath}?${params}`
+      `ws://${location.hostname}:${location.port}/jupyter_rtc_proxy/${this._actorId}/${options.localPath}?${params}`
     );
     this._ws = new WebSocket(uri);
     this._ws.binaryType = 'arraybuffer';
