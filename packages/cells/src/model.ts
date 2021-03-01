@@ -183,13 +183,16 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
       this._observableCell.trusted.set(false);
       return;
     }
+
     this._observableCell.trusted.set(!!cell.metadata['trusted']);
     delete cell.metadata['trusted'];
 
     if (Array.isArray(cell.source)) {
-      this.value.text = (cell.source as string[]).join('');
+      // TODO(ECH) Revisit this...
+      this.value.insert(0, (cell.source as string[]).join(''));
     } else {
-      this.value.text = cell.source as string;
+      // TODO(ECH) Revisit this...
+      this.value.insert(0, cell.source as string);
     }
     const metadata = JSONExt.deepCopy(cell.metadata);
     if (this.type !== 'raw') {
@@ -501,17 +504,11 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
    */
   constructor(options: CodeCellModel.IOptions) {
     super(options);
-
     const factory =
       options.contentFactory || CodeCellModel.defaultContentFactory;
-
     const trusted = this.trusted;
     const cell = options.cell as nbformat.ICodeCell;
-
-    this.observableCell.cellType.set('code');
-
     let outputs: nbformat.IOutput[] = [];
-
     const executionCount = this.observableCell.executionCount;
     if (!executionCount.get()) {
       if (cell && cell.cell_type === 'code') {

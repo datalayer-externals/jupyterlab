@@ -28,9 +28,11 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     path: string[],
     modelDB: AutomergeModelDB,
     id: string,
+    textInit: string,
     options: ObservableJSON.IOptions = {}
   ) {
     super(path, modelDB, { values: options.values });
+    this._textInit = textInit;
     this._id = new AutomergeValue(path.concat('id'), modelDB, id);
     this._codeEditor = new AutomergeCodeEditor(path.concat('codeEditor'), modelDB);
     this._metadata = new AutomergeJSON(path.concat('metadata'), modelDB);
@@ -40,13 +42,16 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
   }
 
   public initObservables() {
-    // Do NOT initialize the `super`- Just initialize the below `composites`!
+    // Do NOT initialize the `super`- Just initialize the `composites`!
     this._id.initObservables();
     this._codeEditor.initObservables();
     this._metadata.initObservables();
     this._cellType.initObservables();
     this._trusted.initObservables();
     this._executionCount.initObservables();
+    if (this._textInit) {
+      this._codeEditor.value.insert(0, this._textInit);
+    }
   }
 
   set path(path: string[]) {
@@ -83,6 +88,7 @@ export class AutomergeCell extends AutomergeJSON implements IObservableCell {
     return this._executionCount;
   }
 
+  private _textInit: string;
   private _id: IObservableValue;
   private _codeEditor: IObservableCodeEditor;
   private _metadata: IObservableJSON;

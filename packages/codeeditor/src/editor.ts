@@ -225,7 +225,7 @@ export namespace CodeEditor {
       }
 
       this._observableCodeEditor = this.modelDB.createCodeEditor('codeEditor');
-      this._observableCodeEditor.value.text = this._observableCodeEditor.value.text || options.value || '';
+      this._observableCodeEditor.value.text = options.value || this._observableCodeEditor.value.text || '';
       this._observableCodeEditor.mimeType.set(options.mimeType || 'text/plain');
       this._observableCodeEditor.mimeType.changed.connect(this._onMimeTypeChanged, this);
     }

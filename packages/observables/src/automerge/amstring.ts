@@ -113,11 +113,12 @@ export class AutomergeString implements IObservableString {
    */
   set text(value: string) {
     waitDocumentInit(this._modelDB, () => {
-      // TODO(ECH) Check this condition
+      // TODO(ECH) Revisit this...
       if (getNested(this._modelDB.document, this._path)) {
         return;
       }
-      if (getNested(this._modelDB.document, this._path)) {
+      const cur = getNested(this._modelDB.document, this._path)
+      if (cur) {
         if (
           value.length === getNested(this._modelDB.document, this._path).length &&
           value === getNested(this._modelDB.document, this._path)
@@ -130,7 +131,7 @@ export class AutomergeString implements IObservableString {
           this._modelDB.document,
           `string set ${this._path} ${value}`,
           doc => {
-            doc.set(this._path, new Text(value));
+            setNested(doc, this._path, new Text(value));
           }
         );
         this._changed.emit({
@@ -147,8 +148,9 @@ export class AutomergeString implements IObservableString {
    * Get the value of the string.
    */
   get text(): string {
-    return getNested(this._modelDB.document, this._path)
-      ? (getNested(this._modelDB.document, this._path) as Text).toString()
+    const curr = getNested(this._modelDB.document, this._path);
+    return curr
+      ? (curr as Text).toString()
       : '';
   }
 
