@@ -30,6 +30,12 @@ import { DisposableDelegate, IDisposable } from '@lumino/disposable';
 import { AttachedProperty } from '@lumino/properties';
 import { Widget } from '@lumino/widgets';
 import * as React from 'react';
+import { ReactWidget } from '@jupyterlab/apputils';
+import { Dialog } from '@jupyterlab/apputils';
+import { withTheme } from "react-jsonschema-form";
+import { Theme as MuiTheme } from "rjsf-material-ui";
+
+const Form = withTheme(MuiTheme);
 
 /**
  * The class name added to Launcher instances.
@@ -383,6 +389,13 @@ function Card(
   const label = commands.label(command, args);
   const title = kernel ? label : caption || label;
 
+  let schema: any = null;
+  try {
+    schema = (item.metadata!.kernel! as any).kernel_provisioner!.config
+  }
+  catch(e){    
+  }
+
   // Build the onclick handler.
   const onclick = () => {
     // If an item has already been launched,
@@ -391,22 +404,51 @@ function Card(
       return;
     }
     launcher.pending = true;
-    void commands
-      .execute(command, {
-        ...item.args,
-        cwd: launcher.cwd
-      })
-      .then(value => {
-        launcher.pending = false;
-        if (value instanceof Widget) {
-          launcherCallback(value);
-          launcher.dispose();
-        }
-      })
-      .catch(err => {
-        launcher.pending = false;
-        void showErrorMessage(trans._p('Error', 'Launcher Error'), err);
-      });
+
+    const buttons = [
+      Dialog.cancelButton({ label: trans.__('Cancel')}),
+      Dialog.okButton({ label: trans.__('Launch') })
+    ];
+
+    console.log(schema);
+
+    const dialog = new Dialog({
+      title: trans.__('Define Kernel Parameters'),
+      body: ReactWidget.create(
+        <>
+          <Form
+            schema={schema}
+            formData={{
+              cache_size: 1000,
+              matplotlib: "auto"
+            }}
+          />
+        </>
+      ),
+      buttons
+    });
+
+    void dialog.launch().then(result => {
+      if (result.button.accept) {
+        void commands
+          .execute(command, {
+            ...item.args,
+            cwd: launcher.cwd
+          })
+          .then(value => {
+            launcher.pending = false;
+            if (value instanceof Widget) {
+              launcherCallback(value);
+              launcher.dispose();
+            }
+          })
+          .catch(err => {
+            launcher.pending = false;
+            void showErrorMessage(trans._p('Error', 'Launcher Error'), err);
+          });
+      }
+    });
+
   };
 
   // With tabindex working, you can now pick a kernel by tabbing around and

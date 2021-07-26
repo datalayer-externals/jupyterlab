@@ -549,6 +549,7 @@ export class DocumentManager implements IDocumentManager {
 
     let context: Private.IContext | null;
     let ready: Promise<void> = Promise.resolve(undefined);
+    console.log('--------', kernel, preference);
 
     // Handle the load-from-disk case
     if (which === 'open') {
