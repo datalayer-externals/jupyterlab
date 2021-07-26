@@ -221,6 +221,7 @@ export namespace ISessionConnection {
       Kernel.IKernelConnection.IOptions,
       'model' | 'username' | 'clientId' | 'serverSettings'
     >;
+
   }
 
   /**
@@ -393,5 +394,7 @@ export interface IModel {
  * See the [Jupyter Notebook API](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/jupyter/notebook/master/notebook/services/api/api.yaml#!/sessions).
  */
 export type ISessionOptions = Pick<IModel, 'path' | 'type' | 'name'> & {
-  kernel?: Partial<Pick<Kernel.IModel, 'name'>>;
+  kernel?: Partial<Pick<Kernel.IModel, 'name'>>,
+  params?: any
+  ;
 };

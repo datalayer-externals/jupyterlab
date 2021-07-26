@@ -168,6 +168,9 @@ export namespace Contents {
      * The file type.
      */
     type?: ContentType;
+
+
+    params?: {} | null;
   }
 
   /**
