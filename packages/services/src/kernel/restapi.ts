@@ -70,6 +70,7 @@ export async function startNew(
   options: IKernelOptions = {},
   settings: ServerConnection.ISettings = ServerConnection.makeSettings()
 ): Promise<IModel> {
+  console.log('-----startNew', options);
   const url = URLExt.join(settings.baseUrl, KERNEL_SERVICE_URL);
   const init = {
     method: 'POST',

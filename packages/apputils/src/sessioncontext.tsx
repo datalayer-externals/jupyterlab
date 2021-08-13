@@ -679,7 +679,7 @@ export class SessionContext implements ISessionContext {
     // and start its kernel first to ensure consistent
     // ordering.
     await this._initStarted.promise;
-    return this._changeKernel(options);
+    return this._changeKernel(options, {});
   }
 
   /**
@@ -710,12 +710,12 @@ export class SessionContext implements ISessionContext {
    * If a default kernel is available, we connect to it.
    * Otherwise we ask the user to select a kernel.
    */
-  async initialize(): Promise<boolean> {
+  async initialize(params?: any): Promise<boolean> {
     if (this._initializing) {
       return this._initPromise.promise;
     }
     this._initializing = true;
-    const needsSelection = await this._initialize();
+    const needsSelection = await this._initialize(params || {});
     if (!needsSelection) {
       this._isReady = true;
       this._ready.resolve(undefined);
@@ -731,7 +731,7 @@ export class SessionContext implements ISessionContext {
    * Inner initialize function that doesn't handle promises.
    * This makes it easier to consolidate promise handling logic.
    */
-  async _initialize(): Promise<boolean> {
+  async _initialize(params: any): Promise<boolean> {
     const manager = this.sessionManager;
     await manager.ready;
     await manager.refreshRunning();
@@ -748,7 +748,7 @@ export class SessionContext implements ISessionContext {
       }
     }
 
-    return await this._startIfNecessary();
+    return await this._startIfNecessary(params);
   }
 
   /**
@@ -782,7 +782,7 @@ export class SessionContext implements ISessionContext {
    *
    * @returns Whether to ask the user to pick a kernel.
    */
-  private async _startIfNecessary(): Promise<boolean> {
+  private async _startIfNecessary(params: any): Promise<boolean> {
     const preference = this.kernelPreference;
     if (
       this.isDisposed ||
@@ -810,7 +810,7 @@ export class SessionContext implements ISessionContext {
 
     if (options) {
       try {
-        await this._changeKernel(options);
+        await this._changeKernel(options, params);
         return false;
       } catch (err) {
         /* no-op */
@@ -826,6 +826,7 @@ export class SessionContext implements ISessionContext {
    */
   private async _changeKernel(
     model: Partial<Kernel.IModel> = {},
+    params: any,
     isInit = false
   ): Promise<Kernel.IKernelConnection | null> {
     if (model.name) {
@@ -864,7 +865,8 @@ export class SessionContext implements ISessionContext {
         path: requestId,
         type: this._type,
         name: this._name,
-        kernel: model
+        kernel: model,
+        params: params
       });
       // Handle a preempt.
       if (this._pendingSessionRequest !== session.path) {

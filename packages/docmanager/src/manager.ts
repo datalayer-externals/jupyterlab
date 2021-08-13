@@ -12,6 +12,7 @@ import {
 import { Contents, Kernel, ServiceManager } from '@jupyterlab/services';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
 import { ArrayExt, find } from '@lumino/algorithm';
+import { ReadonlyPartialJSONValue } from '@lumino/coreutils';
 import { UUID } from '@lumino/coreutils';
 import { IDisposable } from '@lumino/disposable';
 import { AttachedProperty } from '@lumino/properties';
@@ -333,14 +334,16 @@ export class DocumentManager implements IDocumentManager {
     path: string,
     widgetName = 'default',
     kernel?: Partial<Kernel.IModel>,
-    options?: DocumentRegistry.IOpenOptions
+    options?: DocumentRegistry.IOpenOptions,
+    params?: ReadonlyPartialJSONValue
   ): IDocumentWidget | undefined {
     return this._createOrOpenDocument(
       'open',
       path,
       widgetName,
       kernel,
-      options
+      options,
+      params
     );
   }
 
@@ -364,14 +367,15 @@ export class DocumentManager implements IDocumentManager {
     path: string,
     widgetName = 'default',
     kernel?: Partial<Kernel.IModel>,
-    options?: DocumentRegistry.IOpenOptions
+    options?: DocumentRegistry.IOpenOptions,
+    params?: ReadonlyPartialJSONValue
   ): IDocumentWidget | undefined {
     const widget = this.findWidget(path, widgetName);
     if (widget) {
       this._opener.open(widget, options || {});
       return widget;
     }
-    return this.open(path, widgetName, kernel, options || {});
+    return this.open(path, widgetName, kernel, options || {}, params || {});
   }
 
   /**
@@ -528,7 +532,8 @@ export class DocumentManager implements IDocumentManager {
     path: string,
     widgetName = 'default',
     kernel?: Partial<Kernel.IModel>,
-    options?: DocumentRegistry.IOpenOptions
+    options?: DocumentRegistry.IOpenOptions,
+    params?: ReadonlyPartialJSONValue
   ): IDocumentWidget | undefined {
     const widgetFactory = this._widgetFactoryFor(path, widgetName);
     if (!widgetFactory) {
@@ -549,7 +554,6 @@ export class DocumentManager implements IDocumentManager {
 
     let context: Private.IContext | null;
     let ready: Promise<void> = Promise.resolve(undefined);
-    console.log('--------', kernel, preference);
 
     // Handle the load-from-disk case
     if (which === 'open') {
@@ -559,12 +563,12 @@ export class DocumentManager implements IDocumentManager {
         context = this._createContext(path, factory, preference);
         // Populate the model, either from disk or a
         // model backend.
-        ready = this._when.then(() => context!.initialize(false));
+        ready = this._when.then(() => context!.initialize(false, params));
       }
     } else if (which === 'create') {
       context = this._createContext(path, factory, preference);
       // Immediately save the contents to disk.
-      ready = this._when.then(() => context!.initialize(true));
+      ready = this._when.then(() => context!.initialize(true, params));
     } else {
       throw new Error(`Invalid argument 'which': ${which}`);
     }

@@ -247,14 +247,14 @@ export class Context<
    *
    * @returns a promise that resolves upon initialization.
    */
-  async initialize(isNew: boolean): Promise<void> {
+  async initialize(isNew: boolean, params: any): Promise<void> {
     const lock = await this._provider.acquireLock();
     const contentIsInitialized = await this._provider.requestInitialContent();
     let promise;
     if (isNew || contentIsInitialized) {
       promise = this._save();
     } else {
-      promise = this._revert();
+      promise = this._revert(params);
     }
     // make sure that the lock is released after the above operations are completed.
     const finally_ = () => {
@@ -367,7 +367,7 @@ export class Context<
       this._provider.acquireLock(),
       this.ready
     ]);
-    const promise = this._revert();
+    const promise = this._revert({});
     const finally_ = () => {
       this._provider.releaseLock(lock);
     };
@@ -532,7 +532,7 @@ export class Context<
   /**
    * Handle an initial population.
    */
-  private _populate(): Promise<void> {
+  private _populate(params: any): Promise<void> {
     this._isPopulated = true;
     this._isReady = true;
     this._populatedPromise.resolve(void 0);
@@ -554,7 +554,7 @@ export class Context<
       // Note: we don't wait on the session to initialize
       // so that the user can be shown the content before
       // any kernel has started.
-      void this.sessionContext.initialize().then(shouldSelect => {
+      void this.sessionContext.initialize(params).then(shouldSelect => {
         if (shouldSelect) {
           void this._dialogs.selectKernel(this.sessionContext);
         }
@@ -617,7 +617,7 @@ export class Context<
       this._updateContentsModel(value);
 
       if (!this._isPopulated) {
-        await this._populate();
+        await this._populate({});
       }
 
       // Emit completion.
@@ -654,7 +654,7 @@ export class Context<
    * @param initializeModel - call the model's initialization function after
    * deserializing the content.
    */
-  private _revert(initializeModel: boolean = false): Promise<void> {
+  private _revert(params: any, initializeModel: boolean = false): Promise<void> {
     const opts: Contents.IFetchOptions = {
       format: this._factory.fileFormat,
       type: this._factory.contentType,
@@ -694,7 +694,7 @@ export class Context<
         this._updateContentsModel(contents);
         model.dirty = dirty;
         if (!this._isPopulated) {
-          return this._populate();
+          return this._populate(params);
         }
       })
       .catch(async err => {

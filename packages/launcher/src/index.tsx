@@ -32,10 +32,11 @@ import { Widget } from '@lumino/widgets';
 import * as React from 'react';
 import { ReactWidget } from '@jupyterlab/apputils';
 import { Dialog } from '@jupyterlab/apputils';
-import { withTheme } from "react-jsonschema-form";
-import { Theme as MuiTheme } from "rjsf-material-ui";
-
-const Form = withTheme(MuiTheme);
+// import MaterialJsonSchemaForm from 'react-jsonschema-form-material-ui';
+import Form, { IChangeEvent } from "react-jsonschema-form";
+// import { Theme as MuiTheme } from "rjsf-material-ui";
+// import { withTheme } from "react-jsonschema-form";
+// const Form = withTheme(MuiTheme);
 
 /**
  * The class name added to Launcher instances.
@@ -409,31 +410,30 @@ function Card(
       Dialog.cancelButton({ label: trans.__('Cancel')}),
       Dialog.okButton({ label: trans.__('Launch') })
     ];
-
-    console.log(schema);
-
+    var params = {};
+    const onChange = (e: IChangeEvent) => {
+      params = e.formData
+    }
     const dialog = new Dialog({
-      title: trans.__('Define Kernel Parameters'),
+      title: trans.__('Kernel Parameters'),
       body: ReactWidget.create(
         <>
           <Form
             schema={schema}
-            formData={{
-              cache_size: 1000,
-              matplotlib: "auto"
-            }}
+            onChange={onChange}
           />
         </>
       ),
       buttons
     });
-
+  
     void dialog.launch().then(result => {
       if (result.button.accept) {
         void commands
           .execute(command, {
             ...item.args,
-            cwd: launcher.cwd
+            cwd: launcher.cwd,
+            params: params
           })
           .then(value => {
             launcher.pending = false;

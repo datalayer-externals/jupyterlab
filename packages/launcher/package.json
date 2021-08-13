@@ -50,9 +50,6 @@
     "@material-ui/icons": "4.11.2",
     "react": "^17.0.1",
     "react-jsonschema-form": "1.8.0",
-    "react-jsonschema-form-material-ui": "2.0.9",
-    "react-jsonschema-form-mui": "1.0.9",
-    "rjsf-material-ui": "0.3.6",
     "stream-browserify": "3.0.0",
     "tty-browserify": "0.0.1"
   },

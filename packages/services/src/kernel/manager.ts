@@ -177,6 +177,7 @@ export class KernelManager extends BaseManager implements Kernel.IManager {
       'model' | 'serverSettings'
     > = {}
   ): Promise<Kernel.IKernelConnection> {
+    console.log('-----startNew', createOptions)
     const model = await startNew(createOptions, this.serverSettings);
     return this.connectTo({
       ...connectOptions,

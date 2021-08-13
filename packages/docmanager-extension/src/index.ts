@@ -520,7 +520,8 @@ function addCommands(
         typeof args['path'] === 'undefined' ? '' : (args['path'] as string);
       const options: Partial<Contents.ICreateOptions> = {
         type: args['type'] as Contents.ContentType,
-        path
+        path,
+        params: args.params
       };
 
       if (args['type'] === 'file') {
@@ -542,9 +543,10 @@ function addCommands(
       const kernel = (args?.kernel as unknown) as Kernel.IModel | undefined;
       const options =
         (args['options'] as DocumentRegistry.IOpenOptions) || void 0;
+      const params = args['params'];
       return docManager.services.contents
         .get(path, { content: false })
-        .then(() => docManager.openOrReveal(path, factory, kernel, options));
+        .then(() => docManager.openOrReveal(path, factory, kernel, options, params));
     },
     icon: args => (args['icon'] as string) || '',
     label: args => (args['label'] || args['factory']) as string,

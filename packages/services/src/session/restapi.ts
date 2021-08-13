@@ -99,6 +99,7 @@ export async function startSession(
   options: Session.ISessionOptions,
   settings: ServerConnection.ISettings = ServerConnection.makeSettings()
 ): Promise<Session.IModel> {
+  console.log('---', options)
   const url = URLExt.join(settings.baseUrl, SESSION_SERVICE_URL);
   const init = {
     method: 'POST',

@@ -1201,15 +1201,16 @@ function activateNotebookHandler(
   }
 
   // Utility function to create a new notebook.
-  const createNew = (cwd: string, kernelName?: string) => {
+  const createNew = (cwd: string, kernelName?: string, params? : {}) => {
     return commands
-      .execute('docmanager:new-untitled', { path: cwd, type: 'notebook' })
+      .execute('docmanager:new-untitled', { path: cwd, params: params, type: 'notebook' })
       .then(model => {
         if (model != undefined) {
           return commands.execute('docmanager:open', {
             path: model.path,
             factory: FACTORY,
-            kernel: { name: kernelName }
+            kernel: { name: kernelName },
+            params: params
           });
         }
       });
@@ -1237,7 +1238,8 @@ function activateNotebookHandler(
         (args['cwd'] as string) ||
         (browserFactory ? browserFactory.defaultBrowser.model.path : '');
       const kernelName = (args['kernelName'] as string) || '';
-      return createNew(cwd, kernelName);
+      const params = (args['params'] as string) || {};      
+      return createNew(cwd, kernelName, params);
     }
   });
 
