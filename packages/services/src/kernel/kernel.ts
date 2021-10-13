@@ -327,6 +327,14 @@ export interface IKernelConnection extends IObservableDisposable {
     KernelMessage.IDebugReplyMsg
   >;
 
+  requestUsage(
+    content: KernelMessage.IUsageRequestMsg['content'],
+    disposeOnDone?: boolean
+  ): IControlFuture<
+    KernelMessage.IUsageRequestMsg,
+    KernelMessage.IUsageReplyMsg
+  >;
+
   /**
    * Send an `is_complete_request` message.
    *
