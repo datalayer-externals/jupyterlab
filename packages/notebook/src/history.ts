@@ -10,7 +10,7 @@ import { Signal } from '@lumino/signaling';
 /**
  * The definition of a console history manager object.
  */
-export interface IConsoleHistory extends IDisposable {
+export interface INotebookHistory extends IDisposable {
   /**
    * The session context used by the foreign handler.
    */
@@ -69,11 +69,11 @@ export interface IConsoleHistory extends IDisposable {
 /**
  * A console history manager object.
  */
-export class ConsoleHistory implements IConsoleHistory {
+export class NotebookHistory implements INotebookHistory {
   /**
    * Construct a new console history object.
    */
-  constructor(options: ConsoleHistory.IOptions) {
+  constructor(options: NotebookHistory.IOptions) {
     this.sessionContext = options.sessionContext;
     void this._handleKernel();
     this.sessionContext.kernelChanged.connect(this._handleKernel, this);
@@ -191,7 +191,6 @@ export class ConsoleHistory implements IConsoleHistory {
    * so that the console's history will consist of no contiguous repetitions.
    */
   push(item: string): void {
-    console.log('---- push', item);
     if (item && item !== this._history[this._history.length - 1]) {
       this._history.push(item);
     }
@@ -218,7 +217,6 @@ export class ConsoleHistory implements IConsoleHistory {
    * Contiguous duplicates are stripped out of the API response.
    */
   protected onHistory(value: KernelMessage.IHistoryReplyMsg): void {
-    console.log('--------', value);
     this._history.length = 0;
     let last = '';
     let current = '';
@@ -342,9 +340,9 @@ export class ConsoleHistory implements IConsoleHistory {
 }
 
 /**
- * A namespace for ConsoleHistory statics.
+ * A namespace for NotebookHistory statics.
  */
-export namespace ConsoleHistory {
+export namespace NotebookHistory {
   /**
    * The initialization options for a console history object.
    */

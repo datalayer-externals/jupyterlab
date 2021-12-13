@@ -1799,6 +1799,24 @@ export namespace NotebookActions {
       }
     });
   }
+
+  /**
+   * Access last notebook history.
+   *
+   * @param notebook - The target notebook widget.
+   */
+  export function accessLastHistory(notebook: Notebook): any {
+    notebook.accessLastHistory();
+  }
+
+  /**
+   * Access next notebook history.
+   *
+   * @param notebook - The target notebook widget.
+   */
+  export function accessNextHistory(notebook: Notebook): any {
+    notebook.accessNextHistory();
+  }
 }
 
 /**
@@ -2024,6 +2042,7 @@ namespace Private {
           }
           const deletedCells = notebook.model?.deletedCells ?? [];
           executionScheduled.emit({ notebook, cell });
+          console.log('---', cell.model.value.text);
           return CodeCell.execute(cell as CodeCell, sessionContext, {
             deletedCells,
             recordTiming: notebook.notebookConfig.recordTiming

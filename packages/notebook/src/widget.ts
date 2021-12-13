@@ -27,6 +27,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 import { h, VirtualDOM } from '@lumino/virtualdom';
 import { PanelLayout, Widget } from '@lumino/widgets';
 import { NotebookActions } from './actions';
+import { INotebookHistory } from './history';
 import { INotebookModel } from './model';
 
 /**
@@ -201,6 +202,7 @@ export class StaticNotebook extends Widget {
       options.notebookConfig || StaticNotebook.defaultNotebookConfig;
     this._updateNotebookConfig();
     this._mimetypeService = options.mimeTypeService;
+    this._history = options.history;
 
     // Section for the virtual-notebook behavior.
     this._toRenderMap = new Map<string, { index: number; cell: Cell }>();
@@ -345,6 +347,14 @@ export class StaticNotebook extends Widget {
   set notebookConfig(value: StaticNotebook.INotebookConfig) {
     this._notebookConfig = value;
     this._updateNotebookConfig();
+  }
+
+  accessLastHistory(): void {
+    // this._history.back(this.content.activeCell);
+  }
+
+  accessNextHistory(): void {
+    // this._history.forward(this.content.activeCell);
   }
 
   /**
@@ -816,6 +826,7 @@ export class StaticNotebook extends Widget {
   private _mimetype = 'text/plain';
   private _model: INotebookModel | null = null;
   private _mimetypeService: IEditorMimeTypeService;
+  private _history: INotebookHistory | undefined;
   private _modelChanged = new Signal<this, void>(this);
   private _modelContentChanged = new Signal<this, void>(this);
   private _fullyRendered = new Signal<this, boolean>(this);
@@ -868,6 +879,11 @@ export namespace StaticNotebook {
      * The application language translator.
      */
     translator?: ITranslator;
+
+    /**
+     * TODO
+     */
+    history?: INotebookHistory;
   }
 
   /**

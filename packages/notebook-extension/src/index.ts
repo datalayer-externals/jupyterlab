@@ -252,6 +252,10 @@ namespace CommandIDs {
   export const expandAllCmd = 'Collapsible_Headings:Expand_All';
 
   export const copyToClipboard = 'notebook:copy-to-clipboard';
+
+  export const accessLastHistory = 'notebook:access-last-history';
+
+  export const accessNextHistory = 'notebook:access-next-history';
 }
 
 /**
@@ -2471,6 +2475,24 @@ function addCommands(
       }
     }
   });
+  commands.addCommand(CommandIDs.accessLastHistory, {
+    label: 'Access Last History',
+    execute: args => {
+      const current = getCurrent(tracker, shell, args);
+      if (current) {
+        return NotebookActions.accessLastHistory(current.content);
+      }
+    }
+  });
+  commands.addCommand(CommandIDs.accessNextHistory, {
+    label: 'Access Next History',
+    execute: args => {
+      const current = getCurrent(tracker, shell, args);
+      if (current) {
+        return NotebookActions.accessNextHistory(current.content);
+      }
+    }
+  });
 }
 
 /**
@@ -2506,7 +2528,9 @@ function populatePalette(
     CommandIDs.trust,
     CommandIDs.toggleCollapseCmd,
     CommandIDs.collapseAllCmd,
-    CommandIDs.expandAllCmd
+    CommandIDs.expandAllCmd,
+    CommandIDs.accessLastHistory,
+    CommandIDs.accessNextHistory
   ].forEach(command => {
     palette.addItem({ command, category });
   });
