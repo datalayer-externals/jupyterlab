@@ -28,6 +28,7 @@ import { h, VirtualDOM } from '@lumino/virtualdom';
 import { PanelLayout, Widget } from '@lumino/widgets';
 import { NotebookActions } from './actions';
 import { INotebookModel } from './model';
+import * as sharedModels from '@jupyterlab/shared-models';
 
 /**
  * The data attribute added to a widget that has an active kernel.
@@ -488,8 +489,9 @@ export class StaticNotebook extends Widget {
     this._updateMimetype();
     const cells = newValue.cells;
     if (!cells.length && newValue.isInitialized) {
-      cells.push(
-        newValue.contentFactory.createCell(this.notebookConfig.defaultCell, {})
+      newValue.sharedModel.insertCell(
+        0,
+        sharedModels.createCell({ cell_type: 'code' })
       );
     }
 
@@ -531,12 +533,10 @@ export class StaticNotebook extends Widget {
           // Add the cell in a new context to avoid triggering another
           // cell changed event during the handling of this signal.
           requestAnimationFrame(() => {
-            if (model && !model.isDisposed && !model.cells.length) {
-              model.cells.push(
-                model.contentFactory.createCell(
-                  this.notebookConfig.defaultCell,
-                  {}
-                )
+            if (model && !model.isDisposed && !model.sharedModel.cells.length) {
+              model.sharedModel.insertCell(
+                0,
+                sharedModels.createCell({ cell_type: 'code' })
               );
             }
           });
@@ -575,7 +575,7 @@ export class StaticNotebook extends Widget {
         break;
       case 'markdown':
         widget = this._createMarkdownCell(cell as IMarkdownCellModel);
-        if (cell.value.text === '') {
+        if (cell.sharedModel.getSource() === '') {
           (widget as MarkdownCell).rendered = false;
         }
         break;
@@ -2339,26 +2339,11 @@ export class Notebook extends StaticNotebook {
       }
       const start = index;
       const values = event.mimeData.getData(JUPYTER_CELL_MIME);
-      const factory = model.contentFactory;
-
       // Insert the copies of the original cells.
-      model.cells.beginCompoundOperation();
-      each(values, (cell: nbformat.ICell) => {
-        let value: ICellModel;
-        switch (cell.cell_type) {
-          case 'code':
-            value = factory.createCodeCell({ cell });
-            break;
-          case 'markdown':
-            value = factory.createMarkdownCell({ cell });
-            break;
-          default:
-            value = factory.createRawCell({ cell });
-            break;
-        }
-        model.cells.insert(index++, value);
-      });
-      model.cells.endCompoundOperation();
+      const ycells = values.map((value: nbformat.ICell) =>
+        sharedModels.createCell(value)
+      );
+      model.sharedModel.insertCells(index, ycells);
       // Select the inserted cells.
       this.deselectAll();
       this.activeCellIndex = start;
@@ -2400,7 +2385,8 @@ export class Notebook extends StaticNotebook {
     dragImage = Private.createDragImage(
       selected.length,
       countString,
-      activeCell?.model.value.text.split('\n')[0].slice(0, 26) ?? ''
+      activeCell?.model.sharedModel.getSource().split('\n')[0].slice(0, 26) ??
+        ''
     );
 
     // Set up the drag event.
@@ -2418,7 +2404,9 @@ export class Notebook extends StaticNotebook {
     this._drag.mimeData.setData('internal:cells', toMove);
     // Add mimeData for the text content of the selected cells,
     // allowing for drag/drop into plain text fields.
-    const textContent = toMove.map(cell => cell.model.value.text).join('\n');
+    const textContent = toMove
+      .map(cell => cell.model.sharedModel.getSource())
+      .join('\n');
     this._drag.mimeData.setData('text/plain', textContent);
 
     // Remove mousemove and mouseup listeners and start the drag.

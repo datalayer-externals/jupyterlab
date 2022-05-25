@@ -11,6 +11,7 @@ import {
   ObservableValue
 } from '@jupyterlab/observables';
 import * as models from '@jupyterlab/shared-models';
+import { ISharedText } from '@jupyterlab/shared-models';
 import { ITranslator } from '@jupyterlab/translation';
 import { JSONObject } from '@lumino/coreutils';
 import { IDisposable } from '@lumino/disposable';
@@ -218,16 +219,17 @@ export namespace CodeEditor {
     /**
      * Construct a new Model.
      */
-    constructor(options?: Model.IOptions) {
-      options = options || {};
+    constructor(options: Model.IOptions) {
       this.modelDB = new ModelDB();
-      this.sharedModel = models.createStandaloneCell(
-        this.type,
-        options.id
-      ) as models.ISharedText;
+      this.sharedModel =
+        options?.sharedModel ||
+        (models.createStandaloneCell({
+          cell_type: this.type,
+          id: options?.id
+        }) as models.ISharedText);
       const mimeType = this.modelDB.createValue('mimeType');
       mimeType.changed.connect(this._onModelDBMimeTypeChanged, this);
-      mimeType.set(options.mimeType || 'text/plain');
+      mimeType.set(options?.mimeType || 'text/plain');
 
       this.modelDB.createMap('selections');
     }
@@ -236,13 +238,12 @@ export namespace CodeEditor {
      * When we initialize a cell model, we create a standalone model that cannot be shared in a YNotebook.
      * Call this function to re-initialize the local representation based on a fresh shared model (e.g. models.YFile or models.YCodeCell).
      *
+     * @todo remove this
+     *
      * @param sharedModel
      * @param reinitialize Whether to reinitialize the shared model.
      */
-    public switchSharedModel(
-      sharedModel: models.ISharedText,
-      reinitialize?: boolean
-    ): void {
+    public switchSharedModel(sharedModel: models.ISharedText): void {
       // clone model retrieve a shared (not standalone) model
       this.sharedModel = sharedModel;
       this._sharedModelSwitched.emit(true);
@@ -761,6 +762,8 @@ export namespace CodeEditor {
        * The mimetype of the model.
        */
       mimeType?: string;
+
+      sharedModel: ISharedText;
     }
   }
 }

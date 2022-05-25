@@ -30,6 +30,7 @@ import { Cell, CodeCellModel } from '@jupyterlab/cells';
 import { defaultRenderMime as localRendermime } from './rendermime';
 
 import * as Mock from './mock';
+import { createStandaloneCell } from '@jupyterlab/shared-models';
 
 /**
  * Stub for the require() function.
@@ -122,7 +123,11 @@ export namespace NBTestUtils {
    */
   export function createCellEditor(model?: CodeCellModel): CodeEditorWrapper {
     return new CodeEditorWrapper({
-      model: model || new CodeCellModel({}),
+      model:
+        model ||
+        new CodeCellModel({
+          sharedModel: createStandaloneCell({ cell_type: 'code' })
+        }),
       factory: editorFactory
     });
   }

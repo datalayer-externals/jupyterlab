@@ -3,6 +3,7 @@ import { Dialog } from '@jupyterlab/apputils';
 import { CodeCell, CodeCellModel } from '@jupyterlab/cells';
 
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
+import { createStandaloneCell } from '@jupyterlab/shared-models';
 
 import { Message } from '@lumino/messaging';
 
@@ -100,7 +101,9 @@ class EvaluateDialogBody extends Widget implements Dialog.IBodyWidget<string> {
 
     const { rendermime, mimeType } = options;
 
-    const model = new CodeCellModel({});
+    const model = new CodeCellModel({
+      sharedModel: createStandaloneCell({ cell_type: 'code' })
+    });
     model.mimeType = mimeType ?? '';
     this._prompt = new CodeCell({
       rendermime,
@@ -117,7 +120,7 @@ class EvaluateDialogBody extends Widget implements Dialog.IBodyWidget<string> {
    * Get the text specified by the user
    */
   getValue(): string {
-    return this._prompt.model.value.text;
+    return this._prompt.model.sharedModel.getSource();
   }
 
   /**

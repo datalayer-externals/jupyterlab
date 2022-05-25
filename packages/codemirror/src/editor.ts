@@ -7,16 +7,7 @@
 import { CodeEditor } from '@jupyterlab/codeeditor';
 import { ICollaborator, IObservableMap } from '@jupyterlab/observables';
 import * as models from '@jupyterlab/shared-models';
-<<<<<<< HEAD
-import {
-  ITranslator,
-  nullTranslator,
-  TranslationBundle
-} from '@jupyterlab/translation';
-import { SyntaxNodeRef } from '@lezer/common';
-=======
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
->>>>>>> 0d77143ff5 (deduplicate modeldb - cells,codeeditor,codemirror)
 import { ArrayExt } from '@lumino/algorithm';
 import { UUID } from '@lumino/coreutils';
 import { DisposableDelegate, IDisposable } from '@lumino/disposable';
@@ -59,6 +50,7 @@ import { Mode } from './mode';
 import { Configuration } from './editorconfiguration';
 import './codemirror-ipython';
 import './codemirror-ipythongfm';
+import { SyntaxNodeRef } from '@lezer/common';
 
 /**
  * The class name added to CodeMirrorWidget instances.
@@ -95,15 +87,12 @@ const DOWN_ARROW = 40;
  */
 const HOVER_TIMEOUT = 1000;
 
-<<<<<<< HEAD
 interface IYCodeMirrorBinding {
   text: Y.Text;
   awareness: Awareness | null;
   undoManager: Y.UndoManager | null;
 }
 
-=======
->>>>>>> 0d77143ff5 (deduplicate modeldb - cells,codeeditor,codemirror)
 /**
  * CodeMirror editor.
  */
@@ -219,10 +208,9 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
 
     this._onMimeTypeChanged();
     this._onCursorActivity();
-<<<<<<< HEAD
     this._poll = new Poll({
       factory: async () => {
-        this._checkSync();
+        // nop
       },
       frequency: { interval: 3000, backoff: false },
       standby: () => {
@@ -233,51 +221,12 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
 
     model.mimeTypeChanged.connect(this._onMimeTypeChanged, this);
     model.selections.changed.connect(this._onSelectionsChanged, this);
-=======
-    model.mimeTypeChanged.connect(this._onMimeTypeChanged, this);
-    model.selections.changed.connect(this._onSelectionsChanged, this);
-
-    CodeMirror.on(editor, 'keydown', (editor: CodeMirror.Editor, event) => {
-      const index = ArrayExt.findFirstIndex(this._keydownHandlers, handler => {
-        if (handler(this, event) === true) {
-          event.preventDefault();
-          return true;
-        }
-        return false;
-      });
-      if (index === -1) {
-        this.onKeydown(event);
-      }
-    });
-
-    this._yeditorBinding?.on('cursorActivity', () => this._onCursorActivity());
-
-    // Turn off paste handling in codemirror since sometimes we want to
-    // replace it with our own.
-    editor.on('paste', (instance: CodeMirror.Editor, event: any) => {
-      const handlePaste = this._config['handlePaste'] ?? true;
-      if (!handlePaste) {
-        event.codemirrorIgnore = true;
-      }
-    });
-
-    // Manually refresh on paste to make sure editor is properly sized.
-    editor.getWrapperElement().addEventListener('paste', () => {
-      if (this.hasFocus()) {
-        this.refresh();
-      }
-    });
->>>>>>> 0d77143ff5 (deduplicate modeldb - cells,codeeditor,codemirror)
   }
 
   /**
    * Initialize the editor binding.
    */
   private _initializeEditorBinding(): void {
-<<<<<<< HEAD
-=======
-    this._yeditorBinding?.destroy();
->>>>>>> 0d77143ff5 (deduplicate modeldb - cells,codeeditor,codemirror)
     const sharedModel = this.model.sharedModel as models.IYText;
     this._yeditorBinding = {
       text: sharedModel.ysource,
@@ -978,7 +927,6 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
   }
 
   /**
-<<<<<<< HEAD
    * Handles document changes.
    */
   private _onDocChanged(update: ViewUpdate) {
@@ -992,8 +940,6 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
   }
 
   /**
-=======
->>>>>>> 0d77143ff5 (deduplicate modeldb - cells,codeeditor,codemirror)
    * Handle the DOM events for the editor.
    *
    * @param event - The DOM event sent to the editor.
@@ -1059,86 +1005,6 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     }
   }
 
-  /**
-<<<<<<< HEAD
-   * Check for an out of sync editor.
-   */
-  private _checkSync(): void {
-    const change = this._lastChange;
-    if (!change) {
-      return;
-    }
-    this._lastChange = null;
-    const doc = this.doc;
-    if (doc.toString() === this._model.value.text) {
-      return;
-    }
-
-    void showDialog({
-      title: this._trans.__('Code Editor out of Sync'),
-      body: this._trans.__(
-        'Please open your browser JavaScript console for bug report instructions'
-      )
-    });
-    console.warn(
-      'If you are able and willing to publicly share the text or code in your editor, you can help us debug the "Code Editor out of Sync" message by pasting the following to the public issue at https://github.com/jupyterlab/jupyterlab/issues/2951. Please note that the data below includes the text/code in your editor.'
-    );
-    console.warn(
-      JSON.stringify({
-        model: this._model.value.text,
-        view: doc.toString(),
-        selections: this.getSelections(),
-        cursor: this.getCursorPosition(),
-        lineSep: this.state.facet(EditorState.lineSeparator),
-        change
-      })
-    );
-=======
-   * Construct a caret element representing the position
-   * of a collaborator's cursor.
-   */
-  private _getCaret(collaborator: ICollaborator): HTMLElement {
-    // FIXME-TRANS: Is this localizable?
-    const name = collaborator ? collaborator.displayName : 'Anonymous';
-    const color = collaborator
-      ? collaborator.color
-      : this._selectionStyle.color;
-    const caret: HTMLElement = document.createElement('span');
-    caret.className = COLLABORATOR_CURSOR_CLASS;
-    caret.style.borderBottomColor = color;
-    caret.onmouseenter = () => {
-      this._clearHover();
-      this._hoverId = collaborator.sessionId;
-      const rect = caret.getBoundingClientRect();
-      // Construct and place the hover box.
-      const hover = document.createElement('div');
-      hover.className = COLLABORATOR_HOVER_CLASS;
-      hover.style.left = String(rect.left) + 'px';
-      hover.style.top = String(rect.bottom) + 'px';
-      hover.textContent = name;
-      hover.style.backgroundColor = color;
-
-      // If the user mouses over the hover, take over the timer.
-      hover.onmouseenter = () => {
-        window.clearTimeout(this._hoverTimeout);
-      };
-      hover.onmouseleave = () => {
-        this._hoverTimeout = window.setTimeout(() => {
-          this._clearHover();
-        }, HOVER_TIMEOUT);
-      };
-      this._caretHover = hover;
-      document.body.appendChild(hover);
-    };
-    caret.onmouseleave = () => {
-      this._hoverTimeout = window.setTimeout(() => {
-        this._clearHover();
-      }, HOVER_TIMEOUT);
-    };
-    return caret;
->>>>>>> 0d77143ff5 (deduplicate modeldb - cells,codeeditor,codemirror)
-  }
-
   protected translator: ITranslator;
   private _model: CodeEditor.IModel;
   private _editor: EditorView;
@@ -1153,10 +1019,7 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
   private _selectionStyle: CodeEditor.ISelectionStyle;
   private _uuid = '';
   private _isDisposed = false;
-<<<<<<< HEAD
   private _lastChange: ChangeSet | null = null;
-=======
->>>>>>> 0d77143ff5 (deduplicate modeldb - cells,codeeditor,codemirror)
   private _poll: Poll;
   private _yeditorBinding: IYCodeMirrorBinding | null;
   private _editorConfig: Configuration.EditorConfiguration;

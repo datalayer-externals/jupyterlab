@@ -26,6 +26,7 @@ import { PanelLayout, Widget } from '@lumino/widgets';
 import { INotebookModel } from './model';
 import { NotebookPanel } from './panel';
 import { INotebookTools, INotebookTracker } from './tokens';
+import { createStandaloneCell, ISharedText } from '@jupyterlab/shared-models';
 
 class RankedPanel<T extends Widget = Widget> extends Widget {
   constructor() {
@@ -455,7 +456,10 @@ export namespace NotebookTools {
         layout.widgets[0].dispose();
       }
       if (this._cellModel && !this._cellModel.isDisposed) {
-        this._cellModel.value.changed.disconnect(this._onValueChanged, this);
+        this._cellModel.sharedModel.changed.disconnect(
+          this._onValueChanged,
+          this
+        );
         this._cellModel.mimeTypeChanged.disconnect(
           this._onMimeTypeChanged,
           this
@@ -475,9 +479,14 @@ export namespace NotebookTools {
       const factory = activeCell.contentFactory.editorFactory;
 
       const cellModel = (this._cellModel = activeCell.model);
-      cellModel.value.changed.connect(this._onValueChanged, this);
+      (cellModel.sharedModel as ISharedText).changed.connect(
+        this._onValueChanged,
+        this
+      );
       cellModel.mimeTypeChanged.connect(this._onMimeTypeChanged, this);
-      this._model.value.text = cellModel.value.text.split('\n')[0];
+      this._model.sharedModel.setSource(
+        cellModel.sharedModel.getSource().split('\n')[0]
+      );
       this._model.mimeType = cellModel.mimeType;
 
       const model = this._model;
@@ -492,7 +501,9 @@ export namespace NotebookTools {
      * Handle a change to the current editor value.
      */
     private _onValueChanged(): void {
-      this._model.value.text = this._cellModel!.value.text.split('\n')[0];
+      this._model.sharedModel.setSource(
+        this._cellModel!.sharedModel.getSource().split('\n')[0]
+      );
     }
 
     /**
@@ -502,7 +513,9 @@ export namespace NotebookTools {
       this._model.mimeType = this._cellModel!.mimeType;
     }
 
-    private _model = new CodeEditor.Model();
+    private _model = new CodeEditor.Model({
+      sharedModel: createStandaloneCell({ cell_type: 'code' })
+    });
     private _cellModel: CodeEditor.IModel | null;
   }
 

@@ -16,7 +16,6 @@ import {
   IDocumentProviderFactory,
   ProviderMock
 } from '@jupyterlab/docprovider';
-import { IModelDB, ModelDB } from '@jupyterlab/observables';
 import { RenderMimeRegistry } from '@jupyterlab/rendermime';
 import { IRenderMime } from '@jupyterlab/rendermime-interfaces';
 import {
@@ -61,14 +60,8 @@ export class Context<
     const localPath = this._manager.contents.localPath(this._path);
     const lang = this._factory.preferredLanguage(PathExt.basename(localPath));
 
-    const dbFactory = options.modelDBFactory;
-    if (dbFactory) {
-      const localPath = manager.contents.localPath(this._path);
-      this._modelDB = dbFactory.createNew(localPath);
-      this._model = this._factory.createNew(lang, this._modelDB, false);
-    } else {
-      this._model = this._factory.createNew(lang, undefined, false);
-    }
+    // @todo remove unused parameters
+    this._model = this._factory.createNew(lang, undefined, false);
 
     const ymodel = this._model.sharedModel as ymodels.YDocument<any>; // translate to the concrete Yjs implementation
     const ydoc = ymodel.ydoc;
@@ -225,9 +218,6 @@ export class Context<
     }
     this._isDisposed = true;
     this.sessionContext.dispose();
-    if (this._modelDB) {
-      this._modelDB.dispose();
-    }
     this._model.dispose();
     this._provider.destroy();
     this._model.sharedModel.dispose();
@@ -925,7 +915,6 @@ or load the version on disk (revert)?`,
     options?: DocumentRegistry.IOpenOptions
   ) => void;
   private _model: T;
-  private _modelDB: IModelDB;
   private _path = '';
   private _lineEnding: string | null = null;
   private _factory: DocumentRegistry.IModelFactory<T>;
@@ -984,11 +973,6 @@ export namespace Context {
      * An factory method for the document provider.
      */
     docProviderFactory?: IDocumentProviderFactory;
-
-    /**
-     * An IModelDB factory method which may be used for the document.
-     */
-    modelDBFactory?: ModelDB.IFactory;
 
     /**
      * An optional callback for opening sibling widgets.

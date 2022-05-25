@@ -1,7 +1,12 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { ICellModel } from '@jupyterlab/cells';
+import {
+  CodeCellModel,
+  ICellModel,
+  MarkdownCellModel,
+  RawCellModel
+} from '@jupyterlab/cells';
 import {
   IModelDB,
   IObservableList,
@@ -19,7 +24,6 @@ import {
   toArray
 } from '@lumino/algorithm';
 import { ISignal, Signal } from '@lumino/signaling';
-import { NotebookModel } from './model';
 
 /**
  * A cell list object that supports undo/redo.
@@ -29,15 +33,11 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * Construct the cell list.
    */
   constructor(
-    modelDB: IModelDB,
-    factory: NotebookModel.IContentFactory,
+    modelDB: IModelDB, // @todo remove usage of modeldb
     model: models.ISharedNotebook
   ) {
-    this._factory = factory;
     this._cellOrder = modelDB.createList<string>('cellOrder');
     this._cellMap = new ObservableMap<ICellModel>();
-
-    this._cellOrder.changed.connect(this._onOrderChanged, this);
     this.nbmodel = model;
     this.nbmodel.changed.connect(this.onSharedModelChanged, this);
     this.changed.connect(this.onModelDBChanged, this);
@@ -101,9 +101,23 @@ export class CellList implements IObservableUndoableList<ICellModel> {
       change.cellsChange?.forEach(delta => {
         if (delta.insert != null) {
           const cells = delta.insert.map(nbcell => {
-            const cell = this._factory.createCell(nbcell.cell_type, {});
-            cell.switchSharedModel(nbcell as any, true);
-            return cell;
+            switch (nbcell.cell_type) {
+              case 'code': {
+                return new CodeCellModel({
+                  sharedModel: nbcell
+                });
+              }
+              case 'markdown': {
+                return new MarkdownCellModel({
+                  sharedModel: nbcell
+                });
+              }
+              default: {
+                return new RawCellModel({
+                  sharedModel: nbcell
+                });
+              }
+            }
           });
           this.insertAll(currpos, cells);
           currpos += delta.insert.length;
@@ -528,73 +542,10 @@ export class CellList implements IObservableUndoableList<ICellModel> {
     this.nbmodel.clearUndoHistory();
   }
 
-  private _onOrderChanged(
-    order: IObservableUndoableList<string>,
-    change: IObservableList.IChangedArgs<string>
-  ): void {
-    if (change.type === 'add' || change.type === 'set') {
-      each(change.newValues, id => {
-        const existingCell = this._cellMap.get(id);
-        if (existingCell == null) {
-          const cellDB = this._factory.modelDB!;
-          const cellType = cellDB.createValue(id + '.type');
-          let cell: ICellModel;
-          switch (cellType.get()) {
-            case 'code':
-              cell = this._factory.createCodeCell({ id: id });
-              break;
-            case 'markdown':
-              cell = this._factory.createMarkdownCell({ id: id });
-              break;
-            default:
-              cell = this._factory.createRawCell({ id: id });
-              break;
-          }
-          this._cellMap.set(id, cell);
-        } else if (!existingCell.sharedModel.isStandalone) {
-          this._mutex(() => {
-            // it does already exist, probably because it was deleted previously and we introduced it
-            // copy it to a fresh codecell instance
-            const cell = existingCell.toJSON();
-            let freshCell = null;
-            switch (cell.cell_type) {
-              case 'code':
-                freshCell = this._factory.createCodeCell({ cell });
-                break;
-              case 'markdown':
-                freshCell = this._factory.createMarkdownCell({ cell });
-                break;
-              default:
-                freshCell = this._factory.createRawCell({ cell });
-                break;
-            }
-            this._cellMap.set(id, freshCell);
-          });
-        }
-      });
-    }
-    const newValues: ICellModel[] = [];
-    const oldValues: ICellModel[] = [];
-    each(change.newValues, id => {
-      newValues.push(this._cellMap.get(id)!);
-    });
-    each(change.oldValues, id => {
-      oldValues.push(this._cellMap.get(id)!);
-    });
-    this._changed.emit({
-      type: change.type,
-      oldIndex: change.oldIndex,
-      newIndex: change.newIndex,
-      oldValues,
-      newValues
-    });
-  }
-
   private _isDisposed: boolean = false;
   private _cellOrder: IObservableUndoableList<string>;
   private _cellMap: IObservableMap<ICellModel>;
   private _changed = new Signal<this, IObservableList.IChangedArgs<ICellModel>>(
     this
   );
-  private _factory: NotebookModel.IContentFactory;
 }

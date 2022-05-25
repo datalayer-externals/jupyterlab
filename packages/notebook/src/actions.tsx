@@ -13,9 +13,6 @@ import {
   CodeCell,
   ICellModel,
   ICodeCellModel,
-  isCodeCellModel,
-  isMarkdownCellModel,
-  isRawCellModel,
   MarkdownCell
 } from '@jupyterlab/cells';
 import * as nbformat from '@jupyterlab/nbformat';
@@ -26,8 +23,14 @@ import { JSONExt, JSONObject } from '@lumino/coreutils';
 import { ElementExt } from '@lumino/domutils';
 import { ISignal, Signal } from '@lumino/signaling';
 import * as React from 'react';
-import { INotebookModel } from './model';
 import { Notebook, StaticNotebook } from './widget';
+import * as sharedModels from '@jupyterlab/shared-models';
+import {
+  createCell,
+  ISharedCell,
+  ISharedMarkdownCell,
+  ISharedRawCell
+} from '@jupyterlab/shared-models';
 
 /**
  * The mimetype used for Jupyter cell data.
@@ -162,7 +165,7 @@ export namespace NotebookActions {
     const child = notebook.widgets[index];
     const editor = child.editor;
     const selections = editor.getSelections();
-    const orig = child.model.value.text;
+    const orig = child.model.sharedModel.getSource();
 
     const offsets = [0];
 
@@ -186,33 +189,28 @@ export namespace NotebookActions {
 
     offsets.push(orig.length);
 
-    const clones: ICellModel[] = [];
+    const clones: ISharedCell[] = [];
     for (let i = 0; i + 1 < offsets.length; i++) {
-      const clone = Private.cloneCell(nbModel, child.model);
+      const clone = createCell({
+        cell_type: child.model.sharedModel.cell_type
+      });
+      clone.setMetadata(child.model.sharedModel.getMetadata());
       clones.push(clone);
     }
 
     for (let i = 0; i < clones.length; i++) {
-      if (i !== clones.length - 1 && clones[i].type === 'code') {
-        (clones[i] as ICodeCellModel).outputs.clear();
-      }
-      clones[i].value.text = orig
-        .slice(offsets[i], offsets[i + 1])
-        .replace(/^\n+/, '')
-        .replace(/\n+$/, '');
+      clones[i].setSource(
+        orig
+          .slice(offsets[i], offsets[i + 1])
+          .replace(/^\n+/, '')
+          .replace(/\n+$/, '')
+      );
     }
 
-    const cells = nbModel.cells;
-
-    cells.beginCompoundOperation();
-    for (let i = 0; i < clones.length; i++) {
-      if (i === 0) {
-        cells.set(index, clones[i]);
-      } else {
-        cells.insert(index + i, clones[i]);
-      }
-    }
-    cells.endCompoundOperation();
+    nbModel.sharedModel.transact(() => {
+      nbModel.sharedModel.deleteCell(index);
+      nbModel.sharedModel.insertCells(index, clones);
+    });
 
     // If there is a selection the selected cell will be activated
     const activeCellDelta = start !== end ? 2 : 1;
@@ -253,7 +251,7 @@ export namespace NotebookActions {
     }
     const state = Private.getState(notebook);
     const toMerge: string[] = [];
-    const toDelete: ICellModel[] = [];
+    const toDelete: number[] = [];
     const model = notebook.model;
     const cells = model.cells;
     const primary = notebook.activeCell;
@@ -263,15 +261,21 @@ export namespace NotebookActions {
     // Get the cells to merge.
     notebook.widgets.forEach((child, index) => {
       if (notebook.isSelectedOrActive(child)) {
-        toMerge.push(child.model.value.text);
+        toMerge.push(child.model.sharedModel.getSource());
         if (index !== active) {
-          toDelete.push(child.model);
+          toDelete.push(index);
         }
         // Collect attachments if the cell is a markdown cell or a raw cell
-        const model = child.model;
-        if (isRawCellModel(model) || isMarkdownCellModel(model)) {
-          for (const key of model.attachments.keys) {
-            attachments[key] = model.attachments.get(key)!.toJSON();
+        const model = child.model.sharedModel;
+
+        if (model.cell_type === 'raw' || model.cell_type === 'markdown') {
+          const modelAttachments = (
+            child.model.sharedModel as ISharedRawCell | ISharedMarkdownCell
+          ).getAttachments();
+          if (modelAttachments) {
+            for (const key in modelAttachments) {
+              attachments[key] = modelAttachments[key];
+            }
           }
         }
       }
@@ -288,8 +292,8 @@ export namespace NotebookActions {
         // Otherwise merge with the previous cell.
         const cellModel = cells.get(active - 1);
 
-        toMerge.unshift(cellModel.value.text);
-        toDelete.push(cellModel);
+        toMerge.unshift(cellModel.sharedModel.getSource());
+        toDelete.push(active - 1);
       } else if (mergeAbove === false) {
         // Bail if it is the last cell.
         if (active === cells.length - 1) {
@@ -298,31 +302,39 @@ export namespace NotebookActions {
         // Otherwise merge with the next cell.
         const cellModel = cells.get(active + 1);
 
-        toMerge.push(cellModel.value.text);
-        toDelete.push(cellModel);
+        toMerge.push(cellModel.sharedModel.getSource());
+        toDelete.push(active + 1);
       }
     }
 
     notebook.deselectAll();
 
+    const primaryModel = primary.model.sharedModel;
     // Create a new cell for the source to preserve history.
-    const newModel = Private.cloneCell(model, primary.model);
-
-    newModel.value.text = toMerge.join('\n\n');
-    if (isCodeCellModel(newModel)) {
-      newModel.outputs.clear();
-    } else if (isMarkdownCellModel(newModel) || isRawCellModel(newModel)) {
-      newModel.attachments.fromJSON(attachments);
+    const newModel = createCell({
+      cell_type: primaryModel.cell_type,
+      metadata: primaryModel.getMetadata(),
+      source: toMerge.join('\n\n')
+    });
+    if (
+      primaryModel.cell_type === 'markdown' ||
+      primaryModel.cell_type === 'raw'
+    ) {
+      newModel.setAttachments(
+        (primaryModel as ISharedMarkdownCell | ISharedRawCell).getAttachments()
+      );
     }
 
     // Make the changes while preserving history.
-    cells.beginCompoundOperation();
-    cells.set(active, newModel);
-    toDelete.forEach(cell => {
-      cells.removeValue(cell);
+    model.sharedModel.transact(() => {
+      model.sharedModel.deleteCell(active);
+      model.sharedModel.insertCells(0, [newModel]);
+      toDelete
+        .sort((a, b) => b - a)
+        .forEach(index => {
+          model.sharedModel.deleteCell(index);
+        });
     });
-    cells.endCompoundOperation();
-
     // If the original cell is a markdown cell, make sure
     // the new cell is unrendered.
     if (primary instanceof MarkdownCell) {
@@ -377,13 +389,12 @@ export namespace NotebookActions {
     }
     const state = Private.getState(notebook);
     const model = notebook.model;
-    const cell = model.contentFactory.createCell(
-      notebook.notebookConfig.defaultCell,
-      {}
-    );
+    const cell = sharedModels.createCell({
+      cell_type: notebook.notebookConfig.defaultCell
+    });
     const active = notebook.activeCellIndex;
 
-    model.cells.insert(active, cell);
+    model.sharedModel.insertCell(active, cell);
 
     // Make the newly inserted cell active.
     notebook.activeCellIndex = active;
@@ -412,12 +423,11 @@ export namespace NotebookActions {
     }
     const state = Private.getState(notebook);
     const model = notebook.model;
-    const cell = model.contentFactory.createCell(
-      notebook.notebookConfig.defaultCell,
-      {}
-    );
+    const cell = sharedModels.createCell({
+      cell_type: notebook.notebookConfig.defaultCell
+    });
 
-    model.cells.insert(notebook.activeCellIndex + 1, cell);
+    model.sharedModel.insertCell(notebook.activeCellIndex + 1, cell);
 
     // Make the newly inserted cell active.
     notebook.activeCellIndex++;
@@ -576,14 +586,12 @@ export namespace NotebookActions {
     const model = notebook.model;
 
     if (notebook.activeCellIndex === notebook.widgets.length - 1) {
-      const cell = model.contentFactory.createCell(
-        notebook.notebookConfig.defaultCell,
-        {}
-      );
-
+      const cell = sharedModels.createCell({
+        cell_type: notebook.notebookConfig.defaultCell
+      });
       // Do not use push here, as we want an widget insertion
       // to make sure no placeholder widget is rendered.
-      model.cells.insert(notebook.widgets.length, cell);
+      model.sharedModel.insertCell(notebook.widgets.length, cell);
       notebook.activeCellIndex++;
       notebook.mode = 'edit';
     } else {
@@ -622,12 +630,11 @@ export namespace NotebookActions {
     const state = Private.getState(notebook);
     const promise = Private.runSelected(notebook, sessionContext);
     const model = notebook.model;
-    const cell = model.contentFactory.createCell(
-      notebook.notebookConfig.defaultCell,
-      {}
-    );
+    const cell = sharedModels.createCell({
+      cell_type: notebook.notebookConfig.defaultCell
+    });
 
-    model.cells.insert(notebook.activeCellIndex + 1, cell);
+    model.sharedModel.insertCell(notebook.activeCellIndex + 1, cell);
     notebook.activeCellIndex++;
     notebook.mode = 'edit';
     Private.handleRunState(notebook, state, true);
@@ -1200,78 +1207,68 @@ export namespace NotebookActions {
     notebook.mode = 'command';
 
     const newCells = values.map(cell => {
-      switch (cell.cell_type) {
-        case 'code':
-          if (
-            notebook.lastClipboardInteraction === 'cut' &&
-            typeof cell.id === 'string'
-          ) {
-            let cellId = cell.id as string;
-            return model.contentFactory.createCodeCell({
-              id: cellId,
-              cell: cell
-            });
-          } else {
-            return model.contentFactory.createCodeCell({ cell });
-          }
-        case 'markdown':
-          return model.contentFactory.createMarkdownCell({ cell });
-        default:
-          return model.contentFactory.createRawCell({ cell });
-      }
+      cell.id =
+        cell.cell_type === 'code' &&
+        notebook.lastClipboardInteraction === 'cut' &&
+        typeof cell.id === 'string'
+          ? cell.id
+          : undefined;
+      const ycell = sharedModels.createCell(cell);
+      ycell.setSource(
+        typeof cell.source === 'string' ? cell.source : cell.source.join('\n')
+      );
+      ycell.setMetadata(cell.metadata);
+      return ycell;
     });
 
-    const cells = notebook.model.cells;
-    let index: number;
+    let index = 0;
 
-    cells.beginCompoundOperation();
-
-    // Set the starting index of the paste operation depending upon the mode.
-    switch (mode) {
-      case 'below':
-        index = notebook.activeCellIndex;
-        break;
-      case 'belowSelected':
-        notebook.widgets.forEach((child, childIndex) => {
-          if (notebook.isSelectedOrActive(child)) {
-            index = childIndex;
-          }
-        });
-
-        break;
-      case 'above':
-        index = notebook.activeCellIndex - 1;
-        break;
-      case 'replace': {
-        // Find the cells to delete.
-        const toDelete: number[] = [];
-
-        notebook.widgets.forEach((child, index) => {
-          const deletable = child.model.metadata.get('deletable') !== false;
-
-          if (notebook.isSelectedOrActive(child) && deletable) {
-            toDelete.push(index);
-          }
-        });
-
-        // If cells are not deletable, we may not have anything to delete.
-        if (toDelete.length > 0) {
-          // Delete the cells as one undo event.
-          toDelete.reverse().forEach(i => {
-            cells.remove(i);
+    model.sharedModel.transact(() => {
+      // Set the starting index of the paste operation depending upon the mode.
+      switch (mode) {
+        case 'below':
+          index = notebook.activeCellIndex;
+          break;
+        case 'belowSelected':
+          notebook.widgets.forEach((child, childIndex) => {
+            if (notebook.isSelectedOrActive(child)) {
+              index = childIndex;
+            }
           });
-        }
-        index = toDelete[0];
-        break;
-      }
-      default:
-        break;
-    }
 
-    newCells.forEach(cell => {
-      cells.insert(++index, cell);
+          break;
+        case 'above':
+          index = notebook.activeCellIndex - 1;
+          break;
+        case 'replace': {
+          // Find the cells to delete.
+          const toDelete: number[] = [];
+
+          notebook.widgets.forEach((child, index) => {
+            const deletable =
+              child.model.sharedModel.getMetadata().deletable !== false;
+
+            if (notebook.isSelectedOrActive(child) && deletable) {
+              toDelete.push(index);
+            }
+          });
+
+          // If cells are not deletable, we may not have anything to delete.
+          if (toDelete.length > 0) {
+            // Delete the cells as one undo event.
+            toDelete.reverse().forEach(i => {
+              model.sharedModel.deleteCell(i);
+            });
+          }
+          index = toDelete[0];
+          break;
+        }
+        default:
+          break;
+      }
+
+      model.sharedModel.insertCells(index, newCells);
     });
-    cells.endCompoundOperation();
 
     notebook.activeCellIndex += newCells.length;
     notebook.deselectAll();
@@ -2149,26 +2146,6 @@ Please wait for the complete rendering before invoking that action.`,
   }
 
   /**
-   * Clone a cell model.
-   */
-  export function cloneCell(
-    model: INotebookModel,
-    cell: ICellModel
-  ): ICellModel {
-    switch (cell.type) {
-      case 'code':
-        // TODO why isn't modeldb or id passed here?
-        return model.contentFactory.createCodeCell({ cell: cell.toJSON() });
-      case 'markdown':
-        // TODO why isn't modeldb or id passed here?
-        return model.contentFactory.createMarkdownCell({ cell: cell.toJSON() });
-      default:
-        // TODO why isn't modeldb or id passed here?
-        return model.contentFactory.createRawCell({ cell: cell.toJSON() });
-    }
-  }
-
-  /**
    * Run the selected cells.
    */
   export function runSelected(
@@ -2353,20 +2330,22 @@ Please wait for the complete rendering before invoking that action.`,
     const replace = setNextInput.replace;
 
     if (replace) {
-      cell.model.value.text = text;
+      cell.model.sharedModel.setSource(text);
       return;
     }
 
     // Create a new code cell and add as the next cell.
-    const newCell = notebook.model!.contentFactory.createCodeCell({});
+    const newCell = sharedModels.createCell({ cell_type: 'code' });
+
+    const notebookModel = notebook.model!.sharedModel;
     const cells = notebook.model!.cells;
     const index = ArrayExt.firstIndexOf(toArray(cells), cell.model);
 
-    newCell.value.text = text;
+    newCell.setSource(text);
     if (index === -1) {
-      cells.push(newCell);
+      notebookModel.insertCell(notebookModel.cells.length, newCell);
     } else {
-      cells.insert(index + 1, newCell);
+      notebookModel.insertCell(index + 1, newCell);
     }
   }
 
@@ -2440,43 +2419,26 @@ Please wait for the complete rendering before invoking that action.`,
     notebook: Notebook,
     value: nbformat.CellType
   ): void {
-    const model = notebook.model!;
-    const cells = model.cells;
-
-    cells.beginCompoundOperation();
-    notebook.widgets.forEach((child, index) => {
-      if (!notebook.isSelectedOrActive(child)) {
-        return;
-      }
-      if (child.model.type !== value) {
-        const cell = child.model.toJSON();
-        let newCell: ICellModel;
-
-        switch (value) {
-          case 'code':
-            newCell = model.contentFactory.createCodeCell({ cell });
-            break;
-          case 'markdown':
-            newCell = model.contentFactory.createMarkdownCell({ cell });
-            if (child.model.type === 'code') {
-              newCell.trusted = false;
-            }
-            break;
-          default:
-            newCell = model.contentFactory.createRawCell({ cell });
-            if (child.model.type === 'code') {
-              newCell.trusted = false;
-            }
+    const notebookSharedModel = notebook.model!.sharedModel;
+    notebookSharedModel.transact(() => {
+      notebook.widgets.forEach((child, index) => {
+        if (!notebook.isSelectedOrActive(child)) {
+          return;
         }
-        cells.set(index, newCell);
-      }
-      if (value === 'markdown') {
-        // Fetch the new widget and unrender it.
-        child = notebook.widgets[index];
-        (child as MarkdownCell).rendered = false;
-      }
+        if (child.model.type !== value) {
+          const newCell = sharedModels.createCell({ cell_type: value });
+          newCell.setSource(child.model.sharedModel.getSource());
+          newCell.setMetadata(child.model.sharedModel.getMetadata());
+          notebookSharedModel.deleteCell(index);
+          notebookSharedModel.insertCell(index, newCell);
+        }
+        if (value === 'markdown') {
+          // Fetch the new widget and unrender it.
+          child = notebook.widgets[index];
+          (child as MarkdownCell).rendered = false;
+        }
+      });
     });
-    cells.endCompoundOperation();
     notebook.deselectAll();
   }
 
@@ -2493,7 +2455,7 @@ Please wait for the complete rendering before invoking that action.`,
    */
   export function deleteCells(notebook: Notebook): void {
     const model = notebook.model!;
-    const cells = model.cells;
+    const sharedModel = model.sharedModel;
     const toDelete: number[] = [];
 
     notebook.mode = 'command';
@@ -2504,31 +2466,29 @@ Please wait for the complete rendering before invoking that action.`,
 
       if (notebook.isSelectedOrActive(child) && deletable) {
         toDelete.push(index);
-        model.deletedCells.push(child.model.id);
       }
     });
 
     // If cells are not deletable, we may not have anything to delete.
     if (toDelete.length > 0) {
       // Delete the cells as one undo event.
-      cells.beginCompoundOperation();
-      // Delete cells in reverse order to maintain the correct indices.
-      toDelete.reverse().forEach(index => {
-        cells.remove(index);
+      sharedModel.transact(() => {
+        // Delete cells in reverse order to maintain the correct indices.
+        toDelete.reverse().forEach(index => {
+          sharedModel.deleteCell(index);
+        });
+        // Add a new cell if the notebook is empty. This is done
+        // within the compound operation to make the deletion of
+        // a notebook's last cell undoable.
+        if (!sharedModel.cells.length) {
+          sharedModel.insertCell(
+            sharedModel.cells.length,
+            sharedModels.createCell({
+              cell_type: notebook.notebookConfig.defaultCell
+            })
+          );
+        }
       });
-      // Add a new cell if the notebook is empty. This is done
-      // within the compound operation to make the deletion of
-      // a notebook's last cell undoable.
-      if (!cells.length) {
-        cells.push(
-          model.contentFactory.createCell(
-            notebook.notebookConfig.defaultCell,
-            {}
-          )
-        );
-      }
-      cells.endCompoundOperation();
-
       // Select the *first* interior cell not deleted or the cell
       // *after* the last selected cell.
       // Note: The activeCellIndex is clamped to the available cells,
@@ -2548,7 +2508,7 @@ Please wait for the complete rendering before invoking that action.`,
    */
   export function setMarkdownHeader(cell: ICellModel, level: number): void {
     // Remove existing header or leading white space.
-    let source = cell.value.text;
+    let source = cell.sharedModel.getSource();
     const regex = /^(#+\s*)|^(\s*)/;
     const newHeader = Array(level + 1).join('#') + ' ';
     const matches = regex.exec(source);
@@ -2556,7 +2516,7 @@ Please wait for the complete rendering before invoking that action.`,
     if (matches) {
       source = source.slice(matches[0].length);
     }
-    cell.value.text = newHeader + source;
+    cell.sharedModel.setSource(newHeader + source);
   }
 
   /** Functionality related to collapsible headings */
@@ -2735,9 +2695,11 @@ Please wait for the complete rendering before invoking that action.`,
       notebook: Notebook
     ) {
       const state = Private.getState(notebook);
-      const newCell = notebook.model!.contentFactory.createMarkdownCell({});
-      notebook.model!.cells.insert(cellIndex, newCell);
-      Private.setMarkdownHeader(newCell, headingLevel);
+      const model = notebook.model!;
+      const sharedModel = model!.sharedModel;
+      const newCell = sharedModels.createCell({ cell_type: 'markdown' });
+      sharedModel.insertCell(cellIndex, newCell);
+      Private.setMarkdownHeader(model.cells.get(cellIndex), headingLevel);
       notebook.activeCellIndex = cellIndex;
       notebook.deselectAll();
       Private.handleState(notebook, state, true);

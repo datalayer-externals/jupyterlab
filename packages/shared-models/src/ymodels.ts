@@ -510,22 +510,110 @@ export const createCellModelFromSharedType = (type: Y.Map<any>): YCellType => {
 };
 
 /**
- * Create a new standalone cell given the type.
+ * Create a new cell that can be inserted in an existing shared model.
  */
-export const createStandaloneCell = (
-  cellType: 'raw' | 'code' | 'markdown',
-  id?: string
+export const createCell = (
+  cell: (
+    | Partial<nbformat.IRawCell>
+    | Partial<nbformat.ICodeCell>
+    | Partial<nbformat.IMarkdownCell>
+    | Partial<nbformat.IBaseCell>
+  ) & { cell_type: 'markdown' | 'code' | 'raw' | string },
+  factory = BoundCellFactory
 ): YCellType => {
-  switch (cellType) {
-    case 'markdown':
-      return YMarkdownCell.createStandalone(id);
-    case 'code':
-      return YCodeCell.createStandalone(id);
-    default:
+  switch (cell.cell_type) {
+    case 'markdown': {
+      const mCell = cell as Partial<nbformat.IMarkdownCell>;
+      const ycell = YMarkdownCell.create(mCell.id);
+      if (mCell.source != null) {
+        ycell.setSource(
+          typeof mCell.source === 'string'
+            ? mCell.source
+            : mCell.source.join('\n')
+        );
+      }
+      if (mCell.metadata != null) {
+        ycell.setMetadata(mCell.metadata);
+      }
+      if (mCell.attachments != null) {
+        ycell.setAttachments(mCell.attachments);
+      }
+      return ycell;
+    }
+    case 'code': {
+      const cCell = cell as Partial<nbformat.ICodeCell>;
+      const ycell = YCodeCell.create(cCell.id);
+      if (cCell.source != null) {
+        ycell.setSource(
+          typeof cCell.source === 'string'
+            ? cCell.source
+            : cCell.source.join('\n')
+        );
+      }
+      if (cCell.metadata != null) {
+        ycell.setMetadata(cCell.metadata);
+      }
+      if (cCell.execution_count != null) {
+        ycell.execution_count = cCell.execution_count;
+      }
+      return ycell;
+    }
+    default: {
       // raw
-      return YRawCell.createStandalone(id);
+      const rCell = cell as Partial<nbformat.IRawCell>;
+      const ycell = YRawCell.create(rCell.id);
+      if (rCell.source != null) {
+        ycell.setSource(
+          typeof rCell.source === 'string'
+            ? rCell.source
+            : rCell.source.join('\n')
+        );
+      }
+      if (rCell.metadata != null) {
+        ycell.setMetadata(rCell.metadata);
+      }
+      if (rCell.attachments) {
+        ycell.setAttachments(rCell.attachments);
+      }
+      return ycell;
+    }
   }
 };
+
+/**
+ * Create a new cell that can be inserted in an existing shared model.
+ */
+export const createStandaloneCell = (
+  cell: (
+    | Partial<nbformat.IRawCell>
+    | Partial<nbformat.ICodeCell>
+    | Partial<nbformat.IMarkdownCell>
+  ) & { cell_type: 'markdown' | 'code' | 'raw' }
+) => createCell(cell, StandaloneCellFactory);
+
+class StandaloneCellFactory {
+  static createMarkdownCell(id?: string) {
+    return YMarkdownCell.createStandalone(id);
+  }
+  static createCodeCell(id?: string) {
+    return YCodeCell.createStandalone(id);
+  }
+  static createRawCell(id?: string) {
+    return YRawCell.createStandalone(id);
+  }
+}
+
+class BoundCellFactory {
+  static createMarkdownCell(id?: string) {
+    return YMarkdownCell.create(id);
+  }
+  static createCodeCell(id?: string) {
+    return YCodeCell.create(id);
+  }
+  static createRawCell(id?: string) {
+    return YRawCell.create(id);
+  }
+}
 
 export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
   implements models.ISharedBaseCell<Metadata>, IYText
@@ -553,7 +641,9 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
   transact(f: () => void, undoable = true): void {
     this.notebook && undoable
       ? this.notebook.transact(f)
-      : this.ymodel.doc!.transact(f, this);
+      : this.ymodel.doc == null
+      ? f()
+      : this.ymodel.doc.transact(f, this);
   }
 
   /**
@@ -672,7 +762,7 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
     ymodel.set('source', ysource);
     ymodel.set('metadata', this.getMetadata());
     ymodel.set('cell_type', this.cell_type);
-    ymodel.set('id', this.getId());
+    ymodel.set('id', UUID.uuid4());
     const Self: any = this.constructor;
     const clone = new Self(ymodel);
     // TODO The assignment of the undoManager does not work for a clone.
@@ -959,7 +1049,7 @@ export class YCodeCell
    */
   public static createStandalone(id?: string): YCodeCell {
     const cell = super.createStandalone(id);
-    cell.ymodel.set('execution_count', null); // for some default value
+    cell.ymodel.set('execution_count', 0); // for some default value
     cell.ymodel.set('outputs', new Y.Array<nbformat.IOutput>());
     return cell as any;
   }

@@ -234,12 +234,11 @@ export class CellSearchProvider implements IBaseSearchProvider {
         this.currentIndex = null;
         // Store the current position to highlight properly the next search hit
         this._lastReplacementPosition = editor.getCursorPosition();
-        this.cell.model.value.text =
-          this.cell.model.value.text.slice(0, match!.position) +
-          newText +
-          this.cell.model.value.text.slice(
-            match!.position + match!.text.length
-          );
+        this.cell.model.sharedModel.updateSource(
+          match!.position,
+          match!.position + match!.text.length,
+          newText
+        );
         occurred = true;
       }
     }
@@ -259,7 +258,7 @@ export class CellSearchProvider implements IBaseSearchProvider {
     }
 
     let occurred = this.cmHandler.matches.length > 0;
-    let src = this.cell.model.value.text;
+    let src = this.cell.model.sharedModel.getSource();
     let lastEnd = 0;
     const finalSrc = this.cmHandler.matches.reduce((agg, match) => {
       const start = match.position as number;
@@ -272,7 +271,7 @@ export class CellSearchProvider implements IBaseSearchProvider {
     if (occurred) {
       this.cmHandler.matches = [];
       this.currentIndex = null;
-      this.cell.model.value.text = `${finalSrc}${src.slice(lastEnd)}`;
+      this.cell.model.sharedModel.setSource(`${finalSrc}${src.slice(lastEnd)}`);
     }
     return Promise.resolve(occurred);
   }
@@ -359,7 +358,7 @@ class CodeCellSearchProvider extends CellSearchProvider {
     this.currentProviderIndex = -1;
     this.outputsProvider = [];
 
-    const outputs = (this.cell as CodeCell).outputArea;
+    const outputs = (this.cell as any as CodeCell).outputArea;
     this._onOutputsChanged(outputs, outputs.widgets.length).catch(reason => {
       console.error(`Failed to initialize search on cell outputs.`, reason);
     });
@@ -535,9 +534,9 @@ class CodeCellSearchProvider extends CellSearchProvider {
     this.outputsProvider.length = 0;
 
     this.currentProviderIndex = -1;
-    this.outputsProvider = (this.cell as CodeCell).outputArea.widgets.map(
-      output => new GenericSearchProvider(output)
-    );
+    this.outputsProvider = (
+      this.cell as any as CodeCell
+    ).outputArea.widgets.map(output => new GenericSearchProvider(output));
 
     if (this.isActive && this.query && this.filters?.output !== false) {
       await Promise.all([

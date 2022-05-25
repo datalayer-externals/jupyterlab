@@ -7,11 +7,11 @@ import { CodeMirrorEditor } from '@jupyterlab/codemirror';
 
 import { ActivityMonitor } from '@jupyterlab/coreutils';
 
-import { IObservableString } from '@jupyterlab/observables';
-
 import { IDisposable } from '@lumino/disposable';
 
 import { Signal } from '@lumino/signaling';
+
+import { ISharedText, TextChange } from '@jupyterlab/shared-models'
 
 import {
   Compartment,
@@ -58,7 +58,7 @@ export class EditorHandler implements IDisposable {
     this._editor = options.editor;
 
     this._editorMonitor = new ActivityMonitor({
-      signal: this._editor.model.value.changed,
+      signal: this._editor.model.sharedModel.changed,
       timeout: EDITOR_CHANGED_TIMEOUT
     });
     this._editorMonitor.activityStopped.connect(() => {
@@ -237,7 +237,7 @@ export class EditorHandler implements IDisposable {
     });
 
     void this._debuggerService.updateBreakpoints(
-      this._editor.model.value.text,
+      this._editor.model.sharedModel.getSource(),
       breakpoints,
       this._path
     );
@@ -277,7 +277,7 @@ export class EditorHandler implements IDisposable {
     });
 
     void this._debuggerService.updateBreakpoints(
-      this._editor.model.value.text,
+      this._editor.model.sharedModel.getSource(),
       breakpoints,
       this._path
     );
@@ -334,8 +334,7 @@ export class EditorHandler implements IDisposable {
    * or its path (if it exists).
    */
   private _getBreakpoints(): IDebugger.IBreakpoint[] {
-    const editor = this._editor as CodeMirrorEditor;
-    const code = editor.doc.toString();
+    const code = this._editor.model.sharedModel.getSource();
     return this._debuggerService.model.breakpoints.getBreakpoints(
       this._path || this._debuggerService.getCodeId(code)
     );
@@ -345,15 +344,12 @@ export class EditorHandler implements IDisposable {
   private _path: string;
   private _editor: CodeEditor.IEditor;
   private _debuggerService: IDebugger;
-  private _editorMonitor: ActivityMonitor<
-    IObservableString,
-    IObservableString.IChangedArgs
-  >;
   private _breakpointEffect: StateEffectType<{ pos: number[] }>;
   private _breakpointState: StateField<RangeSet<GutterMarker>>;
   private _gutter: Compartment;
   private _highlightDeco: Decoration;
   private _highlightState: StateField<DecorationSet>;
+  private _editorMonitor: ActivityMonitor<ISharedText, TextChange>;
 }
 
 /**

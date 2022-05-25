@@ -2,16 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 
 import { Dialog, showDialog } from '@jupyterlab/apputils';
-import {
-  CellModel,
-  CodeCellModel,
-  ICellModel,
-  ICodeCellModel,
-  IMarkdownCellModel,
-  IRawCellModel,
-  MarkdownCellModel,
-  RawCellModel
-} from '@jupyterlab/cells';
+import { ICellModel } from '@jupyterlab/cells';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 import * as nbformat from '@jupyterlab/nbformat';
@@ -23,13 +14,13 @@ import {
   IObservableUndoableList,
   ModelDB
 } from '@jupyterlab/observables';
-import * as models from '@jupyterlab/shared-models';
+import * as sharedModels from '@jupyterlab/shared-models';
 import {
   ITranslator,
   nullTranslator,
   TranslationBundle
 } from '@jupyterlab/translation';
-import { JSONObject, ReadonlyPartialJSONValue, UUID } from '@lumino/coreutils';
+import { JSONObject, ReadonlyPartialJSONValue } from '@lumino/coreutils';
 import { ISignal, Signal } from '@lumino/signaling';
 import { CellList } from './celllist';
 
@@ -41,11 +32,6 @@ export interface INotebookModel extends DocumentRegistry.IModel {
    * The list of cells in the notebook.
    */
   readonly cells: IObservableUndoableList<ICellModel>;
-
-  /**
-   * The cell model factory for the notebook.
-   */
-  readonly contentFactory: NotebookModel.IContentFactory;
 
   /**
    * The major version number of the nbformat.
@@ -71,7 +57,7 @@ export interface INotebookModel extends DocumentRegistry.IModel {
    * If the model is initialized or not.
    */
   isInitialized: boolean;
-  readonly sharedModel: models.ISharedNotebook;
+  readonly sharedModel: sharedModels.ISharedNotebook;
 }
 
 /**
@@ -87,18 +73,11 @@ export class NotebookModel implements INotebookModel {
     } else {
       this.modelDB = new ModelDB();
     }
-    this.sharedModel = models.YNotebook.create(
+    this.sharedModel = sharedModels.YNotebook.create(
       options.disableDocumentWideUndoRedo || false
-    ) as models.ISharedNotebook;
+    ) as sharedModels.ISharedNotebook;
     this._isInitialized = options.isInitialized === false ? false : true;
-    const factory =
-      options.contentFactory || NotebookModel.defaultContentFactory;
-    this.contentFactory = factory.clone(this.modelDB.view('cells'));
-    this._cells = new CellList(
-      this.modelDB,
-      this.contentFactory,
-      this.sharedModel
-    );
+    this._cells = new CellList(this.modelDB, this.sharedModel);
     this._trans = (options.translator || nullTranslator).load('jupyterlab');
     this._cells.changed.connect(this._onCellsChanged, this);
 
@@ -290,43 +269,29 @@ export class NotebookModel implements INotebookModel {
    * Should emit a [contentChanged] signal.
    */
   fromJSON(value: nbformat.INotebookContent): void {
-    const cells: ICellModel[] = [];
-    const factory = this.contentFactory;
-    const useId = value.nbformat === 4 && value.nbformat_minor >= 5;
-    for (const cell of value.cells) {
-      const options: CellModel.IOptions = { cell };
-      if (useId) {
-        options.id = (cell as any).id;
-      }
-      switch (cell.cell_type) {
-        case 'code':
-          cells.push(factory.createCodeCell(options));
-          break;
-        case 'markdown':
-          cells.push(factory.createMarkdownCell(options));
-          break;
-        case 'raw':
-          cells.push(factory.createRawCell(options));
-          break;
-        default:
-          continue;
-      }
-    }
-    this.cells.beginCompoundOperation();
-    this.cells.clear();
-    this.cells.pushAll(cells);
-    this.cells.endCompoundOperation();
+    this.sharedModel.transact(() => {
+      const useId = value.nbformat === 4 && value.nbformat_minor >= 5;
+      const ycells = value.cells.map(cell => {
+        if (!useId) {
+          delete cell.id;
+        }
+        return sharedModels.createCell(cell);
+      });
+      this.sharedModel.deleteCellRange(0, this.sharedModel.cells.length);
+      this.sharedModel.insertCells(0, ycells);
+    });
 
-    (this.sharedModel as models.YNotebook).nbformat_minor =
+    (this.sharedModel as sharedModels.YNotebook).nbformat_minor =
       nbformat.MINOR_VERSION;
-    (this.sharedModel as models.YNotebook).nbformat = nbformat.MAJOR_VERSION;
+    (this.sharedModel as sharedModels.YNotebook).nbformat =
+      nbformat.MAJOR_VERSION;
     const origNbformat = value.metadata.orig_nbformat;
 
     if (value.nbformat !== this._nbformat) {
-      (this.sharedModel as models.YNotebook).nbformat = value.nbformat;
+      (this.sharedModel as sharedModels.YNotebook).nbformat = value.nbformat;
     }
     if (value.nbformat_minor > this._nbformatMinor) {
-      (this.sharedModel as models.YNotebook).nbformat_minor =
+      (this.sharedModel as sharedModels.YNotebook).nbformat_minor =
         value.nbformat_minor;
     }
 
@@ -385,9 +350,12 @@ close the notebook without saving it.`,
    * and clears undo state.
    */
   initialize(): void {
+    // @todo this initialization step should be done by the server / ypy
     if (!this.cells.length) {
-      const factory = this.contentFactory;
-      this.cells.push(factory.createCodeCell({}));
+      this.sharedModel.insertCell(
+        0,
+        sharedModels.createCell({ cell_type: 'code' })
+      );
     }
     this._isInitialized = true;
     this.cells.clearUndo();
@@ -420,8 +388,8 @@ close the notebook without saving it.`,
   }
 
   private _onStateChanged(
-    sender: models.ISharedNotebook,
-    changes: models.NotebookChange
+    sender: sharedModels.ISharedNotebook,
+    changes: sharedModels.NotebookChange
   ): void {
     if (changes.stateChange) {
       changes.stateChange.forEach(value => {
@@ -498,19 +466,14 @@ close the notebook without saving it.`,
   }
 
   /**
-   * The cell model factory for the notebook.
-   */
-  readonly contentFactory: NotebookModel.IContentFactory;
-
-  /**
    * The shared notebook model.
    */
-  readonly sharedModel: models.ISharedNotebook;
+  readonly sharedModel: sharedModels.ISharedNotebook;
 
   /**
    * A mutex to update the shared model.
    */
-  protected readonly _modelDBMutex = models.createMutex();
+  protected readonly _modelDBMutex = sharedModels.createMutex();
 
   /**
    * The underlying `IModelDB` instance in which model
@@ -546,13 +509,6 @@ export namespace NotebookModel {
     languagePreference?: string;
 
     /**
-     * A factory for creating cell models.
-     *
-     * The default is a shared factory instance.
-     */
-    contentFactory?: IContentFactory;
-
-    /**
      * A modelDB for storing notebook data.
      */
     modelDB?: IModelDB;
@@ -572,214 +528,4 @@ export namespace NotebookModel {
      */
     disableDocumentWideUndoRedo?: boolean;
   }
-
-  /**
-   * A factory for creating notebook model content.
-   */
-  export interface IContentFactory {
-    /**
-     * The factory for output area models.
-     */
-    readonly codeCellContentFactory: CodeCellModel.IContentFactory;
-
-    /**
-     * The IModelDB in which to put data for the notebook model.
-     */
-    modelDB: IModelDB | undefined;
-
-    /**
-     * Create a new cell by cell type.
-     *
-     * @param type:  the type of the cell to create.
-     *
-     * @param options: the cell creation options.
-     *
-     * #### Notes
-     * This method is intended to be a convenience method to programmatically
-     * call the other cell creation methods in the factory.
-     */
-    createCell(
-      type: nbformat.CellType,
-      options: CellModel.IOptions
-    ): ICellModel;
-
-    /**
-     * Create a new code cell.
-     *
-     * @param options - The options used to create the cell.
-     *
-     * @returns A new code cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     */
-    createCodeCell(options: CodeCellModel.IOptions): ICodeCellModel;
-
-    /**
-     * Create a new markdown cell.
-     *
-     * @param options - The options used to create the cell.
-     *
-     * @returns A new markdown cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     */
-    createMarkdownCell(options: CellModel.IOptions): IMarkdownCellModel;
-
-    /**
-     * Create a new raw cell.
-     *
-     * @param options - The options used to create the cell.
-     *
-     * @returns A new raw cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     */
-    createRawCell(options: CellModel.IOptions): IRawCellModel;
-
-    /**
-     * Clone the content factory with a new IModelDB.
-     */
-    clone(modelDB: IModelDB): IContentFactory;
-  }
-
-  /**
-   * The default implementation of an `IContentFactory`.
-   */
-  export class ContentFactory {
-    /**
-     * Create a new cell model factory.
-     */
-    constructor(options: ContentFactory.IOptions) {
-      this.codeCellContentFactory =
-        options.codeCellContentFactory || CodeCellModel.defaultContentFactory;
-      this.modelDB = options.modelDB;
-    }
-
-    /**
-     * The factory for code cell content.
-     */
-    readonly codeCellContentFactory: CodeCellModel.IContentFactory;
-
-    /**
-     * The IModelDB in which to put the notebook data.
-     */
-    readonly modelDB: IModelDB | undefined;
-
-    /**
-     * Create a new cell by cell type.
-     *
-     * @param type:  the type of the cell to create.
-     *
-     * @param options: the cell creation options.
-     *
-     * #### Notes
-     * This method is intended to be a convenience method to programmatically
-     * call the other cell creation methods in the factory.
-     */
-    createCell(
-      type: nbformat.CellType,
-      options: CellModel.IOptions
-    ): ICellModel {
-      switch (type) {
-        case 'code':
-          return this.createCodeCell(options);
-        case 'markdown':
-          return this.createMarkdownCell(options);
-        case 'raw':
-        default:
-          return this.createRawCell(options);
-      }
-    }
-
-    /**
-     * Create a new code cell.
-     *
-     * @param source - The data to use for the original source data.
-     *
-     * @returns A new code cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     *   If the contentFactory is not provided, the instance
-     *   `codeCellContentFactory` will be used.
-     */
-    createCodeCell(options: CodeCellModel.IOptions): ICodeCellModel {
-      if (options.contentFactory) {
-        options.contentFactory = this.codeCellContentFactory;
-      }
-      if (this.modelDB) {
-        if (!options.id) {
-          options.id = UUID.uuid4();
-        }
-        options.modelDB = this.modelDB.view(options.id);
-      }
-      return new CodeCellModel(options);
-    }
-
-    /**
-     * Create a new markdown cell.
-     *
-     * @param source - The data to use for the original source data.
-     *
-     * @returns A new markdown cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     */
-    createMarkdownCell(options: CellModel.IOptions): IMarkdownCellModel {
-      if (this.modelDB) {
-        if (!options.id) {
-          options.id = UUID.uuid4();
-        }
-        options.modelDB = this.modelDB.view(options.id);
-      }
-      return new MarkdownCellModel(options);
-    }
-
-    /**
-     * Create a new raw cell.
-     *
-     * @param source - The data to use for the original source data.
-     *
-     * @returns A new raw cell. If a source cell is provided, the
-     *   new cell will be initialized with the data from the source.
-     */
-    createRawCell(options: CellModel.IOptions): IRawCellModel {
-      if (this.modelDB) {
-        if (!options.id) {
-          options.id = UUID.uuid4();
-        }
-        options.modelDB = this.modelDB.view(options.id);
-      }
-      return new RawCellModel(options);
-    }
-
-    /**
-     * Clone the content factory with a new IModelDB.
-     */
-    clone(modelDB: IModelDB): ContentFactory {
-      return new ContentFactory({
-        modelDB: modelDB,
-        codeCellContentFactory: this.codeCellContentFactory
-      });
-    }
-  }
-
-  /**
-   * A namespace for the notebook model content factory.
-   */
-  export namespace ContentFactory {
-    /**
-     * The options used to initialize a `ContentFactory`.
-     */
-    export interface IOptions {
-      /**
-       * The factory for code cell model content.
-       */
-      codeCellContentFactory?: CodeCellModel.IContentFactory;
-
-      /**
-       * The modelDB in which to place new content.
-       */
-      modelDB?: IModelDB;
-    }
-  }
-
-  /**
-   * The default `ContentFactory` instance.
-   */
-  export const defaultContentFactory = new ContentFactory({});
 }

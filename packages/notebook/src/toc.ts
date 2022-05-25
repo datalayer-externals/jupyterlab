@@ -314,7 +314,7 @@ export class NotebookToCModel extends TableOfContentsModel<
         }
         case 'markdown': {
           const cellHeadings = TableOfContentsUtils.Markdown.getHeadings(
-            cell.model.value.text,
+            cell.model.sharedModel.getSource(),
             this.configuration,
             documentLevels
           ).map((heading, index) => {
