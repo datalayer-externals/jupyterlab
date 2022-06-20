@@ -499,11 +499,11 @@ export class YNotebook
 export const createCellModelFromSharedType = (type: Y.Map<any>): YCellType => {
   switch (type.get('cell_type')) {
     case 'code':
-      return new YCodeCell(type);
+      return new YCodeCell(type, type.get('source'));
     case 'markdown':
-      return new YMarkdownCell(type);
+      return new YMarkdownCell(type, type.get('source'));
     case 'raw':
-      return new YRawCell(type);
+      return new YRawCell(type, type.get('source'));
     default:
       throw new Error('Found unknown cell type');
   }
@@ -618,16 +618,16 @@ class BoundCellFactory {
 export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
   implements models.ISharedBaseCell<Metadata>, IYText
 {
-  constructor(ymodel: Y.Map<any>) {
+  constructor(ymodel: Y.Map<any>, ysource: Y.Text) {
     this.ymodel = ymodel;
-    const ysource = ymodel.get('source');
+    this._ysource = ysource;
     this._prevSourceLength = ysource ? ysource.length : 0;
     this.ymodel.observeDeep(this._modelObserver);
     this._awareness = null;
   }
 
   get ysource(): Y.Text {
-    return this.ymodel.get('source');
+    return this._ysource;
   }
 
   get awareness(): Awareness | null {
@@ -731,7 +731,7 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
     ymodel.set('metadata', {});
     ymodel.set('cell_type', this.prototype.cell_type);
     ymodel.set('id', id);
-    return new this(ymodel);
+    return new this(ymodel, ysource);
   }
 
   /**
@@ -881,7 +881,7 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
    * @returns Cell's source.
    */
   public getSource(): string {
-    return this.ymodel.get('source').toString();
+    return this.ysource.toString();
   }
 
   /**
@@ -890,10 +890,9 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
    * @param value: New source.
    */
   public setSource(value: string): void {
-    const ytext = this.ymodel.get('source');
     this.transact(() => {
-      ytext.delete(0, ytext.length);
-      ytext.insert(0, value);
+      this.ysource.delete(0, this.ysource.length);
+      this.ysource.insert(0, value);
     });
     // @todo Do we need proper replace semantic? This leads to issues in editor bindings because they don't switch source.
     // this.ymodel.set('source', new Y.Text(value));
@@ -959,6 +958,7 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
 
   public isDisposed = false;
   public ymodel: Y.Map<any>;
+  private _ysource: Y.Text;
   private _undoManager: Y.UndoManager | null = null;
   private _changed = new Signal<this, models.CellChange<Metadata>>(this);
   private _prevSourceLength: number;

@@ -358,7 +358,7 @@ class CodeCellSearchProvider extends CellSearchProvider {
     this.currentProviderIndex = -1;
     this.outputsProvider = [];
 
-    const outputs = (this.cell as any as CodeCell).outputArea;
+    const outputs = (this.cell as CodeCell).outputArea;
     this._onOutputsChanged(outputs, outputs.widgets.length).catch(reason => {
       console.error(`Failed to initialize search on cell outputs.`, reason);
     });
@@ -534,9 +534,9 @@ class CodeCellSearchProvider extends CellSearchProvider {
     this.outputsProvider.length = 0;
 
     this.currentProviderIndex = -1;
-    this.outputsProvider = (
-      this.cell as any as CodeCell
-    ).outputArea.widgets.map(output => new GenericSearchProvider(output));
+    this.outputsProvider = (this.cell as CodeCell).outputArea.widgets.map(
+      output => new GenericSearchProvider(output)
+    );
 
     if (this.isActive && this.query && this.filters?.output !== false) {
       await Promise.all([

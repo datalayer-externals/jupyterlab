@@ -156,9 +156,9 @@ export class DocumentModel
 
   private _onStateChanged(
     sender: models.ISharedFile,
-    changes: models.NotebookChange
+    changes: models.NotebookChange | models.FileChange
   ): void {
-    if (changes.contextChange) {
+    if (changes.contextChange || (changes as models.FileChange).sourceChange) {
       this.triggerContentChange();
     }
     if (changes.stateChange) {
