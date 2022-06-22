@@ -293,7 +293,7 @@ export interface ISharedBaseCell<Metadata extends ISharedBaseCellMetadata>
   readonly changed: ISignal<this, CellChange<Metadata>>;
 
   /**
-   * Create a new YCodeCell that can be inserted into a YNotebook.
+   * Create a new Cell that can be inserted into a YNotebook.
    *
    * @todo clone should only be available in the specific implementations i.e. ISharedCodeCell
    */

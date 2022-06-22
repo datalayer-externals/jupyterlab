@@ -11,7 +11,6 @@ import { ITranslator, nullTranslator } from '@jupyterlab/translation';
 import { ArrayExt } from '@lumino/algorithm';
 import { UUID } from '@lumino/coreutils';
 import { DisposableDelegate, IDisposable } from '@lumino/disposable';
-import { Poll } from '@lumino/polling';
 import { Signal } from '@lumino/signaling';
 
 import {
@@ -51,6 +50,7 @@ import { Configuration } from './editorconfiguration';
 import './codemirror-ipython';
 import './codemirror-ipythongfm';
 import { SyntaxNodeRef } from '@lezer/common';
+import { Poll } from '@lumino/polling';
 
 /**
  * The class name added to CodeMirrorWidget instances.
@@ -328,7 +328,7 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     this.host.removeEventListener('blur', this, true);
     this.host.removeEventListener('scroll', this, true);
     this._keydownHandlers.length = 0;
-    this._poll.dispose();
+    this._poll.dispose()
     Signal.clearData(this);
     this.editor.destroy();
   }

@@ -4,7 +4,7 @@
 |----------------------------------------------------------------------------*/
 
 import * as nbformat from '@jupyterlab/nbformat';
-import { UUID } from '@lumino/coreutils';
+import { JSONExt, UUID } from '@lumino/coreutils';
 import { ISignal, Signal } from '@lumino/signaling';
 import { Awareness } from 'y-protocols/awareness';
 import * as Y from 'yjs';
@@ -524,7 +524,7 @@ export const createCell = (
   switch (cell.cell_type) {
     case 'markdown': {
       const mCell = cell as Partial<nbformat.IMarkdownCell>;
-      const ycell = YMarkdownCell.create(mCell.id);
+      const ycell = factory.createMarkdownCell(mCell.id);
       if (mCell.source != null) {
         ycell.setSource(
           typeof mCell.source === 'string'
@@ -542,7 +542,7 @@ export const createCell = (
     }
     case 'code': {
       const cCell = cell as Partial<nbformat.ICodeCell>;
-      const ycell = YCodeCell.create(cCell.id);
+      const ycell = factory.createCodeCell(cCell.id);
       if (cCell.source != null) {
         ycell.setSource(
           typeof cCell.source === 'string'
@@ -556,12 +556,15 @@ export const createCell = (
       if (cCell.execution_count != null) {
         ycell.execution_count = cCell.execution_count;
       }
+      if (cCell.outputs) {
+        ycell.setOutputs(cCell.outputs);
+      }
       return ycell;
     }
     default: {
       // raw
       const rCell = cell as Partial<nbformat.IRawCell>;
-      const ycell = YRawCell.create(rCell.id);
+      const ycell = factory.createRawCell(rCell.id);
       if (rCell.source != null) {
         ycell.setSource(
           typeof rCell.source === 'string'
@@ -940,7 +943,18 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
    */
   setMetadata(value: Partial<Metadata>): void {
     this.transact(() => {
-      this.ymodel.set('metadata', deepCopy(value));
+      const clone = deepCopy(value) as any;
+      if (clone.collapsed != null) {
+        clone.jupyter = clone.jupyter || {};
+        (clone as any).jupyter.outputs_hidden = clone.collapsed;
+      } else if (clone?.jupyter?.outputs_hidden != null) {
+        clone.collapsed = clone.jupyter.outputs_hidden;
+      }
+      if (!JSONExt.deepEqual(clone, this.getMetadata())) {
+        this.transact(() => {
+          this.ymodel.set('metadata', clone);
+        });
+      }
     });
   }
 
@@ -969,6 +983,11 @@ export class YCodeCell
   extends YBaseCell<models.ISharedBaseCellMetadata>
   implements models.ISharedCodeCell
 {
+  constructor(ymodel: Y.Map<any>, ysource: Y.Text) {
+    super(ymodel, ysource);
+    this._youtputs = new Y.Array();
+  }
+
   /**
    * The type of the cell.
    */
@@ -987,26 +1006,27 @@ export class YCodeCell
    * The code cell's prompt number. Will be null if the cell has not been run.
    */
   set execution_count(count: number | null) {
-    this.transact(() => {
-      this.ymodel.set('execution_count', count);
-    });
+    if (this.execution_count !== count) {
+      this.transact(() => {
+        this.ymodel.set('execution_count', count);
+      });
+    }
   }
 
   /**
    * Execution, display, or stream outputs.
    */
   getOutputs(): Array<nbformat.IOutput> {
-    return deepCopy(this.ymodel.get('outputs').toArray());
+    return deepCopy(this._youtputs.toArray());
   }
 
   /**
    * Replace all outputs.
    */
   setOutputs(outputs: Array<nbformat.IOutput>): void {
-    const youtputs = this.ymodel.get('outputs') as Y.Array<nbformat.IOutput>;
     this.transact(() => {
-      youtputs.delete(0, youtputs.length);
-      youtputs.insert(0, outputs);
+      this._youtputs.delete(0, this._youtputs.length);
+      this._youtputs.insert(0, outputs);
     }, false);
   }
 
@@ -1024,11 +1044,11 @@ export class YCodeCell
     end: number,
     outputs: Array<nbformat.IOutput> = []
   ): void {
-    const youtputs = this.ymodel.get('outputs') as Y.Array<nbformat.IOutput>;
-    const fin = end < youtputs.length ? end - start : youtputs.length - start;
+    const fin =
+      end < this._youtputs.length ? end - start : this._youtputs.length - start;
     this.transact(() => {
-      youtputs.delete(start, fin);
-      youtputs.insert(start, outputs);
+      this._youtputs.delete(start, fin);
+      this._youtputs.insert(start, outputs);
     }, false);
   }
 
@@ -1036,10 +1056,10 @@ export class YCodeCell
    * Create a new YCodeCell that can be inserted into a YNotebook
    */
   public static create(id?: string): YCodeCell {
-    const cell = super.create(id);
+    const cell = super.create(id) as YCodeCell;
     cell.ymodel.set('execution_count', 0); // for some default value
-    cell.ymodel.set('outputs', new Y.Array<nbformat.IOutput>());
-    return cell as any;
+    cell.ymodel.set('outputs', cell._youtputs);
+    return cell;
   }
 
   /**
@@ -1048,10 +1068,7 @@ export class YCodeCell
    * attached to an anonymous Y.Doc instance.
    */
   public static createStandalone(id?: string): YCodeCell {
-    const cell = super.createStandalone(id);
-    cell.ymodel.set('execution_count', 0); // for some default value
-    cell.ymodel.set('outputs', new Y.Array<nbformat.IOutput>());
-    return cell as any;
+    return super.createStandalone(id) as YCodeCell;
   }
 
   /**
@@ -1060,11 +1077,10 @@ export class YCodeCell
    * @todo clone should only be available in the specific implementations i.e. ISharedCodeCell
    */
   public clone(): YCodeCell {
-    const cell = super.clone();
-    const youtputs = new Y.Array<nbformat.IOutput>();
-    youtputs.insert(0, this.getOutputs());
+    const cell = super.clone() as YCodeCell;
+    cell._youtputs.insert(0, this.getOutputs());
     cell.ymodel.set('execution_count', this.execution_count); // for some default value
-    cell.ymodel.set('outputs', youtputs);
+    cell.ymodel.set('outputs', cell._youtputs);
     return cell as any;
   }
 
@@ -1081,6 +1097,8 @@ export class YCodeCell
       execution_count: this.execution_count
     };
   }
+
+  private _youtputs: Y.Array<nbformat.IOutput>;
 }
 
 export class YRawCell
@@ -1100,7 +1118,7 @@ export class YRawCell
    * attached to an anonymous Y.Doc instance.
    */
   public static createStandalone(id?: string): YRawCell {
-    return super.createStandalone(id) as any;
+    return super.createStandalone(id) as YRawCell;
   }
 
   /**
@@ -1141,7 +1159,7 @@ export class YMarkdownCell
    * attached to an anonymous Y.Doc instance.
    */
   public static createStandalone(id?: string): YMarkdownCell {
-    return super.createStandalone(id) as any;
+    return super.createStandalone(id) as YMarkdownCell;
   }
 
   /**

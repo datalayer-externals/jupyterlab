@@ -42,6 +42,7 @@ import {
 import { CommandRegistry } from '@lumino/commands';
 
 import { BoxPanel, Widget } from '@lumino/widgets';
+import { createStandaloneCell } from '@jupyterlab/shared-models';
 
 function main(): void {
   const kernelManager = new KernelManager();
@@ -72,7 +73,9 @@ function main(): void {
 
   const cellWidget = new CodeCell({
     rendermime,
-    model: new CodeCellModel({})
+    model: new CodeCellModel({
+      sharedModel: createStandaloneCell({ cell_type: 'code' })
+    })
   }).initializeState();
 
   // Handle the mimeType for the current kernel asynchronously.

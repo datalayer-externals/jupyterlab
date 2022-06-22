@@ -1120,7 +1120,7 @@ export namespace CodeCell {
       model.clearExecution();
       return;
     }
-    const cellId = { cellId: model.id };
+    const cellId = { cellId: model.sharedModel.getId() };
     metadata = {
       ...model.metadata.toJSON(),
       ...metadata,

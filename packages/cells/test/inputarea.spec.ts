@@ -6,11 +6,14 @@ import { Widget } from '@lumino/widgets';
 import { CodeEditorWrapper } from '@jupyterlab/codeeditor';
 
 import { CodeCellModel, InputArea, InputPrompt } from '@jupyterlab/cells';
+import { createStandaloneCell } from '@jupyterlab/shared-models';
 
 const PROMPT_CLASS = 'jp-InputArea-prompt';
 
 describe('@jupyterlab/cells', () => {
-  const model = new CodeCellModel({});
+  const model = new CodeCellModel({
+    sharedModel: createStandaloneCell({ cell_type: 'code' })
+  });
 
   describe('InputArea', () => {
     describe('#constructor()', () => {
