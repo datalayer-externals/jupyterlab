@@ -14,7 +14,7 @@ import {
 import { CodeEditor, IEditorMimeTypeService } from '@jupyterlab/codeeditor';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 import * as nbformat from '@jupyterlab/nbformat';
-import { IObservableList, IObservableMap } from '@jupyterlab/observables';
+import { IObservableMap } from '@jupyterlab/observables';
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
 import { ArrayExt, each, findIndex } from '@lumino/algorithm';
@@ -473,7 +473,7 @@ export class StaticNotebook extends Widget {
   ): void {
     const layout = this.layout as PanelLayout;
     if (oldValue) {
-      oldValue.cells.changed.disconnect(this._onCellsChanged, this);
+      oldValue.sharedModel.changed.disconnect(this._onCellsChanged, this)
       oldValue.metadata.changed.disconnect(this.onMetadataChanged, this);
       oldValue.contentChanged.disconnect(this.onModelContentChanged, this);
       // TODO: reuse existing cell widgets if possible. Remember to initially
@@ -498,7 +498,7 @@ export class StaticNotebook extends Widget {
     each(cells, (cell: ICellModel, i: number) => {
       this._insertCell(i, cell, 'set');
     });
-    cells.changed.connect(this._onCellsChanged, this);
+    newValue.sharedModel.changed.connect(this._onCellsChanged, this)
     newValue.contentChanged.connect(this.onModelContentChanged, this);
     newValue.metadata.changed.connect(this.onMetadataChanged, this);
   }
@@ -506,56 +506,42 @@ export class StaticNotebook extends Widget {
   /**
    * Handle a change cells event.
    */
-  private _onCellsChanged(
-    sender: IObservableList<ICellModel>,
-    args: IObservableList.IChangedArgs<ICellModel>
+  protected _onCellsChanged(
+    sender: sharedModels.ISharedNotebook,
+    args: sharedModels.NotebookChange
   ) {
-    let index = 0;
-    switch (args.type) {
-      case 'add':
-        index = args.newIndex;
-        // eslint-disable-next-line no-case-declarations
-        const insertType: InsertType = args.oldIndex == -1 ? 'push' : 'insert';
-        each(args.newValues, value => {
-          this._insertCell(index++, value, insertType);
-        });
-        break;
-      case 'move':
-        this._moveCell(args.oldIndex, args.newIndex);
-        break;
-      case 'remove':
-        each(args.oldValues, value => {
-          this._removeCell(args.oldIndex);
-        });
-        // Add default cell if there are no cells remaining.
-        if (!sender.length) {
-          const model = this.model;
-          // Add the cell in a new context to avoid triggering another
-          // cell changed event during the handling of this signal.
-          requestAnimationFrame(() => {
-            if (model && !model.isDisposed && !model.sharedModel.cells.length) {
-              model.sharedModel.insertCell(
-                0,
-                sharedModels.createCell({ cell_type: 'code' })
-              );
-            }
+    if (args.cellsChange) {
+      let index = 0;
+      args.cellsChange.forEach(delta => {
+        if (delta.retain != null) {
+          index += delta.retain
+        } else if (delta.insert) {
+          const insertType: InsertType = index === this.widgets.length ? 'push' : 'insert';
+          each(delta.insert, (val, offset) => {
+            this._insertCell(index + offset, this.model!.cells.get(index + offset), insertType);
           });
+          index += delta.insert.length
+        } else if (delta.delete != null) {
+          for (let i = 0; i < delta.delete; i++) {
+            this._removeCell(index)
+          }
+          // Add default cell if there are no cells remaining.
+          // @todo this should probably be handled by shared-notebook
+          if (!sender.cells.length) {
+            const model = this.model;
+            // Add the cell in a new context to avoid triggering another
+            // cell changed event during the handling of this signal.
+            requestAnimationFrame(() => {
+              if (model && !model.isDisposed && !model.sharedModel.cells.length) {
+                model.sharedModel.insertCell(
+                  0,
+                  sharedModels.createCell({ cell_type: 'code' })
+                );
+              }
+            });
+          }
         }
-        break;
-      case 'set':
-        // TODO: reuse existing widgets if possible.
-        index = args.newIndex;
-        each(args.newValues, value => {
-          // Note: this ordering (insert then remove)
-          // is important for getting the active cell
-          // index for the editable notebook correct.
-          this._insertCell(index, value, 'set');
-          this._removeCell(index + 1);
-          index++;
-        });
-        break;
-      default:
-        return;
+      })
     }
   }
 
@@ -772,15 +758,6 @@ export class StaticNotebook extends Widget {
     cell.syncCollapse = true;
     cell.syncEditable = true;
     return cell;
-  }
-
-  /**
-   * Move a cell widget.
-   */
-  private _moveCell(fromIndex: number, toIndex: number): void {
-    const layout = this.layout as PanelLayout;
-    layout.insertWidget(toIndex, layout.widgets[fromIndex]);
-    this.onCellMoved(fromIndex, toIndex);
   }
 
   /**
@@ -1224,6 +1201,23 @@ export class Notebook extends StaticNotebook {
   }
 
   /**
+   * Handle a change cells event.
+   */
+  protected _onCellsChanged(
+    sender: sharedModels.ISharedNotebook,
+    args: sharedModels.NotebookChange
+  ) {
+    const activeCellId = args.cellsChange && this.activeCell?.model.id
+    super._onCellsChanged(sender, args)
+    if (activeCellId) {
+      const newActiveCellIndex = this.model?.sharedModel.cells.findIndex(cell => cell.getId() === activeCellId)
+      if (newActiveCellIndex != null) {
+        this.activeCellIndex = newActiveCellIndex
+      }
+    }
+  }
+
+  /**
    * A signal emitted when the active cell changes.
    *
    * #### Notes
@@ -1300,11 +1294,11 @@ export class Notebook extends StaticNotebook {
   }
   set activeCellIndex(newValue: number) {
     const oldValue = this._activeCellIndex;
-    if (!this.model || !this.model.cells.length) {
+    if (!this.model || !this.model.sharedModel.cells.length) {
       newValue = -1;
     } else {
       newValue = Math.max(newValue, 0);
-      newValue = Math.min(newValue, this.model.cells.length - 1);
+      newValue = Math.min(newValue, this.model.sharedModel.cells.length - 1);
     }
 
     this._activeCellIndex = newValue;

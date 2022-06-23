@@ -38,9 +38,9 @@ export class CellList implements IObservableUndoableList<ICellModel> {
   ) {
     this._cellOrder = modelDB.createList<string>('cellOrder');
     this._cellMap = new ObservableMap<ICellModel>();
+    this._cellOrder.changed.connect(this._onOrderChanged, this);
     this.nbmodel = model;
     this.nbmodel.changed.connect(this.onSharedModelChanged, this);
-    this.changed.connect(this.onModelDBChanged, this);
   }
 
   type: 'List';
@@ -50,47 +50,6 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * Prevents that the modeldb event handler is executed when the shared-model event handler is executed and vice-versa.
    */
   private readonly _mutex = models.createMutex();
-
-  private onModelDBChanged(
-    self: CellList,
-    change: IObservableList.IChangedArgs<ICellModel>
-  ) {
-    this._mutex(() => {
-      const nbmodel = this.nbmodel;
-      nbmodel.transact(() => {
-        if (change.type === 'set' || change.type === 'remove') {
-          nbmodel.deleteCellRange(
-            change.oldIndex,
-            change.oldIndex + change.oldValues.length
-          );
-        }
-        if (
-          change.type === 'set' ||
-          change.type === 'add' ||
-          change.type === 'move'
-        ) {
-          const cells = change.newValues.map(cell => {
-            return cell.sharedModel.clone() as any;
-          });
-          let insertLocation = change.newIndex;
-          if (change.type === 'move' && insertLocation > change.oldIndex) {
-            insertLocation += change.oldValues.length;
-          }
-          nbmodel.insertCells(insertLocation, cells);
-          change.newValues.forEach((cell, index) => {
-            cell.switchSharedModel(cells[index], false);
-          });
-        }
-        if (change.type === 'move') {
-          let from = change.oldIndex;
-          if (from >= change.newIndex) {
-            from += change.oldValues.length;
-          }
-          nbmodel.deleteCellRange(from, from + change.oldValues.length);
-        }
-      });
-    });
-  }
 
   private onSharedModelChanged(
     self: models.ISharedNotebook,
@@ -313,6 +272,8 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    * This should be considered to transfer ownership of the
    * cell to the `CellList`. As such, `cell.dispose()` should
    * not be called by other actors.
+   *
+   * @todo remove these!!!!
    */
   insert(index: number, cell: ICellModel): void {
     // Set the internal data structures.
@@ -540,6 +501,26 @@ export class CellList implements IObservableUndoableList<ICellModel> {
    */
   clearUndo(): void {
     this.nbmodel.clearUndoHistory();
+  }
+  private _onOrderChanged(
+    order: IObservableUndoableList<string>,
+    change: IObservableList.IChangedArgs<string>
+  ): void {
+    const newValues: ICellModel[] = [];
+    const oldValues: ICellModel[] = [];
+    each(change.newValues, id => {
+      newValues.push(this._cellMap.get(id)!);
+    });
+    each(change.oldValues, id => {
+      oldValues.push(this._cellMap.get(id)!);
+    });
+    this._changed.emit({
+      type: change.type,
+      oldIndex: change.oldIndex,
+      newIndex: change.newIndex,
+      oldValues,
+      newValues
+    });
   }
 
   private _isDisposed: boolean = false;

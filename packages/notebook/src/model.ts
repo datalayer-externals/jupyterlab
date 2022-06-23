@@ -277,8 +277,8 @@ export class NotebookModel implements INotebookModel {
         }
         return sharedModels.createCell(cell);
       });
+      this.sharedModel.insertCells(this.sharedModel.cells.length, ycells);
       this.sharedModel.deleteCellRange(0, this.sharedModel.cells.length);
-      this.sharedModel.insertCells(0, ycells);
     });
 
     (this.sharedModel as sharedModels.YNotebook).nbformat_minor =

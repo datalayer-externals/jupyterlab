@@ -97,6 +97,7 @@ describe('@jupyterlab/notebook', () => {
     });
 
     afterEach(() => {
+      widget.model?.dispose()
       widget.dispose();
       utils.clipboard.clear();
       indicator.dispose();

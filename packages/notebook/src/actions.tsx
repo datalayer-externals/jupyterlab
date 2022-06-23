@@ -328,7 +328,7 @@ export namespace NotebookActions {
     // Make the changes while preserving history.
     model.sharedModel.transact(() => {
       model.sharedModel.deleteCell(active);
-      model.sharedModel.insertCells(0, [newModel]);
+      model.sharedModel.insertCell(active, newModel);
       toDelete
         .sort((a, b) => b - a)
         .forEach(index => {

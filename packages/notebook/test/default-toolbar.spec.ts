@@ -4,6 +4,7 @@
 import { CodeCell, MarkdownCell } from '@jupyterlab/cells';
 import { Context } from '@jupyterlab/docregistry';
 import { KernelMessage } from '@jupyterlab/services';
+import { createCell } from '@jupyterlab/shared-models';
 import {
   acceptDialog,
   framePromise,
@@ -63,6 +64,7 @@ describe('@jupyterlab/notebook', () => {
 
       describe('#createInsertButton()', () => {
         it('should insert below when clicked', async () => {
+          debugger
           const button = ToolbarItems.createInsertButton(panel);
           Widget.attach(button, document.body);
           await framePromise();
@@ -151,6 +153,7 @@ describe('@jupyterlab/notebook', () => {
 
       describe('#createCellTypeItem()', () => {
         it('should track the cell type of the current cell', async () => {
+          debugger
           const item = ToolbarItems.createCellTypeItem(panel);
           Widget.attach(item, document.body);
           await framePromise();
@@ -186,8 +189,7 @@ describe('@jupyterlab/notebook', () => {
             'select'
           )[0] as HTMLSelectElement;
           expect(node.value).toBe('code');
-          const cell = panel.model!.contentFactory.createCodeCell({});
-          panel.model!.cells.insert(1, cell);
+          panel.model!.sharedModel.insertCell(0, createCell({ cell_type: 'code' }))
           panel.content.select(panel.content.widgets[1]);
           await framePromise();
           expect(node.value).toBe('code');

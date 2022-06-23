@@ -336,7 +336,7 @@ describe('@jupyter/notebook', () => {
         });
 
         it('should handle an add', () => {
-          widget.model.sharedModel.insertCell(
+          widget.model!.sharedModel.insertCell(
             0,
             createCell({ cell_type: 'code' })
           );
@@ -346,7 +346,7 @@ describe('@jupyter/notebook', () => {
         });
 
         it('should initially render markdown cells with content', () => {
-          widget.model.sharedModel.insertCells(0, [
+          widget.model!.sharedModel.insertCells(0, [
             createCell({ cell_type: 'markdown' }),
             createCell({ cell_type: 'markdown', source: '# Hello' })
           ]);
@@ -363,12 +363,12 @@ describe('@jupyter/notebook', () => {
 
         it('should handle a move', () => {
           const child = widget.widgets[1];
-          widget.model!.cells.move(1, 2);
-          expect(widget.widgets[2]).toBe(child);
+          widget.model!.sharedModel.moveCell(1, 2)
+          expect(widget.widgets[2].id).toBe(child.id);
         });
 
         it('should handle a clear', () => {
-          widget.model.sharedModel.insertCell(
+          widget.model!.sharedModel.insertCell(
             0,
             createCell({ cell_type: 'code' })
           );
@@ -551,7 +551,7 @@ describe('@jupyter/notebook', () => {
       it('should be called when a cell is moved', () => {
         const widget = createWidget();
         widget.model!.fromJSON(utils.DEFAULT_CONTENT);
-        widget.model!.cells.move(0, 1);
+        widget.model!.sharedModel.moveCell(0, 1);
         expect(widget.methods).toEqual(expect.arrayContaining(['onCellMoved']));
       });
     });
@@ -749,7 +749,7 @@ describe('@jupyter/notebook', () => {
         const widget = createActiveWidget();
         Widget.attach(widget, document.body);
         MessageLoop.sendMessage(widget, Widget.Msg.ActivateRequest);
-        widget.model.sharedModel.insertCell(
+        widget.model!.sharedModel.insertCell(
           0,
           createCell({ cell_type: 'markdown', source: '# Hello' })
         ); // Should be rendered with content.
@@ -1228,7 +1228,7 @@ describe('@jupyter/notebook', () => {
         });
 
         it('should preserve "command" mode if in a markdown cell', () => {
-          widget.model.sharedModel.insertCell(
+          widget.model!.sharedModel.insertCell(
             0,
             createCell({ cell_type: 'markdown', source: '# Hello' })
           );
@@ -1283,7 +1283,7 @@ describe('@jupyter/notebook', () => {
         });
 
         it('should leave a markdown cell rendered', () => {
-          widget.model.sharedModel.insertCells(0, [
+          widget.model!.sharedModel.insertCells(0, [
             createCell({ cell_type: 'code' }),
             createCell({ cell_type: 'markdown', source: '# Hello' })
           ]);
@@ -1302,7 +1302,7 @@ describe('@jupyter/notebook', () => {
         });
 
         it('should remove selection and switch to command mode', () => {
-          widget.model.sharedModel.insertCells(0, [
+          widget.model!.sharedModel.insertCells(0, [
             createCell({ cell_type: 'code' }),
             createCell({ cell_type: 'markdown', source: '# Hello' })
           ]);
@@ -1321,7 +1321,7 @@ describe('@jupyter/notebook', () => {
         });
 
         it('should have no effect on shift right click', () => {
-          widget.model.sharedModel.insertCells(0, [
+          widget.model!.sharedModel.insertCells(0, [
             createCell({ cell_type: 'code' }),
             createCell({ cell_type: 'markdown', source: '# Hello' })
           ]);
@@ -1342,7 +1342,7 @@ describe('@jupyter/notebook', () => {
 
       describe('dblclick', () => {
         it('should unrender a markdown cell', () => {
-          widget.model.sharedModel.insertCell(
+          widget.model!.sharedModel.insertCell(
             0,
             createCell({ cell_type: 'markdown', source: '# Hello' })
           );
@@ -1546,7 +1546,7 @@ describe('@jupyter/notebook', () => {
         const widget = createActiveWidget();
         widget.model!.fromJSON(utils.DEFAULT_CONTENT);
         widget.activeCellIndex = 1;
-        widget.model.sharedModel.insertCell(
+        widget.model!.sharedModel.insertCell(
           0,
           createCell({ cell_type: 'code' })
         );
@@ -1595,7 +1595,7 @@ describe('@jupyter/notebook', () => {
           widget.model!.fromJSON(utils.DEFAULT_CONTENT);
           const cell = widget.widgets[3];
           widget.activeCellIndex = 3;
-          widget.model!.cells.move(fromIndex, toIndex);
+          widget.model!.sharedModel.moveCell(fromIndex, toIndex);
           expect(widget.activeCellIndex).toBe(activeIndex);
           expect(widget.widgets[activeIndex]).toBe(cell);
         });
@@ -1641,7 +1641,7 @@ describe('@jupyter/notebook', () => {
         widget.model!.fromJSON(utils.DEFAULT_CONTENT);
         const cell = widget.widgets[5];
         expect(
-          cell.inputArea.editorWidget.model.sharedModel
+          cell.inputArea.editorWidget.model!.sharedModel
             .getSource()
             .startsWith('from IPython.display import Latex')
         ).toBe(true);

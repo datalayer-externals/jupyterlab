@@ -425,11 +425,7 @@ export class AttachmentsCellModel extends CellModel {
    * Serialize the model to JSON.
    */
   toJSON(): nbformat.IRawCell | nbformat.IMarkdownCell {
-    const cell = super.toJSON() as nbformat.IRawCell | nbformat.IMarkdownCell;
-    if (this.attachments.length) {
-      cell.attachments = this.attachments.toJSON();
-    }
-    return cell;
+    return super.toJSON() as nbformat.IRawCell | nbformat.IMarkdownCell;
   }
 
   private _attachments: IAttachmentsModel;
@@ -496,8 +492,7 @@ export class RawCellModel extends AttachmentsCellModel {
    * Serialize the model to JSON.
    */
   toJSON(): nbformat.IRawCell {
-    const cell = super.toJSON() as nbformat.IRawCell;
-    return cell;
+    return super.toJSON() as nbformat.IRawCell;
   }
 }
 
@@ -525,8 +520,7 @@ export class MarkdownCellModel extends AttachmentsCellModel {
    * Serialize the model to JSON.
    */
   toJSON(): nbformat.IMarkdownCell {
-    const cell = super.toJSON() as nbformat.IMarkdownCell;
-    return cell;
+    return super.toJSON() as nbformat.IMarkdownCell;
   }
 }
 
@@ -642,10 +636,7 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
    * @todo remove this as this is implemented by shared-model
    */
   toJSON(): nbformat.ICodeCell {
-    const cell = super.toJSON() as nbformat.ICodeCell;
-    cell.execution_count = this.executionCount || null;
-    cell.outputs = this.outputs.toJSON();
-    return cell;
+    return super.toJSON() as nbformat.ICodeCell;
   }
 
   /**

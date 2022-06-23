@@ -259,6 +259,7 @@ describe('@jupyterlab/completer', () => {
       });
 
       it('should be undoable and redoable', () => {
+        debugger;
         const model = new CompleterModel();
         const patch = 'foobar';
         const completer = new Completer({ editor: null, model });

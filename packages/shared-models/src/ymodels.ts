@@ -765,7 +765,7 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
     ymodel.set('source', ysource);
     ymodel.set('metadata', this.getMetadata());
     ymodel.set('cell_type', this.cell_type);
-    ymodel.set('id', UUID.uuid4());
+    ymodel.set('id', this.getId());
     const Self: any = this.constructor;
     const clone = new Self(ymodel);
     // TODO The assignment of the undoManager does not work for a clone.
@@ -942,20 +942,18 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
    * @param metadata: Notebook's metadata.
    */
   setMetadata(value: Partial<Metadata>): void {
-    this.transact(() => {
-      const clone = deepCopy(value) as any;
-      if (clone.collapsed != null) {
-        clone.jupyter = clone.jupyter || {};
-        (clone as any).jupyter.outputs_hidden = clone.collapsed;
-      } else if (clone?.jupyter?.outputs_hidden != null) {
-        clone.collapsed = clone.jupyter.outputs_hidden;
-      }
-      if (!JSONExt.deepEqual(clone, this.getMetadata())) {
-        this.transact(() => {
-          this.ymodel.set('metadata', clone);
-        });
-      }
-    });
+    const clone = deepCopy(value) as any;
+    if (clone.collapsed != null) {
+      clone.jupyter = clone.jupyter || {};
+      (clone as any).jupyter.outputs_hidden = clone.collapsed;
+    } else if (clone?.jupyter?.outputs_hidden != null) {
+      clone.collapsed = clone.jupyter.outputs_hidden;
+    }
+    if (this.ymodel.doc == null || !JSONExt.deepEqual(clone, this.getMetadata())) {
+      this.transact(() => {
+        this.ymodel.set('metadata', clone);
+      });
+    }
   }
 
   /**
