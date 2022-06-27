@@ -100,6 +100,7 @@ describe('@jupyterlab/notebook', () => {
       widget.model?.dispose();
       widget.dispose();
       utils.clipboard.clear();
+      indicator.model.dispose();
       indicator.dispose();
     });
 

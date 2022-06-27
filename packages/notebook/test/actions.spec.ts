@@ -74,6 +74,7 @@ describe('@jupyterlab/notebook', () => {
     });
 
     afterEach(() => {
+      widget.model?.dispose();
       widget.dispose();
       utils.clipboard.clear();
     });
@@ -133,7 +134,6 @@ describe('@jupyterlab/notebook', () => {
         expect(cellError!.errorName).toBe('NameError');
         expect(cellError!.errorValue).toBe("name 'foo' is not defined");
         expect(cellError!.traceback).not.toBeNull();
-        await ipySessionContext.session!.kernel!.restart();
       });
     });
 
@@ -686,7 +686,7 @@ describe('@jupyterlab/notebook', () => {
         const result = await NotebookActions.run(widget, undefined);
         expect(result).toBe(true);
         const cell = widget.activeCell as CodeCell;
-        expect(cell.model.executionCount).toBeNull();
+        expect(cell.model.executionCount).toBe(0);
         expect(emitted).toBe(1);
       });
 
@@ -704,9 +704,9 @@ describe('@jupyterlab/notebook', () => {
         widget.model!.sharedModel.insertCell(widget.widgets.length, cell);
         widget.select(widget.widgets[widget.widgets.length - 1]);
         const result = await NotebookActions.run(widget, ipySessionContext);
+        await sleep(400);
         expect(result).toBe(false);
         expect(cell.execution_count).toBeNull();
-        await ipySessionContext.session!.kernel!.restart();
         expect(emitted).toBe(1);
       });
 
@@ -727,10 +727,9 @@ describe('@jupyterlab/notebook', () => {
         // Markdown rendering is asynchronous, but the cell
         // provides no way to hook into that. Sleep here
         // to make sure it finishes.
-        await sleep(100);
+        await sleep(400);
         expect(result).toBe(false);
         expect(child.rendered).toBe(true);
-        await ipySessionContext.session!.kernel!.restart();
         expect(emitted).toBe(1);
       });
     });
@@ -769,7 +768,6 @@ describe('@jupyterlab/notebook', () => {
         );
         expect(result).toBe(false);
         expect(widget.isSelected(widget.widgets[0])).toBe(false);
-        await ipySessionContext.session!.kernel!.restart();
       });
 
       it('should change to command mode', async () => {
@@ -821,15 +819,14 @@ describe('@jupyterlab/notebook', () => {
       it('should stop executing code cells on an error', async () => {
         widget.activeCell!.model.sharedModel.setSource(ERROR_INPUT);
         const cell = createCell({ cell_type: 'code' }) as ISharedCodeCell;
-        widget.model!.sharedModel.insertCell(0, cell);
-        widget.select(widget.widgets[0]);
+        widget.model!.sharedModel.insertCell(widget.widgets.length, cell);
+        widget.select(widget.widgets[widget.widgets.length - 1]);
         const result = await NotebookActions.runAndAdvance(
           widget,
           ipySessionContext
         );
         expect(result).toBe(false);
         expect(cell.execution_count).toBeNull();
-        await ipySessionContext.session!.kernel!.restart();
       });
 
       it('should render all markdown cells on an error', async () => {
@@ -844,11 +841,10 @@ describe('@jupyterlab/notebook', () => {
         // Markdown rendering is asynchronous, but the cell
         // provides no way to hook into that. Sleep here
         // to make sure it finishes.
-        await sleep(100);
+        await sleep(400);
         expect(result).toBe(false);
         expect(cell.rendered).toBe(true);
         expect(widget.activeCellIndex).toBe(2);
-        await ipySessionContext.session!.kernel!.restart();
       });
     });
 
@@ -926,9 +922,9 @@ describe('@jupyterlab/notebook', () => {
           widget,
           ipySessionContext
         );
+        await sleep(400);
         expect(result).toBe(false);
         expect(cell.execution_count).toBeNull();
-        await ipySessionContext.session!.kernel!.restart();
       });
 
       it('should render all markdown cells on an error', async () => {
@@ -943,11 +939,10 @@ describe('@jupyterlab/notebook', () => {
         // Markdown rendering is asynchronous, but the cell
         // provides no way to hook into that. Sleep here
         // to make sure it finishes.
-        await sleep(100);
+        await sleep(500);
         expect(result).toBe(false);
         expect(cell.rendered).toBe(true);
         expect(widget.activeCellIndex).toBe(2);
-        await ipySessionContext.session!.kernel!.restart();
       });
     });
 
@@ -1003,7 +998,6 @@ describe('@jupyterlab/notebook', () => {
         expect(result).toBe(false);
         expect(cell.execution_count).toBeNull();
         expect(widget.activeCellIndex).toBe(widget.widgets.length - 1);
-        await ipySessionContext.session!.kernel!.restart();
       });
 
       it('should render all markdown cells on an error', async () => {
@@ -1014,10 +1008,9 @@ describe('@jupyterlab/notebook', () => {
         // Markdown rendering is asynchronous, but the cell
         // provides no way to hook into that. Sleep here
         // to make sure it finishes.
-        await sleep(100);
+        await sleep(400);
         expect(result).toBe(false);
         expect(cell.rendered).toBe(true);
-        await ipySessionContext.session!.kernel!.restart();
       });
     });
 

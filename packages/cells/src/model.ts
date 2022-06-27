@@ -565,7 +565,7 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
    * @todo this can be removed as the same properties exist on sharedModel
    */
   get executionCount(): nbformat.ExecutionCount {
-    return this.sharedModel.execution_count;
+    return this.sharedModel.execution_count || 0;
   }
   set executionCount(newValue: nbformat.ExecutionCount) {
     this.sharedModel.execution_count = newValue;

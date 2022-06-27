@@ -37,8 +37,10 @@ export class YDocument<T> implements models.ISharedDocument {
    * Dispose of the resources.
    */
   dispose(): void {
+    if (this.isDisposed) return;
     this.isDisposed = true;
     this.ydoc.destroy();
+    Signal.clearData(this);
   }
 
   /**
@@ -108,8 +110,10 @@ export class YFile
    * Dispose of the resources.
    */
   dispose(): void {
+    if (this.isDisposed) return;
     this.ysource.unobserve(this._modelObserver);
     this.ystate.unobserve(this._onStateChanged);
+    super.dispose();
   }
 
   /**
@@ -243,9 +247,11 @@ export class YNotebook
    * Dispose of the resources.
    */
   dispose(): void {
+    if (this.isDisposed) return;
     this.ycells.unobserve(this._onYCellsChanged);
     this.ymeta.unobserve(this._onMetaChanged);
     this.ystate.unobserve(this._onStateChanged);
+    super.dispose();
   }
 
   /**
@@ -836,6 +842,8 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
    * Dispose of the resources.
    */
   dispose(): void {
+    if (this.isDisposed) return;
+    this.isDisposed = true;
     this.ymodel.unobserveDeep(this._modelObserver);
     if (this._awareness) {
       this._awareness.destroy();
@@ -843,6 +851,7 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
     if (!this.notebook && this._undoManager) {
       this._undoManager.destroy();
     }
+    Signal.clearData(this);
   }
 
   /**

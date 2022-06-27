@@ -214,6 +214,7 @@ export class NotebookModel implements INotebookModel {
     const cells = this.cells;
     this._cells = null!;
     cells.dispose();
+    this.sharedModel.dispose();
     this._isDisposed = true;
     this.modelDB.dispose();
     Signal.clearData(this);

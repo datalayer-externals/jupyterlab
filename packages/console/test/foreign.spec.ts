@@ -4,6 +4,7 @@
 import { ISessionContext } from '@jupyterlab/apputils';
 import { CodeCell, CodeCellModel } from '@jupyterlab/cells';
 import { KernelMessage } from '@jupyterlab/services';
+import { createCell } from '@jupyterlab/shared-models';
 import { defaultRenderMime, NBTestUtils } from '@jupyterlab/testutils';
 import * as Mock from '@jupyterlab/testutils/lib/mock';
 import { UUID } from '@lumino/coreutils';
@@ -21,7 +22,9 @@ class TestParent extends Panel implements ForeignHandler.IReceiver {
 
   createCodeCell(): CodeCell {
     const contentFactory = NBTestUtils.createCodeCellFactory();
-    const model = new CodeCellModel({});
+    const model = new CodeCellModel({
+      sharedModel: createCell({ cell_type: 'code' })
+    });
     const cell = new CodeCell({
       model,
       rendermime,

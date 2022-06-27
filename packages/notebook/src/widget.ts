@@ -307,24 +307,6 @@ export class StaticNotebook extends Widget {
     }
     const oldValue = this._model;
     this._model = newValue;
-
-    if (oldValue && oldValue.modelDB.isCollaborative) {
-      void oldValue.modelDB.connected.then(() => {
-        oldValue!.modelDB.collaborators!.changed.disconnect(
-          this._onCollaboratorsChanged,
-          this
-        );
-      });
-    }
-    if (newValue && newValue.modelDB.isCollaborative) {
-      void newValue.modelDB.connected.then(() => {
-        newValue!.modelDB.collaborators!.changed.connect(
-          this._onCollaboratorsChanged,
-          this
-        );
-      });
-    }
-
     // Trigger private, protected, and public changes.
     this._onModelChanged(oldValue, newValue);
     this.onModelChanged(oldValue, newValue);
@@ -798,22 +780,6 @@ export class StaticNotebook extends Widget {
         widget.model.mimeType = this._mimetype;
       }
     });
-  }
-
-  /**
-   * Handle an update to the collaborators.
-   */
-  private _onCollaboratorsChanged(): void {
-    // If there are selections corresponding to non-collaborators,
-    // they are stale and should be removed.
-    for (let i = 0; i < this.widgets.length; i++) {
-      const cell = this.widgets[i];
-      for (const key of cell.model.selections.keys()) {
-        if (false === this._model?.modelDB?.collaborators?.has(key)) {
-          cell.model.selections.delete(key);
-        }
-      }
-    }
   }
 
   /**
