@@ -13,6 +13,8 @@ import {
   CodeCell,
   ICellModel,
   ICodeCellModel,
+  isMarkdownCellModel,
+  isRawCellModel,
   MarkdownCell
 } from '@jupyterlab/cells';
 import * as nbformat from '@jupyterlab/nbformat';
@@ -25,12 +27,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 import * as React from 'react';
 import { Notebook, StaticNotebook } from './widget';
 import * as sharedModels from '@jupyterlab/shared-models';
-import {
-  createCell,
-  ISharedCell,
-  ISharedMarkdownCell,
-  ISharedRawCell
-} from '@jupyterlab/shared-models';
+import { createCell, ISharedCell } from '@jupyterlab/shared-models';
 
 /**
  * The mimetype used for Jupyter cell data.
@@ -266,16 +263,10 @@ export namespace NotebookActions {
           toDelete.push(index);
         }
         // Collect attachments if the cell is a markdown cell or a raw cell
-        const model = child.model.sharedModel;
-
-        if (model.cell_type === 'raw' || model.cell_type === 'markdown') {
-          const modelAttachments = (
-            child.model.sharedModel as ISharedRawCell | ISharedMarkdownCell
-          ).getAttachments();
-          if (modelAttachments) {
-            for (const key in modelAttachments) {
-              attachments[key] = modelAttachments[key];
-            }
+        const model = child.model;
+        if (isRawCellModel(model) || isMarkdownCellModel(model)) {
+          for (const key of model.attachments.keys) {
+            attachments[key] = model.attachments.get(key)!.toJSON();
           }
         }
       }
@@ -320,9 +311,7 @@ export namespace NotebookActions {
       primaryModel.cell_type === 'markdown' ||
       primaryModel.cell_type === 'raw'
     ) {
-      newModel.setAttachments(
-        (primaryModel as ISharedMarkdownCell | ISharedRawCell).getAttachments()
-      );
+      newModel.setAttachments(attachments);
     }
 
     // Make the changes while preserving history.
@@ -452,20 +441,19 @@ export namespace NotebookActions {
     const cells = notebook.model.cells;
     const widgets = notebook.widgets;
 
-    cells.beginCompoundOperation();
     for (let i = cells.length - 2; i > -1; i--) {
       if (notebook.isSelectedOrActive(widgets[i])) {
         if (!notebook.isSelectedOrActive(widgets[i + 1])) {
-          cells.move(i, i + 1);
-          if (notebook.activeCellIndex === i) {
-            notebook.activeCellIndex++;
+          const activeCellIndex = notebook.activeCellIndex;
+          notebook.model?.sharedModel.moveCell(i, i + 1);
+          if (activeCellIndex === i) {
+            notebook.activeCellIndex = activeCellIndex + 1;
           }
           notebook.select(widgets[i + 1]);
           notebook.deselect(widgets[i]);
         }
       }
     }
-    cells.endCompoundOperation();
     Private.handleState(notebook, state, true);
   }
 
@@ -485,12 +473,11 @@ export namespace NotebookActions {
     const state = Private.getState(notebook);
     const cells = notebook.model.cells;
     const widgets = notebook.widgets;
-
-    cells.beginCompoundOperation();
+    const sharedModel = notebook.model.sharedModel;
     for (let i = 1; i < cells.length; i++) {
       if (notebook.isSelectedOrActive(widgets[i])) {
         if (!notebook.isSelectedOrActive(widgets[i - 1])) {
-          cells.move(i, i - 1);
+          sharedModel.moveCell(i, i - 1);
           if (notebook.activeCellIndex === i) {
             notebook.activeCellIndex--;
           }
@@ -499,7 +486,6 @@ export namespace NotebookActions {
         }
       }
     }
-    cells.endCompoundOperation();
     Private.handleState(notebook, state, true);
   }
 
@@ -1213,32 +1199,28 @@ export namespace NotebookActions {
         typeof cell.id === 'string'
           ? cell.id
           : undefined;
-      const ycell = sharedModels.createCell(cell);
-      ycell.setSource(
-        typeof cell.source === 'string' ? cell.source : cell.source.join('\n')
-      );
-      ycell.setMetadata(cell.metadata);
-      return ycell;
+      return sharedModels.createCell(cell);
     });
 
     let index = 0;
+    const prevActiveCellIndex = notebook.activeCellIndex;
 
     model.sharedModel.transact(() => {
       // Set the starting index of the paste operation depending upon the mode.
       switch (mode) {
         case 'below':
-          index = notebook.activeCellIndex;
+          index = notebook.activeCellIndex + 1;
           break;
         case 'belowSelected':
           notebook.widgets.forEach((child, childIndex) => {
             if (notebook.isSelectedOrActive(child)) {
-              index = childIndex;
+              index = childIndex + 1;
             }
           });
 
           break;
         case 'above':
-          index = notebook.activeCellIndex - 1;
+          index = notebook.activeCellIndex;
           break;
         case 'replace': {
           // Find the cells to delete.
@@ -1270,7 +1252,7 @@ export namespace NotebookActions {
       model.sharedModel.insertCells(index, newCells);
     });
 
-    notebook.activeCellIndex += newCells.length;
+    notebook.activeCellIndex = prevActiveCellIndex + newCells.length;
     notebook.deselectAll();
     if (cellsFromClipboard) {
       notebook.lastClipboardInteraction = 'paste';
@@ -1287,7 +1269,7 @@ export namespace NotebookActions {
    * This is a no-op if if there are no cell actions to undo.
    */
   export function undo(notebook: Notebook): void {
-    if (!notebook.model || !notebook.activeCell) {
+    if (!notebook.model) {
       return;
     }
 
@@ -2420,8 +2402,8 @@ Please wait for the complete rendering before invoking that action.`,
     value: nbformat.CellType
   ): void {
     const notebookSharedModel = notebook.model!.sharedModel;
-    notebookSharedModel.transact(() => {
-      notebook.widgets.forEach((child, index) => {
+    notebook.widgets.forEach((child, index) => {
+      notebookSharedModel.transact(() => {
         if (!notebook.isSelectedOrActive(child)) {
           return;
         }
@@ -2432,12 +2414,12 @@ Please wait for the complete rendering before invoking that action.`,
           notebookSharedModel.deleteCell(index);
           notebookSharedModel.insertCell(index, newCell);
         }
-        if (value === 'markdown') {
-          // Fetch the new widget and unrender it.
-          child = notebook.widgets[index];
-          (child as MarkdownCell).rendered = false;
-        }
       });
+      if (value === 'markdown') {
+        // Fetch the new widget and unrender it.
+        child = notebook.widgets[index];
+        (child as MarkdownCell).rendered = false;
+      }
     });
     notebook.deselectAll();
   }
@@ -2466,6 +2448,7 @@ Please wait for the complete rendering before invoking that action.`,
 
       if (notebook.isSelectedOrActive(child) && deletable) {
         toDelete.push(index);
+        notebook.model?.deletedCells.push(child.model.id);
       }
     });
 

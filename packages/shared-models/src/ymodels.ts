@@ -765,9 +765,9 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
     ymodel.set('source', ysource);
     ymodel.set('metadata', this.getMetadata());
     ymodel.set('cell_type', this.cell_type);
-    ymodel.set('id', this.getId());
+    ymodel.set('id', UUID.uuid4());
     const Self: any = this.constructor;
-    const clone = new Self(ymodel);
+    const clone = new Self(ymodel, ysource);
     // TODO The assignment of the undoManager does not work for a clone.
     // See https://github.com/jupyterlab/jupyterlab/issues/11035
     clone._undoManager = this.undoManager;
@@ -949,7 +949,10 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
     } else if (clone?.jupyter?.outputs_hidden != null) {
       clone.collapsed = clone.jupyter.outputs_hidden;
     }
-    if (this.ymodel.doc == null || !JSONExt.deepEqual(clone, this.getMetadata())) {
+    if (
+      this.ymodel.doc == null ||
+      !JSONExt.deepEqual(clone, this.getMetadata())
+    ) {
       this.transact(() => {
         this.ymodel.set('metadata', clone);
       });
@@ -997,7 +1000,7 @@ export class YCodeCell
    * The code cell's prompt number. Will be null if the cell has not been run.
    */
   get execution_count(): number | null {
-    return this.ymodel.get('execution_count');
+    return this.ymodel.get('execution_count') || null;
   }
 
   /**

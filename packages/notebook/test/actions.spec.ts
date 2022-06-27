@@ -334,7 +334,6 @@ describe('@jupyterlab/notebook', () => {
       it.each(['raw', 'markdown'] as CellType[])(
         'should merge attachments if the last selected cell is a %s cell',
         type => {
-          debugger // raw, md
           for (let i = 0; i < 2; i++) {
             NotebookActions.changeCellType(widget, type);
             const markdownCell = widget.widgets[i] as MarkdownCell;
@@ -697,12 +696,12 @@ describe('@jupyterlab/notebook', () => {
           emitted += 1;
         });
         widget.model!.sharedModel.insertCell(
-          0,
+          2,
           createCell({ cell_type: 'code', source: ERROR_INPUT })
         );
         widget.select(widget.widgets[2]);
         const cell = createCell({ cell_type: 'code' }) as ISharedCodeCell;
-        widget.model!.sharedModel.insertCell(1, cell);
+        widget.model!.sharedModel.insertCell(widget.widgets.length, cell);
         widget.select(widget.widgets[widget.widgets.length - 1]);
         const result = await NotebookActions.run(widget, ipySessionContext);
         expect(result).toBe(false);
@@ -717,7 +716,7 @@ describe('@jupyterlab/notebook', () => {
           emitted += 1;
         });
         widget.model!.sharedModel.insertCell(
-          0,
+          widget.widgets.length,
           createCell({ cell_type: 'markdown' })
         );
         const child = widget.widgets[widget.widgets.length - 1] as MarkdownCell;
@@ -823,7 +822,7 @@ describe('@jupyterlab/notebook', () => {
         widget.activeCell!.model.sharedModel.setSource(ERROR_INPUT);
         const cell = createCell({ cell_type: 'code' }) as ISharedCodeCell;
         widget.model!.sharedModel.insertCell(0, cell);
-        widget.select(widget.widgets[widget.widgets.length - 1]);
+        widget.select(widget.widgets[0]);
         const result = await NotebookActions.runAndAdvance(
           widget,
           ipySessionContext
@@ -921,7 +920,7 @@ describe('@jupyterlab/notebook', () => {
       it('should stop executing code cells on an error', async () => {
         widget.activeCell!.model.sharedModel.setSource(ERROR_INPUT);
         const cell = createCell({ cell_type: 'code' }) as ISharedCodeCell;
-        widget.model!.sharedModel.insertCell(0, cell);
+        widget.model!.sharedModel.insertCell(widget.widgets.length, cell);
         widget.select(widget.widgets[widget.widgets.length - 1]);
         const result = await NotebookActions.runAndInsert(
           widget,
@@ -998,7 +997,8 @@ describe('@jupyterlab/notebook', () => {
       it('should stop executing code cells on an error', async () => {
         widget.activeCell!.model.sharedModel.setSource(ERROR_INPUT);
         const cell = createCell({ cell_type: 'code' }) as ISharedCodeCell;
-        widget.model!.sharedModel.insertCell(0, cell);
+        widget.model!.sharedModel.insertCell(widget.widgets.length, cell);
+        widget.select(widget.widgets[widget.widgets.length - 1]);
         const result = await NotebookActions.runAll(widget, ipySessionContext);
         expect(result).toBe(false);
         expect(cell.execution_count).toBeNull();

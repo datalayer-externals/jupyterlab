@@ -24,7 +24,7 @@ import {
 } from '@jupyterlab/observables';
 
 import { IOutputAreaModel, OutputAreaModel } from '@jupyterlab/outputarea';
-import { ISharedCell } from '@jupyterlab/shared-models';
+import { ISharedCell, ISharedMarkdownCell } from '@jupyterlab/shared-models';
 const globalModelDBMutex = models.createMutex();
 
 /**
@@ -405,11 +405,8 @@ export class AttachmentsCellModel extends CellModel {
     super(options);
     const factory =
       options.contentFactory || AttachmentsCellModel.defaultContentFactory;
-    let attachments: nbformat.IAttachments | undefined;
-
     this._attachments = factory.createAttachmentsModel({
-      values: attachments,
-      modelDB: this.modelDB
+      sharedModel: this.sharedModel as ISharedMarkdownCell
     });
     this._attachments.stateChanged.connect(this.onGenericChange, this);
   }

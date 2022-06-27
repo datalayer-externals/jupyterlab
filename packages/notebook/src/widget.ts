@@ -473,7 +473,7 @@ export class StaticNotebook extends Widget {
   ): void {
     const layout = this.layout as PanelLayout;
     if (oldValue) {
-      oldValue.sharedModel.changed.disconnect(this._onCellsChanged, this)
+      oldValue.sharedModel.changed.disconnect(this._onCellsChanged, this);
       oldValue.metadata.changed.disconnect(this.onMetadataChanged, this);
       oldValue.contentChanged.disconnect(this.onModelContentChanged, this);
       // TODO: reuse existing cell widgets if possible. Remember to initially
@@ -491,14 +491,14 @@ export class StaticNotebook extends Widget {
     if (!cells.length && newValue.isInitialized) {
       newValue.sharedModel.insertCell(
         0,
-        sharedModels.createCell({ cell_type: 'code' })
+        sharedModels.createCell({ cell_type: this.notebookConfig.defaultCell })
       );
     }
 
     each(cells, (cell: ICellModel, i: number) => {
       this._insertCell(i, cell, 'set');
     });
-    newValue.sharedModel.changed.connect(this._onCellsChanged, this)
+    newValue.sharedModel.changed.connect(this._onCellsChanged, this);
     newValue.contentChanged.connect(this.onModelContentChanged, this);
     newValue.metadata.changed.connect(this.onMetadataChanged, this);
   }
@@ -514,16 +514,21 @@ export class StaticNotebook extends Widget {
       let index = 0;
       args.cellsChange.forEach(delta => {
         if (delta.retain != null) {
-          index += delta.retain
+          index += delta.retain;
         } else if (delta.insert) {
-          const insertType: InsertType = index === this.widgets.length ? 'push' : 'insert';
+          const insertType: InsertType =
+            index === this.widgets.length ? 'push' : 'insert';
           each(delta.insert, (val, offset) => {
-            this._insertCell(index + offset, this.model!.cells.get(index + offset), insertType);
+            this._insertCell(
+              index + offset,
+              this.model!.cells.get(index + offset),
+              insertType
+            );
           });
-          index += delta.insert.length
+          index += delta.insert.length;
         } else if (delta.delete != null) {
           for (let i = 0; i < delta.delete; i++) {
-            this._removeCell(index)
+            this._removeCell(index);
           }
           // Add default cell if there are no cells remaining.
           // @todo this should probably be handled by shared-notebook
@@ -532,16 +537,22 @@ export class StaticNotebook extends Widget {
             // Add the cell in a new context to avoid triggering another
             // cell changed event during the handling of this signal.
             requestAnimationFrame(() => {
-              if (model && !model.isDisposed && !model.sharedModel.cells.length) {
+              if (
+                model &&
+                !model.isDisposed &&
+                !model.sharedModel.cells.length
+              ) {
                 model.sharedModel.insertCell(
                   0,
-                  sharedModels.createCell({ cell_type: 'code' })
+                  sharedModels.createCell({
+                    cell_type: this.notebookConfig.defaultCell
+                  })
                 );
               }
             });
           }
         }
-      })
+      });
     }
   }
 
@@ -1207,12 +1218,14 @@ export class Notebook extends StaticNotebook {
     sender: sharedModels.ISharedNotebook,
     args: sharedModels.NotebookChange
   ) {
-    const activeCellId = args.cellsChange && this.activeCell?.model.id
-    super._onCellsChanged(sender, args)
+    const activeCellId = args.cellsChange && this.activeCell?.model.id;
+    super._onCellsChanged(sender, args);
     if (activeCellId) {
-      const newActiveCellIndex = this.model?.sharedModel.cells.findIndex(cell => cell.getId() === activeCellId)
+      const newActiveCellIndex = this.model?.sharedModel.cells.findIndex(
+        cell => cell.getId() === activeCellId
+      );
       if (newActiveCellIndex != null) {
-        this.activeCellIndex = newActiveCellIndex
+        this.activeCellIndex = newActiveCellIndex;
       }
     }
   }
@@ -1290,15 +1303,15 @@ export class Notebook extends StaticNotebook {
     if (!this.model) {
       return -1;
     }
-    return this.model.cells.length ? this._activeCellIndex : -1;
+    return this.widgets.length ? this._activeCellIndex : -1;
   }
   set activeCellIndex(newValue: number) {
     const oldValue = this._activeCellIndex;
-    if (!this.model || !this.model.sharedModel.cells.length) {
+    if (!this.model || !this.widgets.length) {
       newValue = -1;
     } else {
       newValue = Math.max(newValue, 0);
-      newValue = Math.min(newValue, this.model.sharedModel.cells.length - 1);
+      newValue = Math.min(newValue, this.widgets.length - 1);
     }
 
     this._activeCellIndex = newValue;
