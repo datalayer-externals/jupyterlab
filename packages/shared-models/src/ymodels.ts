@@ -9,6 +9,7 @@ import { ISignal, Signal } from '@lumino/signaling';
 import { Awareness } from 'y-protocols/awareness';
 import * as Y from 'yjs';
 import * as models from './api';
+import * as buffer from 'lib0/buffer';
 import { Delta, ISharedNotebook } from './api';
 
 const deepCopy = (o: any) => JSON.parse(JSON.stringify(o));
@@ -195,6 +196,24 @@ export class YFile
 }
 
 /**
+ * These are "templates" that can be used as initial content. All clients will start with the same template which prevents that every joining client will create another "initial" cell.
+ *
+ * Note that initialization must not be done dynamically. Hence you need to create a static update message that doesn't change.
+ *
+ * You may creates templates by creating an empty shared notebook model, insert some content (e.g. an intial code cell), and then encoding the update to base64:
+ *
+ * ```js
+ * template = buffer.toBase64(Y.encodeStateAsUpdateV2(model.ydoc))
+ * ```
+ */
+const yCodeCellTemplate =
+  'AAAGyKjKnwUFAgEEAAcHACcAKAMnPDRjZWxsc3NvdXJjZW1ldGFkYXRhY2VsbF90eXBlaWRleGVjdXRpb25fY291bnRvdXRwdXRzBQYICQIPBwMBAAADAQIAAkECAQcAdgB3BGNvZGV3JGU1MTNlNzk2LTM4NmItNDg3Zi1hNGFjLTQ5MjZkNTcyZGJiNX0AAA==';
+const yMdCellTemplate =
+  'AAAF+8KuWAMCAQIABQcAJwAoJB5jZWxsc3NvdXJjZW1ldGFkYXRhY2VsbF90eXBlaWQFBggJAgMBAAACAQICQQEBBQB2AHcIbWFya2Rvd253JDE2MWUyNDFjLTI3ZWEtNDQ3NC1hMTljLWI5NzZkZDJhN2YxZQA=';
+const yRawCellTemplate =
+  'AAAGyp/SnR8DAgECAAUHACcAKCQeY2VsbHNzb3VyY2VtZXRhZGF0YWNlbGxfdHlwZWlkBQYICQIDAQAAAgECAkEBAQUAdgB3A3Jhd3ckN2M4MGMyMWYtNjIxZi00MWFlLTg5YTAtZGE2YzAzOGE2NjQzAA==';
+
+/**
  * Shared implementation of the Shared Document types.
  *
  * Shared cells can be inserted into a SharedNotebook.
@@ -211,6 +230,7 @@ export class YNotebook
   constructor(options: ISharedNotebook.IOptions) {
     super();
     this._disableDocumentWideUndoRedo = options.disableDocumentWideUndoRedo;
+    this._defaultCell = options.defaultCell || 'code';
     this.ycells.observe(this._onYCellsChanged);
     this.cells = this.ycells.toArray().map(ycell => {
       if (!this._ycellMapping.has(ycell)) {
@@ -221,6 +241,14 @@ export class YNotebook
 
     this.ymeta.observe(this._onMetaChanged);
     this.ystate.observe(this._onStateChanged);
+    // Initialize the document with a template
+    let template = yCodeCellTemplate;
+    if (this._defaultCell === 'raw') {
+      template = yRawCellTemplate;
+    } else if (this._defaultCell === 'markdown') {
+      template = yMdCellTemplate;
+    }
+    Y.applyUpdateV2(this.ydoc, buffer.fromBase64(template));
   }
 
   get nbformat(): number {
@@ -368,10 +396,10 @@ export class YNotebook
    * Create a new YNotebook.
    */
   public static create(
-    disableDocumentWideUndoRedo: boolean
+    disableDocumentWideUndoRedo: boolean,
+    defaultCell: 'code' | 'markdown' | 'raw' = 'code'
   ): models.ISharedNotebook {
-    const model = new YNotebook({ disableDocumentWideUndoRedo });
-    return model;
+    return new YNotebook({ disableDocumentWideUndoRedo, defaultCell });
   }
 
   /**
@@ -495,6 +523,7 @@ export class YNotebook
     trackedOrigins: new Set([this])
   });
   private _disableDocumentWideUndoRedo: boolean;
+  private _defaultCell: string;
   private _ycellMapping: Map<Y.Map<any>, YCellType> = new Map();
   public cells: YCellType[];
 }
@@ -762,8 +791,6 @@ export class YBaseCell<Metadata extends models.ISharedBaseCellMetadata>
 
   /**
    * Clone the cell.
-   *
-   * @todo clone should only be available in the specific implementations i.e. ISharedCodeCell
    */
   public clone(): YBaseCell<any> {
     const ymodel = new Y.Map();
@@ -1083,8 +1110,6 @@ export class YCodeCell
 
   /**
    * Create a new YCodeCell that can be inserted into a YNotebook
-   *
-   * @todo clone should only be available in the specific implementations i.e. ISharedCodeCell
    */
   public clone(): YCodeCell {
     const cell = super.clone() as YCodeCell;

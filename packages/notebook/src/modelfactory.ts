@@ -1,9 +1,7 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 
-import { CodeCellModel } from '@jupyterlab/cells';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
-import { IModelDB } from '@jupyterlab/observables';
 import { Contents } from '@jupyterlab/services';
 import { INotebookModel, NotebookModel } from './model';
 
@@ -70,15 +68,9 @@ export class NotebookModelFactory
    *
    * @returns A new document model.
    */
-  createNew(
-    languagePreference?: string,
-    modelDB?: IModelDB,
-    isInitialized?: boolean
-  ): INotebookModel {
+  createNew(languagePreference?: string): INotebookModel {
     return new NotebookModel({
       languagePreference,
-      modelDB,
-      isInitialized,
       disableDocumentWideUndoRedo: this._disableDocumentWideUndoRedo
     });
   }
@@ -109,10 +101,5 @@ export namespace NotebookModelFactory {
      * Defines if the document can be undo/redo.
      */
     disableDocumentWideUndoRedo?: boolean;
-
-    /**
-     * The factory for code cell content.
-     */
-    codeCellContentFactory?: CodeCellModel.IContentFactory; // @todo remove this
   }
 }

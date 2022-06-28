@@ -5,8 +5,7 @@ import * as nbformat from '@jupyterlab/nbformat';
 import {
   IObservableMap,
   IObservableValue,
-  ObservableMap,
-  ObservableValue
+  ObservableMap
 } from '@jupyterlab/observables';
 import {
   AttachmentModel,
@@ -284,22 +283,6 @@ export class AttachmentsModel implements IAttachmentsModel {
     }
     this._changed.emit(args);
     this._stateChanged.emit(void 0);
-  }
-
-  /**
-   * If the serialized version of the outputs have changed due to a remote
-   * action, then update the model accordingly.
-   * @todo remove this
-   */
-  protected _onSerializedChanged(
-    sender: IObservableValue,
-    args: ObservableValue.IChangedArgs
-  ) {
-    if (!this._changeGuard) {
-      this._changeGuard = true;
-      this.fromJSON(args.newValue as nbformat.IAttachments);
-      this._changeGuard = false;
-    }
   }
 
   /**

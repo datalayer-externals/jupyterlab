@@ -1420,7 +1420,7 @@ describe('@jupyterlab/notebook', () => {
       it('should be a no-op if there are no cell actions to undo', () => {
         const count = widget.widgets.length;
         NotebookActions.deleteCells(widget);
-        widget.model!.cells.clearUndo();
+        widget.model!.sharedModel.clearUndoHistory();
         NotebookActions.undo(widget);
         expect(widget.widgets.length).toBe(count - 1);
       });

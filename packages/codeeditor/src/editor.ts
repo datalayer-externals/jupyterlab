@@ -201,15 +201,6 @@ export namespace CodeEditor {
      * The shared model for the cell editor.
      */
     readonly sharedModel: models.ISharedText;
-
-    /**
-     * When we initialize a cell model, we create a standalone cell model that cannot be shared in a YNotebook.
-     * Call this function to re-initialize the local representation based on a fresh shared model (e.g. models.YFile or models.YCodeCell).
-     */
-    switchSharedModel(
-      sharedModel: models.ISharedText,
-      reinitialize: boolean
-    ): void;
   }
 
   /**
@@ -232,21 +223,6 @@ export namespace CodeEditor {
       mimeType.set(options?.mimeType || 'text/plain');
 
       this.modelDB.createMap('selections');
-    }
-
-    /**
-     * When we initialize a cell model, we create a standalone model that cannot be shared in a YNotebook.
-     * Call this function to re-initialize the local representation based on a fresh shared model (e.g. models.YFile or models.YCodeCell).
-     *
-     * @todo remove this
-     *
-     * @param sharedModel
-     * @param reinitialize Whether to reinitialize the shared model.
-     */
-    public switchSharedModel(sharedModel: models.ISharedText): void {
-      // clone model retrieve a shared (not standalone) model
-      this.sharedModel = sharedModel;
-      this._sharedModelSwitched.emit(true);
     }
 
     get type(): nbformat.CellType {

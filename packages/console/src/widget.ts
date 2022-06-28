@@ -271,11 +271,9 @@ export class CodeConsole extends Widget {
     if (this.isDisposed) {
       return;
     }
-    this._cells.clear();
     this._msgIdCells = null!;
     this._msgIds = null!;
     this._history.dispose();
-
     super.dispose();
   }
 

@@ -6,7 +6,6 @@ import { Cell, CodeCell, ICellModel } from '@jupyterlab/cells';
 import {
   IObservableList,
   IObservableMap,
-  IObservableUndoableList,
   ObservableMap
 } from '@jupyterlab/observables';
 
@@ -69,7 +68,7 @@ export class NotebookHandler implements IDisposable {
    * Handle a notebook cells changed event.
    */
   private _onCellsChanged(
-    cells?: IObservableUndoableList<ICellModel>,
+    cells?: any,
     changes?: IObservableList.IChangedArgs<ICellModel>
   ): void {
     this._notebookPanel.content.widgets.forEach(cell =>

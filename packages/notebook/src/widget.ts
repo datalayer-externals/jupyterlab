@@ -470,7 +470,7 @@ export class StaticNotebook extends Widget {
     }
     this._updateMimetype();
     const cells = newValue.cells;
-    if (!cells.length && newValue.isInitialized) {
+    if (!cells.length) {
       newValue.sharedModel.insertCell(
         0,
         sharedModels.createCell({ cell_type: this.notebookConfig.defaultCell })
@@ -514,6 +514,7 @@ export class StaticNotebook extends Widget {
           }
           // Add default cell if there are no cells remaining.
           // @todo this should probably be handled by shared-notebook
+          // @todo this is duplicatively implemented (see other occurrences of notebookconfig.defaultCell)
           if (!sender.cells.length) {
             const model = this.model;
             // Add the cell in a new context to avoid triggering another
@@ -1805,20 +1806,6 @@ export class Notebook extends StaticNotebook {
    * Handle a cell being inserted.
    */
   protected onCellInserted(index: number, cell: Cell): void {
-    if (this.model && this.model.modelDB.isCollaborative) {
-      const modelDB = this.model.modelDB;
-      void modelDB.connected.then(() => {
-        if (!cell.isDisposed) {
-          // Setup the selection style for collaborators.
-          const localCollaborator = modelDB.collaborators!.localCollaborator;
-          cell.editor.uuid = localCollaborator.sessionId;
-          cell.editor.selectionStyle = {
-            ...CodeEditor.defaultSelectionStyle,
-            color: localCollaborator.color
-          };
-        }
-      });
-    }
     cell.editor.edgeRequested.connect(this._onEdgeRequest, this);
     // If the insertion happened above, increment the active cell
     // index, otherwise it stays the same.
@@ -2290,17 +2277,17 @@ export class Notebook extends StaticNotebook {
       }
 
       // Move the cells one by one
-      model.cells.beginCompoundOperation();
-      if (fromIndex < toIndex) {
-        each(toMove, cellWidget => {
-          model.cells.move(fromIndex, toIndex);
-        });
-      } else if (fromIndex > toIndex) {
-        each(toMove, cellWidget => {
-          model.cells.move(fromIndex++, toIndex++);
-        });
-      }
-      model.cells.endCompoundOperation();
+      model.sharedModel.transact(() => {
+        if (fromIndex < toIndex) {
+          each(toMove, cellWidget => {
+            model.sharedModel.moveCell(fromIndex, toIndex);
+          });
+        } else if (fromIndex > toIndex) {
+          each(toMove, cellWidget => {
+            model.sharedModel.moveCell(fromIndex++, toIndex++);
+          });
+        }
+      });
     } else {
       // Handle the case where we are copying cells between
       // notebooks.

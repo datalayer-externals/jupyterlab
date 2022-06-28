@@ -7,12 +7,10 @@ import { IChangedArgs } from '@jupyterlab/coreutils';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 import * as nbformat from '@jupyterlab/nbformat';
 import {
-  IModelDB,
   IObservableJSON,
   IObservableList,
   IObservableMap,
-  IObservableUndoableList,
-  ModelDB
+  ObservableJSON
 } from '@jupyterlab/observables';
 import * as sharedModels from '@jupyterlab/shared-models';
 import {
@@ -31,7 +29,7 @@ export interface INotebookModel extends DocumentRegistry.IModel {
   /**
    * The list of cells in the notebook.
    */
-  readonly cells: IObservableUndoableList<ICellModel>;
+  readonly cells: CellList;
 
   /**
    * The major version number of the nbformat.
@@ -52,11 +50,6 @@ export interface INotebookModel extends DocumentRegistry.IModel {
    * The array of deleted cells since the notebook was last run.
    */
   readonly deletedCells: string[];
-
-  /**
-   * If the model is initialized or not.
-   */
-  isInitialized: boolean;
   readonly sharedModel: sharedModels.ISharedNotebook;
 }
 
@@ -68,27 +61,22 @@ export class NotebookModel implements INotebookModel {
    * Construct a new notebook model.
    */
   constructor(options: NotebookModel.IOptions = {}) {
-    if (options.modelDB) {
-      this.modelDB = options.modelDB;
-    } else {
-      this.modelDB = new ModelDB();
-    }
     this.sharedModel = sharedModels.YNotebook.create(
-      options.disableDocumentWideUndoRedo || false
+      options.disableDocumentWideUndoRedo || false,
+      options.defaultCell
     ) as sharedModels.ISharedNotebook;
-    this._isInitialized = options.isInitialized === false ? false : true;
-    this._cells = new CellList(this.modelDB, this.sharedModel);
+    this._cells = new CellList(this.sharedModel);
     this._trans = (options.translator || nullTranslator).load('jupyterlab');
     this._cells.changed.connect(this._onCellsChanged, this);
 
     // Handle initial metadata.
-    const metadata = this.modelDB.createMap('metadata');
-    if (!metadata.has('language_info')) {
+    this._metadata = new ObservableJSON();
+    if (!this._metadata.has('language_info')) {
       const name = options.languagePreference || '';
-      metadata.set('language_info', { name });
+      this._metadata.set('language_info', { name });
     }
     this._ensureMetadata();
-    metadata.changed.connect(this._onMetadataChanged, this);
+    this._metadata.changed.connect(this._onMetadataChanged, this);
     this._deletedCells = [];
 
     this.sharedModel.changed.connect(this._onStateChanged, this);
@@ -145,13 +133,13 @@ export class NotebookModel implements INotebookModel {
    * The metadata associated with the notebook.
    */
   get metadata(): IObservableJSON {
-    return this.modelDB.get('metadata') as IObservableJSON;
+    return this._metadata;
   }
 
   /**
    * Get the observable list of notebook cells.
    */
-  get cells(): IObservableUndoableList<ICellModel> {
+  get cells(): CellList {
     return this._cells;
   }
 
@@ -184,13 +172,6 @@ export class NotebookModel implements INotebookModel {
    */
   get deletedCells(): string[] {
     return this._deletedCells;
-  }
-
-  /**
-   * If the model is initialized or not.
-   */
-  get isInitialized(): boolean {
-    return this._isInitialized;
   }
 
   /**
@@ -344,29 +325,10 @@ close the notebook without saving it.`,
   }
 
   /**
-   * Initialize the model with its current state.
-   *
-   * # Notes
-   * Adds an empty code cell if the model is empty
-   * and clears undo state.
-   */
-  initialize(): void {
-    // @todo this initialization step should be done by the server / ypy
-    if (!this.cells.length) {
-      this.sharedModel.insertCell(
-        0,
-        sharedModels.createCell({ cell_type: 'code' })
-      );
-    }
-    this._isInitialized = true;
-    this.cells.clearUndo();
-  }
-
-  /**
    * Handle a change in the cells list.
    */
   private _onCellsChanged(
-    list: IObservableList<ICellModel>,
+    list: CellList,
     change: IObservableList.IChangedArgs<ICellModel>
   ): void {
     switch (change.type) {
@@ -476,12 +438,6 @@ close the notebook without saving it.`,
    */
   protected readonly _modelDBMutex = sharedModels.createMutex();
 
-  /**
-   * The underlying `IModelDB` instance in which model
-   * data is stored.
-   */
-  readonly modelDB: IModelDB;
-
   private _dirty = false;
   private _readOnly = false;
   private _contentChanged = new Signal<this, void>(this);
@@ -489,10 +445,10 @@ close the notebook without saving it.`,
 
   private _trans: TranslationBundle;
   private _cells: CellList;
+  private _metadata: IObservableJSON;
   private _nbformat = nbformat.MAJOR_VERSION;
   private _nbformatMinor = nbformat.MINOR_VERSION;
   private _deletedCells: string[];
-  private _isInitialized: boolean;
   private _isDisposed = false;
 }
 
@@ -509,20 +465,12 @@ export namespace NotebookModel {
      */
     languagePreference?: string;
 
-    /**
-     * A modelDB for storing notebook data.
-     */
-    modelDB?: IModelDB;
+    defaultCell?: 'code' | 'markdown' | 'raw';
 
     /**
      * Language translator.
      */
     translator?: ITranslator;
-
-    /**
-     * If the model is initialized or not.
-     */
-    isInitialized?: boolean;
 
     /**
      * Defines if the document can be undo/redo.

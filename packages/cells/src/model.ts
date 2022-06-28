@@ -201,7 +201,6 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
     sender: models.ISharedCell,
     change: models.CellChange<models.ISharedBaseCellMetadata>
   ) {
-    // globalModelDBMutex(() => {
     if (change.metadataChange) {
       const newValue = change.metadataChange.newValue || {};
       const oldValue = change.metadataChange.oldValue || {};
@@ -219,7 +218,6 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
         }
       });
     }
-    // }); @todo remove
   }
 
   /**
@@ -291,7 +289,6 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
     event: IObservableJSON.IChangedArgs
   ): void {
     const metadata = this.sharedModel.getMetadata();
-    // globalModelDBMutex(() => {
     switch (event.type) {
       case 'add':
         this._changeCellMetadata(metadata, event);
@@ -315,7 +312,6 @@ export class CellModel extends CodeEditor.Model implements ICellModel {
         throw new Error(`Invalid event type: ${event.type}`);
     }
     this.sharedModel.setMetadata(metadata);
-    // }); // @todo remove
   }
 
   /**
@@ -541,18 +537,6 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
     this._outputs.changed.connect(this.onModelDBOutputsChange, this);
   }
 
-  public switchSharedModel(
-    sharedModel: models.ISharedCodeCell,
-    reinitialize?: boolean
-  ): void {
-    if (reinitialize) {
-      this.outputs.clear();
-      sharedModel.getOutputs().forEach(output => this._outputs.add(output));
-    }
-    super.switchSharedModel(sharedModel);
-    this._setDirty(false);
-  }
-
   /**
    * The type of the cell.
    */
@@ -562,7 +546,6 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
 
   /**
    * The execution count of the cell.
-   * @todo this can be removed as the same properties exist on sharedModel
    */
   get executionCount(): nbformat.ExecutionCount {
     return this.sharedModel.execution_count || 0;
@@ -630,7 +613,6 @@ export class CodeCellModel extends CellModel implements ICodeCellModel {
 
   /**
    * Serialize the model to JSON.
-   * @todo remove this as this is implemented by shared-model
    */
   toJSON(): nbformat.ICodeCell {
     return super.toJSON() as nbformat.ICodeCell;
