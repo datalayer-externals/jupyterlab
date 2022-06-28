@@ -46,6 +46,7 @@
     "@jupyterlab/notebook": "^4.0.0-alpha.11",
     "@jupyterlab/rendermime": "^4.0.0-alpha.11",
     "@jupyterlab/services": "^7.0.0-alpha.11",
+    "@jupyterlab/shared-models": "^4.0.0-alpha.11",
     "@lumino/algorithm": "^1.9.1",
     "@lumino/coreutils": "^1.12.0",
     "@lumino/properties": "^1.8.1",
