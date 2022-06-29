@@ -18,7 +18,7 @@ import { generate, simulate } from 'simulate-event';
 import * as nbformat from '@jupyterlab/nbformat';
 import { INotebookModel, Notebook, NotebookModel, StaticNotebook } from '..';
 import * as utils from './utils';
-import { createCell, createStandaloneCell } from '@jupyterlab/shared-models';
+import { createCell } from '@jupyterlab/shared-models';
 
 const server = new JupyterServer();
 
@@ -569,9 +569,7 @@ describe('@jupyter/notebook', () => {
       describe('#createCodeCell({})', () => {
         it('should create a `CodeCell`', () => {
           const contentFactory = new StaticNotebook.ContentFactory();
-          const model = new CodeCellModel({
-            sharedModel: createStandaloneCell({ cell_type: 'code' })
-          });
+          const model = new CodeCellModel();
           const codeOptions = { model, rendermime, contentFactory };
           const parent = new StaticNotebook(options);
           const widget = contentFactory.createCodeCell(codeOptions, parent);
@@ -582,9 +580,7 @@ describe('@jupyter/notebook', () => {
       describe('#createMarkdownCell({})', () => {
         it('should create a `MarkdownCell`', () => {
           const contentFactory = new StaticNotebook.ContentFactory();
-          const model = new MarkdownCellModel({
-            sharedModel: createStandaloneCell({ cell_type: 'markdown' })
-          });
+          const model = new MarkdownCellModel();
           const mdOptions = { model, rendermime, contentFactory };
           const parent = new StaticNotebook(options);
           const widget = contentFactory.createMarkdownCell(mdOptions, parent);
@@ -595,9 +591,7 @@ describe('@jupyter/notebook', () => {
       describe('#createRawCell()', () => {
         it('should create a `RawCell`', () => {
           const contentFactory = new StaticNotebook.ContentFactory();
-          const model = new RawCellModel({
-            sharedModel: createStandaloneCell({ cell_type: 'raw' })
-          });
+          const model = new RawCellModel();
           const rawOptions = { model, contentFactory };
           const parent = new StaticNotebook(options);
           const widget = contentFactory.createRawCell(rawOptions, parent);

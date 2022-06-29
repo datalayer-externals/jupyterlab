@@ -33,9 +33,6 @@
       "path": "../packages/services"
     },
     {
-      "path": "../packages/shared-models"
-    },
-    {
       "path": "."
     }
   ]

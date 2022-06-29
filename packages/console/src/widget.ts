@@ -5,7 +5,6 @@ import { ISessionContext } from '@jupyterlab/apputils';
 import {
   Cell,
   CellDragUtils,
-  CellModel,
   CodeCell,
   CodeCellModel,
   ICodeCellModel,
@@ -19,7 +18,10 @@ import * as nbformat from '@jupyterlab/nbformat';
 import { IObservableList, ObservableList } from '@jupyterlab/observables';
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { KernelMessage } from '@jupyterlab/services';
-import { createStandaloneCell } from '@jupyterlab/shared-models';
+import {
+  createStandaloneCell,
+  ISharedRawCell
+} from '@jupyterlab/shared-models';
 import { each } from '@lumino/algorithm';
 import { JSONObject, MimeData } from '@lumino/coreutils';
 import { Drag } from '@lumino/dragdrop';
@@ -228,7 +230,7 @@ export class CodeConsole extends Widget {
       sharedModel: createStandaloneCell({
         cell_type: 'raw',
         source: '...'
-      })
+      }) as ISharedRawCell
     });
     const banner = (this._banner = new RawCell({
       model,
@@ -725,11 +727,7 @@ export class CodeConsole extends Widget {
   private _createCodeCellOptions(): CodeCell.IOptions {
     const contentFactory = this.contentFactory;
     const modelFactory = this.modelFactory;
-    const model = modelFactory.createCodeCell({
-      sharedModel: createStandaloneCell({
-        cell_type: 'code'
-      })
-    });
+    const model = modelFactory.createCodeCell({});
     const rendermime = this.rendermime;
     const editorConfig = this.editorConfig;
     return {
@@ -974,7 +972,7 @@ export namespace CodeConsole {
      * @returns A new raw cell. If a source cell is provided, the
      *   new cell will be initialized with the data from the source.
      */
-    createRawCell(options: CellModel.IOptions): IRawCellModel;
+    createRawCell(options: RawCellModel.IOptions): IRawCellModel;
   }
 
   /**
@@ -1004,7 +1002,7 @@ export namespace CodeConsole {
      *   If the contentFactory is not provided, the instance
      *   `codeCellContentFactory` will be used.
      */
-    createCodeCell(options: CodeCellModel.IOptions): ICodeCellModel {
+    createCodeCell(options: CodeCellModel.IOptions = {}): ICodeCellModel {
       if (!options.contentFactory) {
         options.contentFactory = this.codeCellContentFactory;
       }
@@ -1019,7 +1017,7 @@ export namespace CodeConsole {
      * @returns A new raw cell. If a source cell is provided, the
      *   new cell will be initialized with the data from the source.
      */
-    createRawCell(options: CellModel.IOptions): IRawCellModel {
+    createRawCell(options: RawCellModel.IOptions): IRawCellModel {
       return new RawCellModel(options);
     }
   }

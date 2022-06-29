@@ -70,9 +70,7 @@ class LogCodeCell extends CodeCell {
 
   constructor() {
     super({
-      model: new CodeCellModel({
-        sharedModel: createStandaloneCell({ cell_type: 'code' })
-      }),
+      model: new CodeCellModel(),
       rendermime
     });
   }
@@ -482,9 +480,7 @@ describe('cells/widget', () => {
 
   describe('CodeCell', () => {
     const contentFactory = NBTestUtils.createCodeCellFactory();
-    const model = new CodeCellModel({
-      sharedModel: createStandaloneCell({ cell_type: 'code' })
-    });
+    const model = new CodeCellModel();
 
     describe('#constructor()', () => {
       it('should create a code cell widget', () => {
@@ -511,9 +507,7 @@ describe('cells/widget', () => {
 
     describe('#outputCollapsed', () => {
       it('should initialize from the model', () => {
-        const collapsedModel = new CodeCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'code' })
-        });
+        const collapsedModel = new CodeCellModel();
         let widget = new CodeCell({ model: collapsedModel, rendermime });
         widget.initializeState();
         expect(widget.outputHidden).toEqual(false);
@@ -541,9 +535,7 @@ describe('cells/widget', () => {
 
     describe('#outputsScrolled', () => {
       it('should initialize from the model', () => {
-        const model = new CodeCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'code' })
-        });
+        const model = new CodeCellModel();
         let widget = new CodeCell({ model, rendermime });
         widget.initializeState();
         expect(widget.outputsScrolled).toEqual(false);
@@ -567,9 +559,7 @@ describe('cells/widget', () => {
 
     describe('#loadScrolledState()', () => {
       it('should load the output scrolled state from the model', () => {
-        const model = new CodeCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'code' })
-        });
+        const model = new CodeCellModel();
         const widget = new CodeCell({ model, rendermime });
         widget.initializeState();
         expect(widget.outputsScrolled).toEqual(false);
@@ -586,9 +576,7 @@ describe('cells/widget', () => {
 
     describe('#saveScrolledState()', () => {
       it('should save the collapse state to the model', () => {
-        const model = new CodeCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'code' })
-        });
+        const model = new CodeCellModel();
         const widget = new CodeCell({ model, rendermime });
         widget.initializeState();
         expect(widget.outputsScrolled).toEqual(false);
@@ -606,9 +594,7 @@ describe('cells/widget', () => {
 
     describe('#syncScrolled', () => {
       it('should control automatic syncing of scrolled state with model', () => {
-        const model = new CodeCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'code' })
-        });
+        const model = new CodeCellModel();
         const widget = new CodeCell({ model, rendermime });
         widget.initializeState();
         expect(widget.syncScrolled).toEqual(false);
@@ -641,9 +627,7 @@ describe('cells/widget', () => {
 
     describe('#loadCollapseState()', () => {
       it('should load the output collapse state from the model', () => {
-        const model = new CodeCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'code' })
-        });
+        const model = new CodeCellModel();
         const widget = new CodeCell({ model, rendermime });
         widget.initializeState();
         widget.loadCollapseState();
@@ -661,9 +645,7 @@ describe('cells/widget', () => {
 
     describe('#saveCollapseState()', () => {
       it('should save the collapse state to the model `collapsed` metadata', () => {
-        const model = new CodeCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'code' })
-        });
+        const model = new CodeCellModel();
         const widget = new CodeCell({ model, rendermime });
         widget.initializeState();
         expect(widget.outputHidden).toEqual(false);
@@ -687,9 +669,7 @@ describe('cells/widget', () => {
 
     describe('#syncCollapse', () => {
       it('should control automatic syncing of collapse state with model', () => {
-        const model = new CodeCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'code' })
-        });
+        const model = new CodeCellModel();
         const widget = new CodeCell({ model, rendermime });
         widget.initializeState();
         expect(widget.syncCollapse).toEqual(false);
@@ -838,9 +818,7 @@ describe('cells/widget', () => {
 
   describe('MarkdownCell', () => {
     const contentFactory = NBTestUtils.createBaseCellFactory();
-    const model = new MarkdownCellModel({
-      sharedModel: createStandaloneCell({ cell_type: 'markdown' })
-    });
+    const model = new MarkdownCellModel();
     describe('#constructor()', () => {
       it('should create a markdown cell widget', () => {
         const widget = new MarkdownCell({ model, rendermime, contentFactory });
@@ -918,9 +896,7 @@ describe('cells/widget', () => {
 
     describe('#constructor()', () => {
       it('should create a raw cell widget', () => {
-        const model = new RawCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'raw' })
-        });
+        const model = new RawCellModel();
         const widget = new RawCell({ model, contentFactory }).initializeState();
         expect(widget).toBeInstanceOf(RawCell);
       });

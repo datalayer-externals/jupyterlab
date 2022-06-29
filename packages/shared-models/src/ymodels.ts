@@ -555,7 +555,7 @@ export const createCell = (
     | Partial<nbformat.IBaseCell>
   ) & { cell_type: 'markdown' | 'code' | 'raw' | string },
   factory = BoundCellFactory
-): YCellType => {
+): YCodeCell | YMarkdownCell | YRawCell => {
   switch (cell.cell_type) {
     case 'markdown': {
       const mCell = cell as Partial<nbformat.IMarkdownCell>;

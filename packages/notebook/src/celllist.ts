@@ -14,6 +14,7 @@ import {
   ObservableMap
 } from '@jupyterlab/observables';
 import * as models from '@jupyterlab/shared-models';
+import { ISharedRawCell } from '@jupyterlab/shared-models';
 import { ArrayIterator, each, IIterator, toArray } from '@lumino/algorithm';
 import { ISignal, Signal } from '@lumino/signaling';
 
@@ -51,7 +52,7 @@ export class CellList {
         }
         default: {
           return new RawCellModel({
-            sharedModel: nbcell
+            sharedModel: nbcell as ISharedRawCell
           });
         }
       }

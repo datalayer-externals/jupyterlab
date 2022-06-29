@@ -8,7 +8,7 @@ import {
   RawCell,
   RawCellModel
 } from '@jupyterlab/cells';
-import { createStandaloneCell } from '@jupyterlab/shared-models';
+import { createStandaloneCell, YCodeCell } from '@jupyterlab/shared-models';
 import { createSessionContext, NBTestUtils } from '@jupyterlab/testutils';
 import { Message, MessageLoop } from '@lumino/messaging';
 import { Widget } from '@lumino/widgets';
@@ -143,9 +143,7 @@ describe('console/widget', () => {
     describe('#addCell()', () => {
       it('should add a code cell to the content widget', () => {
         const contentFactory = NBTestUtils.createCodeCellFactory();
-        const model = new CodeCellModel({
-          sharedModel: createStandaloneCell({ cell_type: 'code' })
-        });
+        const model = new CodeCellModel();
         const cell = new CodeCell({
           model,
           contentFactory,
@@ -322,9 +320,7 @@ describe('console/widget', () => {
 
       describe('#createCodeCell', () => {
         it('should create a code cell', () => {
-          const model = new CodeCellModel({
-            sharedModel: createStandaloneCell({ cell_type: 'code' })
-          });
+          const model = new CodeCellModel();
           const prompt = contentFactory.createCodeCell({
             rendermime: widget.rendermime,
             model,
@@ -336,9 +332,7 @@ describe('console/widget', () => {
 
       describe('#createRawCell', () => {
         it('should create a foreign cell', () => {
-          const model = new RawCellModel({
-            sharedModel: createStandaloneCell({ cell_type: 'raw' })
-          });
+          const model = new RawCellModel();
           const prompt = contentFactory.createRawCell({
             model,
             contentFactory
@@ -378,7 +372,9 @@ describe('console/widget', () => {
           const factory = new CodeConsole.ModelFactory({});
           expect(
             factory.createCodeCell({
-              sharedModel: createStandaloneCell({ cell_type: 'code' })
+              sharedModel: createStandaloneCell({
+                cell_type: 'code'
+              }) as YCodeCell
             })
           ).toBeInstanceOf(CodeCellModel);
         });
@@ -387,11 +383,7 @@ describe('console/widget', () => {
       describe('#createRawCell()', () => {
         it('should create a raw cell model', () => {
           const factory = new CodeConsole.ModelFactory({});
-          expect(
-            factory.createRawCell({
-              sharedModel: createStandaloneCell({ cell_type: 'raw' })
-            })
-          ).toBeInstanceOf(RawCellModel);
+          expect(factory.createRawCell({})).toBeInstanceOf(RawCellModel);
         });
       });
     });
