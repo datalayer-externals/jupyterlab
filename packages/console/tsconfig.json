@@ -31,13 +31,13 @@
       "path": "../services"
     },
     {
+      "path": "../shared-models"
+    },
+    {
       "path": "../translation"
     },
     {
       "path": "../ui-components"
-    },
-    {
-      "path": "../shared-models"
     }
   ]
 }

@@ -25,6 +25,9 @@
       "path": "../settingregistry"
     },
     {
+      "path": "../shared-models"
+    },
+    {
       "path": "../statedb"
     },
     {
@@ -32,9 +35,6 @@
     },
     {
       "path": "../ui-components"
-    },
-    {
-      "path": "../shared-models"
     }
   ]
 }

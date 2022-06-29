@@ -16,7 +16,7 @@ import {
 import { Context } from '@jupyterlab/docregistry';
 import { INotebookModel, NotebookModelFactory } from '@jupyterlab/notebook';
 import { ServiceManager } from '@jupyterlab/services';
-import { createCell } from '@jupyterlab/shared-models';
+import { createStandaloneCell } from '@jupyterlab/shared-models';
 
 import { createSessionContext } from '@jupyterlab/testutils';
 import { NBTestUtils } from '@jupyterlab/testutils';
@@ -183,7 +183,7 @@ describe('completer/manager', () => {
         await manager.updateCompleter(completerContext);
         const cell = new Cell({
           model: new CellModel({
-            sharedModel: createCell({ cell_type: 'code' })
+            sharedModel: createStandaloneCell({ cell_type: 'code' })
           })
         });
         const newCompleterContext = {

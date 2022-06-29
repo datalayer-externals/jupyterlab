@@ -190,6 +190,7 @@ describe('@jupyterlab/completer', () => {
         // This signal is emitted (again) because the cursor position that
         // a natural user would create need to be recreated here.
         // (editor.model.value.changed as any).emit({ type: 'set', value: 'bar' }); @todo remove?
+        (editor.model.sharedModel.changed as any).emit([]);
         expect(model.methods).toEqual(
           expect.arrayContaining(['handleTextChange'])
         );
