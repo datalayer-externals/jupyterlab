@@ -197,7 +197,6 @@ export class NotebookModel implements INotebookModel {
     cells.dispose();
     this.sharedModel.dispose();
     this._isDisposed = true;
-    this.modelDB.dispose();
     Signal.clearData(this);
   }
 
