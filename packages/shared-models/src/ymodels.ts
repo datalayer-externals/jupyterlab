@@ -208,6 +208,21 @@ export class YFile
  * ynotebook.insertCell(0, ycell)
  * template = buffer.toBase64(Y.encodeStateAsUpdateV2(ynotebook.ydoc))
  * ```
+ *
+ * The JSON-representation of the generated Y.Doc would look like this:
+ *
+ * ```json
+ * cells: [
+ *   {
+ *     source: '',
+ *     metadata: {},
+ *     cell_type: 'code',
+ *     id: 'e513e796-386b-487f-a4ac-4926d572dbb5',
+ *     execution_count: 0,
+ *     outputs: []
+ *   }
+ * ],
+ * ```
  */
 const yCodeCellTemplate =
   'AAAGyKjKnwUFAgEEAAcHACcAKAMnPDRjZWxsc3NvdXJjZW1ldGFkYXRhY2VsbF90eXBlaWRleGVjdXRpb25fY291bnRvdXRwdXRzBQYICQIPBwMBAAADAQIAAkECAQcAdgB3BGNvZGV3JGU1MTNlNzk2LTM4NmItNDg3Zi1hNGFjLTQ5MjZkNTcyZGJiNX0AAA==';
