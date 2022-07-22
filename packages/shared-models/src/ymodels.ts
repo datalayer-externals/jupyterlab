@@ -88,10 +88,10 @@ export class YDocument<T> implements models.ISharedDocument {
 
   public isDisposed = false;
   public ydoc = new Y.Doc();
-  public source = this.ydoc.getText('source');
   public ystate: Y.Map<any> = this.ydoc.getMap('state');
-  public undoManager = new Y.UndoManager([this.source], {
-    trackedOrigins: new Set([this])
+  public undoManager = new Y.UndoManager([], {
+    trackedOrigins: new Set([this]),
+    doc: this.ydoc
   });
   public awareness = new Awareness(this.ydoc);
   protected _changed = new Signal<this, T>(this);
@@ -103,6 +103,7 @@ export class YFile
 {
   constructor() {
     super();
+    this.undoManager.addToScope(this.ysource);
     this.ysource.observe(this._modelObserver);
     this.ystate.observe(this._onStateChanged);
   }
@@ -249,6 +250,7 @@ export class YNotebook
     super();
     this._disableDocumentWideUndoRedo = options.disableDocumentWideUndoRedo;
     this._defaultCell = options.defaultCell || 'code';
+    this.undoManager.addToScope(this.ycells);
     this.ycells.observe(this._onYCellsChanged);
     this.cells = this.ycells.toArray().map(ycell => {
       if (!this._ycellMapping.has(ycell)) {
@@ -545,9 +547,6 @@ export class YNotebook
   public ycells: Y.Array<Y.Map<any>> = this.ydoc.getArray('cells');
   public ymeta: Y.Map<any> = this.ydoc.getMap('meta');
   public ymodel: Y.Map<any> = this.ydoc.getMap('model');
-  public undoManager = new Y.UndoManager([this.ycells], {
-    trackedOrigins: new Set([this])
-  });
   private _disableDocumentWideUndoRedo: boolean;
   private _defaultCell: string;
   private _ycellMapping: Map<Y.Map<any>, YCellType> = new Map();
