@@ -203,7 +203,10 @@ export class YFile
  * You may creates templates by creating an empty shared notebook model, insert some content (e.g. an intial code cell), and then encoding the update to base64:
  *
  * ```js
- * template = buffer.toBase64(Y.encodeStateAsUpdateV2(model.ydoc))
+ * const ynotebook = new YNotebook({ defaultCell: 'none' })
+ * const ycell = createCell({ cell_type: 'code' })
+ * ynotebook.insertCell(0, ycell)
+ * template = buffer.toBase64(Y.encodeStateAsUpdateV2(ynotebook.ydoc))
  * ```
  */
 const yCodeCellTemplate =
@@ -242,13 +245,21 @@ export class YNotebook
     this.ymeta.observe(this._onMetaChanged);
     this.ystate.observe(this._onStateChanged);
     // Initialize the document with a template
-    let template = yCodeCellTemplate;
-    if (this._defaultCell === 'raw') {
-      template = yRawCellTemplate;
-    } else if (this._defaultCell === 'markdown') {
-      template = yMdCellTemplate;
+    let template: string | null = null;
+    switch (this._defaultCell) {
+      case 'raw':
+        template = yRawCellTemplate;
+        break;
+      case 'markdown':
+        template = yMdCellTemplate;
+        break;
+      case 'code':
+        template = yCodeCellTemplate;
+        break;
     }
-    Y.applyUpdateV2(this.ydoc, buffer.fromBase64(template));
+    if (template) {
+      Y.applyUpdateV2(this.ydoc, buffer.fromBase64(template));
+    }
   }
 
   get nbformat(): number {

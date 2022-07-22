@@ -328,7 +328,7 @@ export class CodeMirrorEditor implements CodeEditor.IEditor {
     this.host.removeEventListener('blur', this, true);
     this.host.removeEventListener('scroll', this, true);
     this._keydownHandlers.length = 0;
-    this._poll.dispose()
+    this._poll.dispose();
     Signal.clearData(this);
     this.editor.destroy();
   }
